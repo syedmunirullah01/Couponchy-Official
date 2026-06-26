@@ -1,0 +1,38 @@
+[
+  {
+    "id": "store_addidas",
+    "name": "Addidas",
+    "slug": "addidas",
+    "category": "Fashion",
+    "categorySlug": "fashion",
+    "logoImage": "https://res.cloudinary.com/drnjivxav/image/upload/v1773794982/couponchy/stores/addidas.jpg",
+    "logoText": "ADDIDAS",
+    "logoClassName": "border border-[var(--border)] bg-[var(--surface-soft)] text-[var(--text)] text-[12px] font-black",
+    "description": "Adidas testing store",
+    "trustStatus": "Verified",
+    "isFeatured": false,
+    "heroImage": "https://images.unsplash.com/photo-1556740749-887f6717d7e4?auto=format&fit=crop&w=900&q=80",
+    "rating": "4.7 (0 reviews)",
+    "offersCount": 0,
+    "createdAt": "2026-03-18T00:49:54.404Z",
+    "updatedAt": "2026-03-18T00:49:54.404Z"
+  },
+  {
+    "id": "store_nike-store",
+    "name": "Nike Store",
+    "slug": "nike-store",
+    "category": "Fashion",
+    "categorySlug": "fashion",
+    "logoImage": "https://res.cloudinary.com/drnjivxav/image/upload/v1773788559/couponchy/stores/nike-store.png",
+    "logoText": "Nike",
+    "logoClassName": "border border-[var(--border)] bg-[var(--surface-soft)] text-[var(--text)] text-[12px] font-black",
+    "description": "This is testing nike store",
+    "trustStatus": "Pending",
+    "isFeatured": false,
+    "heroImage": "https://images.unsplash.com/photo-1556740749-887f6717d7e4?auto=format&fit=crop&w=900&q=80",
+    "rating": "4.7 (0 reviews)",
+    "offersCount": 0,
+    "createdAt": "2026-03-17T23:02:57.261Z",
+    "updatedAt": "2026-03-17T23:02:57.261Z"
+  }
+]

@@ -1,0 +1,250 @@
+[
+  {
+    "id": "category_fashion",
+    "name": "Fashion",
+    "slug": "fashion",
+    "description": "",
+    "createdAt": "2026-03-22T14:06:12.303Z",
+    "updatedAt": "2026-06-25T23:35:45.621Z"
+  },
+  {
+    "id": "category_computers-softwares",
+    "name": "Computers & Softwares",
+    "slug": "computers-softwares",
+    "description": "",
+    "createdAt": "2026-06-26T00:00:00.000Z",
+    "updatedAt": "2026-06-26T00:00:00.000Z"
+  },
+  {
+    "id": "category_gifts-flowers",
+    "name": "Gifts & Flowers",
+    "slug": "gifts-flowers",
+    "description": "",
+    "createdAt": "2026-06-26T00:00:00.000Z",
+    "updatedAt": "2026-06-26T00:00:00.000Z"
+  },
+  {
+    "id": "category_sound-vision",
+    "name": "Sound & Vision",
+    "slug": "sound-vision",
+    "description": "",
+    "createdAt": "2026-06-26T00:00:00.000Z",
+    "updatedAt": "2026-06-26T00:00:00.000Z"
+  },
+  {
+    "id": "category_workshop",
+    "name": "Workshop",
+    "slug": "workshop",
+    "description": "",
+    "createdAt": "2026-06-26T00:00:00.000Z",
+    "updatedAt": "2026-06-26T00:00:00.000Z"
+  },
+  {
+    "id": "category_home-garden",
+    "name": "Home & Garden",
+    "slug": "home-garden",
+    "description": "",
+    "createdAt": "2026-06-26T00:00:00.000Z",
+    "updatedAt": "2026-06-26T00:00:00.000Z"
+  },
+  {
+    "id": "category_automotive",
+    "name": "Automotive",
+    "slug": "automotive",
+    "description": "",
+    "createdAt": "2026-06-26T00:00:00.000Z",
+    "updatedAt": "2026-06-26T00:00:00.000Z"
+  },
+  {
+    "id": "category_fishing-hunting",
+    "name": "Fishing, Hunting, ...",
+    "slug": "fishing-hunting",
+    "description": "",
+    "createdAt": "2026-06-26T00:00:00.000Z",
+    "updatedAt": "2026-06-26T00:00:00.000Z"
+  },
+  {
+    "id": "category_special-occasions",
+    "name": "Special Occasions",
+    "slug": "special-occasions",
+    "description": "",
+    "createdAt": "2026-06-26T00:00:00.000Z",
+    "updatedAt": "2026-06-26T00:00:00.000Z"
+  },
+  {
+    "id": "category_sustainable-living",
+    "name": "Sustainable Living",
+    "slug": "sustainable-living",
+    "description": "",
+    "createdAt": "2026-06-26T00:00:00.000Z",
+    "updatedAt": "2026-06-26T00:00:00.000Z"
+  },
+  {
+    "id": "category_sports-outdoors",
+    "name": "Sports & Outdoors",
+    "slug": "sports-outdoors",
+    "description": "",
+    "createdAt": "2026-06-26T00:00:00.000Z",
+    "updatedAt": "2026-06-26T00:00:00.000Z"
+  },
+  {
+    "id": "category_arts-crafts",
+    "name": "Arts & Crafts",
+    "slug": "arts-crafts",
+    "description": "",
+    "createdAt": "2026-06-26T00:00:00.000Z",
+    "updatedAt": "2026-06-26T00:00:00.000Z"
+  },
+  {
+    "id": "category_travel-vacations",
+    "name": "Travel & Vacations",
+    "slug": "travel-vacations",
+    "description": "",
+    "createdAt": "2026-06-26T00:00:00.000Z",
+    "updatedAt": "2026-06-26T00:00:00.000Z"
+  },
+  {
+    "id": "category_events-entertainment",
+    "name": "Events & Entertainment",
+    "slug": "events-entertainment",
+    "description": "",
+    "createdAt": "2026-06-26T00:00:00.000Z",
+    "updatedAt": "2026-06-26T00:00:00.000Z"
+  },
+  {
+    "id": "category_babies-kids",
+    "name": "Babies & Kids",
+    "slug": "babies-kids",
+    "description": "",
+    "createdAt": "2026-06-26T00:00:00.000Z",
+    "updatedAt": "2026-06-26T00:00:00.000Z"
+  },
+  {
+    "id": "category_animals-pets",
+    "name": "Animals & Pets",
+    "slug": "animals-pets",
+    "description": "",
+    "createdAt": "2026-06-26T00:00:00.000Z",
+    "updatedAt": "2026-06-26T00:00:00.000Z"
+  },
+  {
+    "id": "category_electric",
+    "name": "Electric",
+    "slug": "electric",
+    "description": "",
+    "createdAt": "2026-06-26T00:00:00.000Z",
+    "updatedAt": "2026-06-26T00:00:00.000Z"
+  },
+  {
+    "id": "category_apparel-clothing",
+    "name": "Apparel & Clothing",
+    "slug": "apparel-clothing",
+    "description": "",
+    "createdAt": "2026-06-26T00:00:00.000Z",
+    "updatedAt": "2026-06-26T00:00:00.000Z"
+  },
+  {
+    "id": "category_painting",
+    "name": "Painting",
+    "slug": "painting",
+    "description": "",
+    "createdAt": "2026-06-26T00:00:00.000Z",
+    "updatedAt": "2026-06-26T00:00:00.000Z"
+  },
+  {
+    "id": "category_communication-wireless",
+    "name": "Communication & Wireless",
+    "slug": "communication-wireless",
+    "description": "",
+    "createdAt": "2026-06-26T00:00:00.000Z",
+    "updatedAt": "2026-06-26T00:00:00.000Z"
+  },
+  {
+    "id": "category_appliances-electronics",
+    "name": "Appliances & Electronics",
+    "slug": "appliances-electronics",
+    "description": "",
+    "createdAt": "2026-06-26T00:00:00.000Z",
+    "updatedAt": "2026-06-26T00:00:00.000Z"
+  },
+  {
+    "id": "category_internet",
+    "name": "Internet",
+    "slug": "internet",
+    "description": "",
+    "createdAt": "2026-06-26T00:00:00.000Z",
+    "updatedAt": "2026-06-26T00:00:00.000Z"
+  },
+  {
+    "id": "category_eyewear",
+    "name": "Eyewear",
+    "slug": "eyewear",
+    "description": "",
+    "createdAt": "2026-06-26T00:00:00.000Z",
+    "updatedAt": "2026-06-26T00:00:00.000Z"
+  },
+  {
+    "id": "category_outdoors",
+    "name": "Outdoors",
+    "slug": "outdoors",
+    "description": "",
+    "createdAt": "2026-06-26T00:00:00.000Z",
+    "updatedAt": "2026-06-26T00:00:00.000Z"
+  },
+  {
+    "id": "category_food-drinks",
+    "name": "Food & Drinks",
+    "slug": "food-drinks",
+    "description": "",
+    "createdAt": "2026-06-26T00:00:00.000Z",
+    "updatedAt": "2026-06-26T00:00:00.000Z"
+  },
+  {
+    "id": "category_tools-parts",
+    "name": "Tools & Parts",
+    "slug": "tools-parts",
+    "description": "",
+    "createdAt": "2026-06-26T00:00:00.000Z",
+    "updatedAt": "2026-06-26T00:00:00.000Z"
+  },
+  {
+    "id": "category_health-beauty",
+    "name": "Health & Beauty",
+    "slug": "health-beauty",
+    "description": "",
+    "createdAt": "2026-06-26T00:00:00.000Z",
+    "updatedAt": "2026-06-26T00:00:00.000Z"
+  },
+  {
+    "id": "category_games-toys",
+    "name": "Games & Toys",
+    "slug": "games-toys",
+    "description": "",
+    "createdAt": "2026-06-26T00:00:00.000Z",
+    "updatedAt": "2026-06-26T00:00:00.000Z"
+  },
+  {
+    "id": "category_business-finance",
+    "name": "Business & Finance",
+    "slug": "business-finance",
+    "description": "",
+    "createdAt": "2026-06-26T00:00:00.000Z",
+    "updatedAt": "2026-06-26T00:00:00.000Z"
+  },
+  {
+    "id": "category_books-media",
+    "name": "Books & Media",
+    "slug": "books-media",
+    "description": "",
+    "createdAt": "2026-06-26T00:00:00.000Z",
+    "updatedAt": "2026-06-26T00:00:00.000Z"
+  },
+  {
+    "id": "category_service",
+    "name": "Service",
+    "slug": "service",
+    "description": "",
+    "createdAt": "2026-06-26T00:00:00.000Z",
+    "updatedAt": "2026-06-26T00:00:00.000Z"
+  }
+]

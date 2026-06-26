@@ -1,0 +1,34 @@
+[
+  {
+    "id": "product_addidas_os8k1gwb",
+    "slug": "f50-hyperfast-elite",
+    "storeSlug": "addidas",
+    "storeName": "Addidas",
+    "title": "F50 Hyperfast Elite",
+    "description": "F50 Hyperfast Elite Firm Ground Soccer Cleats",
+    "image": "https://ggnxkmuobokpdjeaulcv.supabase.co/storage/v1/object/public/couponchy/couponchy/products/addidas-f50-hyperfast-elite.jfif",
+    "price": 159,
+    "originalPrice": 270,
+    "ctaLabel": "View Product",
+    "productUrl": "/stores/store/addidas/products/f50-hyperfast-elite",
+    "status": "Active",
+    "createdAt": "2026-06-26T15:04:41.025Z",
+    "updatedAt": "2026-06-26T15:10:45.668Z"
+  },
+  {
+    "id": "product_nike-store_x1s1ty7i",
+    "slug": "nike-airmax-2026",
+    "storeSlug": "nike-store",
+    "storeName": "Nike Store",
+    "title": "Nike Airmax 2026",
+    "description": "Nike Airmax 2026",
+    "image": "https://res.cloudinary.com/drnjivxav/image/upload/v1775256404/couponchy/products/nike-store-nike-airmax-2026.jpg",
+    "price": 99.99,
+    "originalPrice": 129.99,
+    "ctaLabel": "View Product",
+    "productUrl": "/stores/store/nike-store/products/nike-airmax-2026",
+    "status": "Active",
+    "createdAt": "2026-04-03T22:49:09.938Z",
+    "updatedAt": "2026-04-03T22:49:09.938Z"
+  }
+]
