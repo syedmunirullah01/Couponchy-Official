@@ -269,6 +269,13 @@ export default function HeroSection({ hero, countryCode = DEFAULT_COUNTRY_CODE, 
   const searchPlaceholder = "Search any store (e.g. nike.com)";
   const popularTags = ["Adidas", "J.Crew", "Sephora", "Crocs", "Abercrombie", "ASUS"];
 
+  const dynamicPopularStores = stores.length > 0
+    ? [...stores]
+        .sort((a, b) => (b.offersCount || 0) - (a.offersCount || 0))
+        .slice(0, 6)
+    : [];
+
+
   // Build stats: replace null (Stores Verified) with live count
   const storeCountLabel = formatStoreCount(totalStoresCount);
   const displayStats = (hero?.stats?.length ? hero.stats : STATS).map((stat) =>
@@ -630,19 +637,35 @@ export default function HeroSection({ hero, countryCode = DEFAULT_COUNTRY_CODE, 
                 </svg>
                 Popular Stores:
               </span>
-              {popularTags.map((tag) => (
-                <button
-                  key={tag}
-                  type="button"
-                  onClick={() => {
-                    setSearchValue(tag);
-                    router.push(`${buildCountryPath("/stores", countryCode)}?search=${encodeURIComponent(tag)}`);
-                  }}
-                  className="popular-tag-btn"
-                >
-                  {tag}
-                </button>
-              ))}
+              {dynamicPopularStores.length > 0 ? (
+                dynamicPopularStores.map((store) => (
+                  <button
+                    key={store.slug}
+                    type="button"
+                    onClick={() => {
+                      setSearchValue(store.name);
+                      router.push(buildCountryPath(`/stores/${store.categorySlug}/${store.slug}`, countryCode));
+                    }}
+                    className="popular-tag-btn"
+                  >
+                    {store.name}
+                  </button>
+                ))
+              ) : (
+                popularTags.map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => {
+                      setSearchValue(tag);
+                      router.push(`${buildCountryPath("/stores", countryCode)}?search=${encodeURIComponent(tag)}`);
+                    }}
+                    className="popular-tag-btn"
+                  >
+                    {tag}
+                  </button>
+                ))
+              )}
             </div>
           </div>
 
