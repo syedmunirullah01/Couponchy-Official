@@ -438,11 +438,18 @@ export default function AdminSettingsPanel() {
                       key={country.code}
                       className="flex items-center justify-between rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3"
                     >
-                      <div>
-                        <p className="text-sm font-semibold text-[var(--text)]">{country.name}</p>
-                        <p className="text-xs text-[var(--muted)]">
-                          {country.code} {country.code === DEFAULT_COUNTRY_CODE ? "• default country" : ""}
-                        </p>
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={country.flagUrl || `https://flagcdn.com/w40/${country.code.toLowerCase()}.png`}
+                          alt=""
+                          className="h-3.5 w-5 object-cover rounded-[1px] border border-white/10 shrink-0"
+                        />
+                        <div>
+                          <p className="text-sm font-semibold text-[var(--text)]">{country.name}</p>
+                          <p className="text-xs text-[var(--muted)]">
+                            {country.code} {country.code === DEFAULT_COUNTRY_CODE ? "• default country" : ""}
+                          </p>
+                        </div>
                       </div>
                       <button
                         type="button"

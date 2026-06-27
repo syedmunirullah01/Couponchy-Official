@@ -30,10 +30,6 @@ const Button = React.forwardRef(({ className, variant = "primary", size = "md", 
     className
   );
 
-  if (asChild && React.isValidElement(children)) {
-    console.log("BUTTON DEBUG: children type:", children.type);
-    console.log("BUTTON DEBUG: children props:", children.props);
-  }
 
   const innerChildren = asChild && React.isValidElement(children) ? children.props.children : children;
 

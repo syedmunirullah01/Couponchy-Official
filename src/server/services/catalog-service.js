@@ -242,6 +242,7 @@ export async function getHomePageData(countryCode) {
     getAllCategories(),
   ]);
   const scopedStores = filterStoresByCountry(stores, countryCode);
+  const storeMap = new Map(scopedStores.map((store) => [store.slug, store]));
   const allowedStoreSlugs = new Set(scopedStores.map((store) => store.slug));
   const scopedOffers = offers.filter((offer) => allowedStoreSlugs.has(offer.storeSlug));
   const scopedProducts = products.filter((product) => allowedStoreSlugs.has(product.storeSlug));
@@ -284,6 +285,8 @@ export async function getHomePageData(countryCode) {
     trendingStoresTitle: homepageSections.trendingStores.title,
     trendingStores: trendingStoresSource.slice(0, homepageSections.trendingStores.limit).map((store) => ({
       name: store.name,
+      slug: store.slug,
+      categorySlug: store.categorySlug,
       href: `/stores/${store.categorySlug}/${store.slug}`,
       offer: `${store.offersCount} ACTIVE OFFERS`,
       cta: store.logoText,
@@ -291,21 +294,27 @@ export async function getHomePageData(countryCode) {
       logoImage: store.logoImage,
       logoText: store.logoText,
       trustStatus: store.trustStatus,
+      offersCount: store.offersCount || 0,
     })),
     featuredCouponsTitle: homepageSections.featuredCoupons.title,
-    featuredCoupons: featuredOffersSource.slice(0, homepageSections.featuredCoupons.limit).map((offer, index) => ({
-      brand: offer.storeName,
-      tag: offer.status,
-      title: offer.title,
-      value: offer.type === "Deal" ? "GET DEAL" : offer.code || "SAVE NOW",
-      description: offer.description,
-      expiryDate: offer.expiryDate,
-      affiliateLink: offer.affiliateLink,
-      storeSlug: offer.storeSlug,
-      highlight: index === 1,
-    })),
+    featuredCoupons: featuredOffersSource.slice(0, homepageSections.featuredCoupons.limit).map((offer, index) => {
+      const store = storeMap.get(offer.storeSlug);
+      return {
+        brand: offer.storeName,
+        tag: offer.status,
+        title: offer.title,
+        value: offer.type === "Deal" ? "GET DEAL" : offer.code || "SAVE NOW",
+        description: offer.description,
+        expiryDate: offer.expiryDate,
+        affiliateLink: offer.affiliateLink,
+        storeSlug: offer.storeSlug,
+        highlight: index === 1,
+        logoImage: store?.logoImage || null,
+        logoText: store?.logoText || "",
+      };
+    }),
     featuredProductsTitle: homepageSections.featuredProducts.title,
-    featuredProducts: featuredProductsSource.slice(0, homepageSections.featuredProducts.limit).map((product) => ({
+    featuredProducts: featuredProductsSource.slice(0, Math.max(10, homepageSections.featuredProducts.limit || 10)).map((product) => ({
       id: product.id,
       title: product.title,
       description: product.description,
@@ -317,6 +326,21 @@ export async function getHomePageData(countryCode) {
       storeName: product.storeName,
       status: product.status,
     })),
+    allCategories: categories.map((cat) => ({
+      id: cat.id,
+      name: cat.name,
+      slug: cat.slug,
+    })),
+    allStores: scopedStores.map((store) => ({
+      name: store.name,
+      slug: store.slug,
+      categorySlug: store.categorySlug,
+      logoImage: store.logoImage,
+      logoText: store.logoText,
+      trustStatus: store.trustStatus,
+      offersCount: store.offersCount,
+    })),
+    totalStoresCount: scopedStores.length,
   };
 }
 

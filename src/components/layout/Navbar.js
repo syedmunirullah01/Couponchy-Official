@@ -19,8 +19,10 @@ import {
 
 const PRIMARY_NAV = [
   { label: "Find Merchants", href: "/stores", kind: "mega" },
-  { label: "Events", href: "#", kind
-    : "events" },
+  {
+    label: "Events", href: "#", kind
+      : "events"
+  },
   { label: "Exclusive", href: "/exclusive" },
   { label: "Blog", href: "/blog" },
 ];
@@ -100,7 +102,7 @@ function BrandMark({ countryCode, onClick }) {
           <circle cx="17.5" cy="17.5" r="2.5" fill="currentColor"></circle>
         </svg>
       </div>
-      
+
       {/* Text logo */}
       <span className="text-[1.25rem] font-black tracking-[-0.04em] text-white">
         Coupon<span style={{ color: "var(--accent)" }}>chy</span>
@@ -190,11 +192,15 @@ export default function Navbar() {
   const pathWithoutCountry = removeCountryPrefix(pathname);
   const router = useRouter();
   const menuRef = useRef(null);
+  const countryDropdownRef = useRef(null);
+  const mobileCountryDropdownRef = useRef(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [megaOpen, setMegaOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
   const [eventsOpen, setEventsOpen] = useState(false);
   const [mobileEventsOpen, setMobileEventsOpen] = useState(false);
+  const [countryDropdownOpen, setCountryDropdownOpen] = useState(false);
+  const [mobileCountryDropdownOpen, setMobileCountryDropdownOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
   const [categories, setCategories] = useState([]);
   const [stores, setStores] = useState([]);
@@ -304,6 +310,12 @@ export default function Navbar() {
         setMegaOpen(false);
         setEventsOpen(false);
       }
+      if (!countryDropdownRef.current?.contains(event.target)) {
+        setCountryDropdownOpen(false);
+      }
+      if (!mobileCountryDropdownRef.current?.contains(event.target)) {
+        setMobileCountryDropdownOpen(false);
+      }
     }
 
     function handleEscape(event) {
@@ -316,6 +328,8 @@ export default function Navbar() {
         setDesktopSearchOpen(false);
         setEventsOpen(false);
         setMobileEventsOpen(false);
+        setCountryDropdownOpen(false);
+        setMobileCountryDropdownOpen(false);
       }
     }
 
@@ -363,7 +377,7 @@ export default function Navbar() {
 
     return [...(storesByCategory[activeCategory.slug] || [])]
       .sort(
-      (left, right) => (right.offersCount || 0) - (left.offersCount || 0) || left.name.localeCompare(right.name)
+        (left, right) => (right.offersCount || 0) - (left.offersCount || 0) || left.name.localeCompare(right.name)
       )
       .slice(0, 7);
   }, [activeCategory, storesByCategory]);
@@ -490,8 +504,8 @@ export default function Navbar() {
                 item.kind === "mega"
                   ? isDealsActive
                   : item.kind === "events"
-                  ? pathWithoutCountry.startsWith("/events")
-                  : pathWithoutCountry === item.href;
+                    ? pathWithoutCountry.startsWith("/events")
+                    : pathWithoutCountry === item.href;
 
               if (item.kind === "events") {
                 return (
@@ -504,7 +518,7 @@ export default function Navbar() {
                     <button
                       type="button"
                       onClick={() => setEventsOpen((current) => !current)}
-                      className="flex items-center gap-1.5 text-[0.88rem] font-semibold text-white transition hover:text-[var(--accent)]"
+                      className="flex items-center gap-1.5 text-[0.88rem] font-semibold text-white/80 transition hover:text-white"
                       aria-expanded={eventsOpen}
                       aria-haspopup="true"
                     >
@@ -551,7 +565,7 @@ export default function Navbar() {
                     <button
                       type="button"
                       onClick={() => setMegaOpen((current) => !current)}
-                      className="flex items-center gap-1.5 text-[0.88rem] font-semibold text-white transition hover:text-[var(--accent)]"
+                      className="flex items-center gap-1.5 text-[0.88rem] font-semibold text-white/80 transition hover:text-white"
                       aria-expanded={megaOpen}
                       aria-haspopup="true"
                     >
@@ -569,234 +583,234 @@ export default function Navbar() {
                             "translate-y-0 opacity-100"
                           )}
                         >
-                        <div className="grid grid-cols-[230px_200px_1fr]">
-                          <div className="bg-[#060609] p-3.5">
-                          <div className="grid max-h-[360px] gap-1 overflow-y-auto pr-1">
-                            {displayCategories.map((category) => {
-                              const isCategoryActive = category.slug === activeCategory?.slug;
-                              const count = storesByCategory[category.slug]?.length || 0;
+                          <div className="grid grid-cols-[230px_200px_1fr]">
+                            <div className="bg-[#060609] p-3.5">
+                              <div className="grid max-h-[360px] gap-1 overflow-y-auto pr-1">
+                                {displayCategories.map((category) => {
+                                  const isCategoryActive = category.slug === activeCategory?.slug;
+                                  const count = storesByCategory[category.slug]?.length || 0;
 
-                              return (
-                                <button
-                                  key={category.id || category.slug}
-                                  type="button"
-                                  onMouseEnter={() => {
-                                    setActiveCategorySlug(category.slug);
-                                    setActiveStoreSlug("");
-                                    setAllCategoriesMode(false);
-                                    setDetailOpen(true);
-                                  }}
-                                  onFocus={() => {
-                                    setActiveCategorySlug(category.slug);
-                                    setActiveStoreSlug("");
-                                    setAllCategoriesMode(false);
-                                    setDetailOpen(true);
-                                  }}
-                                  onClick={() => {
-                                    setActiveCategorySlug(category.slug);
-                                    setActiveStoreSlug("");
-                                    setAllCategoriesMode(false);
-                                    setDetailOpen(true);
-                                  }}
-                                  className={cn(
-                                    "flex items-center justify-between rounded-xl px-3.5 py-2.5 text-left transition border-l-2",
-                                    isCategoryActive
-                                      ? "bg-[var(--accent)]/10 border-[var(--accent)] text-white"
-                                      : "border-transparent text-white/70 hover:bg-white/[0.02] hover:text-white"
-                                  )}
-                                >
-                                  <span>
-                                    <span className="block text-[0.88rem] font-semibold">{category.displayName}</span>
-                                    <span className={cn("mt-0.5 block text-[10px]", isCategoryActive ? "text-[var(--accent)]/70 font-semibold" : "text-white/40")}>{count} stores</span>
-                                  </span>
-                                  <ChevronRightIcon className="h-3.5 w-3.5 text-white/55" />
-                                </button>
-                              );
-                            })}
-                          </div>
+                                  return (
+                                    <button
+                                      key={category.id || category.slug}
+                                      type="button"
+                                      onMouseEnter={() => {
+                                        setActiveCategorySlug(category.slug);
+                                        setActiveStoreSlug("");
+                                        setAllCategoriesMode(false);
+                                        setDetailOpen(true);
+                                      }}
+                                      onFocus={() => {
+                                        setActiveCategorySlug(category.slug);
+                                        setActiveStoreSlug("");
+                                        setAllCategoriesMode(false);
+                                        setDetailOpen(true);
+                                      }}
+                                      onClick={() => {
+                                        setActiveCategorySlug(category.slug);
+                                        setActiveStoreSlug("");
+                                        setAllCategoriesMode(false);
+                                        setDetailOpen(true);
+                                      }}
+                                      className={cn(
+                                        "flex items-center justify-between rounded-xl px-3.5 py-2.5 text-left transition border-l-2",
+                                        isCategoryActive
+                                          ? "bg-[var(--accent)]/10 border-[var(--accent)] text-white"
+                                          : "border-transparent text-white/70 hover:bg-white/[0.02] hover:text-white"
+                                      )}
+                                    >
+                                      <span>
+                                        <span className="block text-[0.88rem] font-semibold">{category.displayName}</span>
+                                        <span className={cn("mt-0.5 block text-[10px]", isCategoryActive ? "text-[var(--accent)]/70 font-semibold" : "text-white/40")}>{count} stores</span>
+                                      </span>
+                                      <ChevronRightIcon className="h-3.5 w-3.5 text-white/55" />
+                                    </button>
+                                  );
+                                })}
+                              </div>
 
-                          <Link
-                            href={buildCountryPath("/stores", selectedCountryCode)}
-                            onMouseEnter={() => {
-                              setActiveStoreSlug("");
-                              setAllCategoriesMode(true);
-                              setDetailOpen(true);
-                            }}
-                            onFocus={() => {
-                              setActiveStoreSlug("");
-                              setAllCategoriesMode(true);
-                              setDetailOpen(true);
-                            }}
-                            className={cn(
-                              "mt-2 flex items-center justify-between rounded-xl border px-3.5 py-2 text-[0.88rem] font-semibold transition",
-                              allCategoriesMode
-                                ? "border-[var(--accent)]/30 bg-[var(--accent)]/10 text-white"
-                                : "border-white/5 bg-white/[0.02] text-white/70 hover:border-white/10 hover:text-white"
-                            )}
-                          >
-                            <span className="flex flex-col">
-                              <span>All categories</span>
-                              <span className="mt-0.5 text-[10px] font-medium text-white/40">Browse the full catalog</span>
-                            </span>
-                            <ChevronRightIcon className="h-3.5 w-3.5" />
-                          </Link>
-                        </div>
-
-                          <div className={cn("border-r border-white/5 bg-[#0a0a0e] p-3.5", detailOpen ? "block" : "hidden")}>
-                          <div className="grid gap-0.5">
-                            {visibleStores.map((store, index) => (
                               <Link
-                                key={store.id || store.slug}
-                                href={getStoreHref(store)}
-                                onMouseEnter={() => setActiveStoreSlug(store.slug)}
-                                  onFocus={() => setActiveStoreSlug(store.slug)}
-                                  className={cn(
-                                    "flex items-center justify-between rounded-xl px-3 py-2 transition-all duration-200",
-                                  effectiveActiveStoreSlug === store.slug
-                                    ? "bg-[var(--accent)]/10 text-[var(--accent)] font-semibold"
-                                    : "text-white/60 hover:bg-white/[0.02] hover:text-white"
+                                href={buildCountryPath("/categories", selectedCountryCode)}
+                                onMouseEnter={() => {
+                                  setActiveStoreSlug("");
+                                  setAllCategoriesMode(true);
+                                  setDetailOpen(true);
+                                }}
+                                onFocus={() => {
+                                  setActiveStoreSlug("");
+                                  setAllCategoriesMode(true);
+                                  setDetailOpen(true);
+                                }}
+                                className={cn(
+                                  "mt-2 flex items-center justify-between rounded-xl border px-3.5 py-2 text-[0.88rem] font-semibold transition",
+                                  allCategoriesMode
+                                    ? "border-[var(--accent)]/30 bg-[var(--accent)]/10 text-white"
+                                    : "border-white/5 bg-white/[0.02] text-white/70 hover:border-white/10 hover:text-white"
                                 )}
                               >
-                                <span className="truncate pr-3 text-[0.88rem]">
-                                  {store.name || POPULAR_STORE_NAMES[index] || "Store"}
+                                <span className="flex flex-col">
+                                  <span>All categories</span>
+                                  <span className="mt-0.5 text-[10px] font-medium text-white/40">Browse the full catalog</span>
                                 </span>
-                                <ChevronRightIcon className="h-3.5 w-3.5 shrink-0 text-white/40" />
+                                <ChevronRightIcon className="h-3.5 w-3.5" />
                               </Link>
-                            ))}
-                          </div>
-
-                          {!visibleStores.length ? (
-                            <div className="px-3 py-4 text-[0.82rem] text-white/45">
-                              {allCategoriesMode ? "No stores available yet." : "No stores in this category yet."}
                             </div>
-                          ) : null}
 
-                          <Link
-                            href={
-                              activeCategory
-                                ? `${buildCountryPath("/stores", selectedCountryCode)}?category=${activeCategory.slug}`
-                                : buildCountryPath("/stores", selectedCountryCode)
-                            }
-                            onMouseEnter={() => setActiveStoreSlug("")}
-                            onFocus={() => setActiveStoreSlug("")}
-                            className="mt-2.5 flex items-center justify-between px-3 py-1.5 text-[0.88rem] font-semibold text-[var(--accent)] transition-all hover:translate-x-0.5"
-                          >
-                            <span>All {activeCategory ? formatCategoryLabel(activeCategory.name) : "stores"}</span>
-                            <ChevronRightIcon className="h-3.5 w-3.5" />
-                          </Link>
-                        </div>
-
-                          <div className={cn("bg-[#0e0e13] p-3.5", detailOpen ? "block" : "hidden")}>
-                          <div className="grid gap-2.5 md:grid-cols-2">
-                            {featuredOffers.length ? (
-                              featuredOffers.map(({ offer, store, totalOffers }) => (
-                                <Link
-                                  key={offer.id}
-                                  href={store ? getStoreHref(store, selectedCountryCode) : buildCountryPath("/stores", selectedCountryCode)}
-                                  className="group flex min-h-[250px] flex-col rounded-2xl border border-white/5 bg-[#13131b]/60 p-4 transition-all duration-300 hover:border-[var(--accent)]/30 hover:bg-[#161622]/85 hover:shadow-[0_8px_25px_rgba(139,92,246,0.06)]"
-                                >
-                                  <div className="flex items-start justify-between gap-3">
-                                    <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white p-1.5 text-black">
-                                      {store?.logoImage ? (
-                                        <Image
-                                          src={store.logoImage}
-                                          alt={store.name}
-                                          width={56}
-                                          height={56}
-                                          className="h-full w-full object-contain"
-                                          unoptimized
-                                        />
-                                      ) : (
-                                        <span className="px-2 text-center text-[11px] font-black uppercase tracking-[0.18em]">
-                                          {(store?.name || offer.storeName || "OF").slice(0, 2)}
-                                        </span>
-                                      )}
-                                    </div>
-                                    <div className="text-right">
-                                      <p className="text-[1.35rem] font-black leading-none text-[var(--accent)] group-hover:scale-105 transition-transform duration-300">
-                                        {formatOfferValue(offer)}
-                                      </p>
-                                    </div>
-                                  </div>
-
-                                  <div className="mt-4">
-                                    <h3 className="line-clamp-1 text-sm font-bold text-white group-hover:text-[var(--accent)] transition-colors">{store?.name || offer.storeName}</h3>
-                                    <p className="mt-2 min-h-[2.5rem] line-clamp-2 text-xs leading-relaxed text-white/50 font-medium">
-                                      {offer.title || offer.description || `Browse current savings from ${store?.name || offer.storeName}.`}
-                                    </p>
-                                  </div>
-
-                                  <div className="mt-3 flex items-center gap-1.5 text-[10px] text-white/40 font-semibold uppercase tracking-wider">
-                                    <span className="inline-flex h-4.5 w-4.5 items-center justify-center rounded-full border border-white/10 text-[9px]">◷</span>
-                                    <span>{formatOfferAge(offer.createdAt)}</span>
-                                  </div>
-
-                                  <div className="mt-auto pt-4">
-                                    <div className="flex items-center justify-center rounded-xl border border-[var(--accent)]/10 bg-[var(--accent)]/5 px-3 py-2 text-[10px] font-extrabold uppercase tracking-wider text-[var(--accent)]">
-                                      <span>{formatOfferUsage(totalOffers)}</span>
-                                    </div>
-                                  </div>
-                                </Link>
-                              ))
-                            ) : featuredStores.length ? (
-                              featuredStores.map((store) => (
-                                <Link
-                                  key={store.id || store.slug}
-                                  href={getStoreHref(store, selectedCountryCode)}
-                                  className="group flex min-h-[250px] flex-col rounded-2xl border border-white/5 bg-[#13131b]/60 p-4 transition-all duration-300 hover:border-[var(--accent)]/30 hover:bg-[#161622]/85 hover:shadow-[0_8px_25px_rgba(139,92,246,0.06)]"
-                                >
-                                  <div className="flex items-start justify-between gap-3">
-                                    <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white p-1 text-black">
-                                      {store.logoImage ? (
-                                        <Image
-                                          src={store.logoImage}
-                                          alt={store.name}
-                                          width={40}
-                                          height={40}
-                                          className="h-full w-full object-contain"
-                                          unoptimized
-                                        />
-                                      ) : (
-                                        <span className="px-2 text-center text-[11px] font-black uppercase tracking-[0.18em]">
-                                          {store.name.slice(0, 2)}
-                                        </span>
-                                      )}
-                                    </div>
-                                    <div className="text-right">
-                                      <p className="text-[1.35rem] font-black leading-none text-[var(--accent)] group-hover:scale-105 transition-transform duration-300">
-                                        {store.offersCount ? `${store.offersCount}+ offers` : "New"}
-                                      </p>
-                                    </div>
-                                  </div>
-
-                                  <div className="mt-4">
-                                    <h3 className="line-clamp-1 text-sm font-bold text-white group-hover:text-[var(--accent)] transition-colors">{store.name}</h3>
-                                    <p className="mt-2 min-h-[2.5rem] line-clamp-2 text-xs leading-relaxed text-white/50 font-medium">
-                                      {store.description || `Browse current savings, coupon codes, and direct offers from ${store.name}.`}
-                                    </p>
-                                  </div>
-
-                                  <div className="mt-3 flex items-center gap-1.5 text-[10px] text-white/40 font-semibold uppercase tracking-wider">
-                                    <span className="inline-flex h-4.5 w-4.5 items-center justify-center rounded-full border border-white/10 text-[9px]">C</span>
-                                    <span>{formatOfferCount(store.offersCount)}</span>
-                                  </div>
-
-                                  <div className="mt-auto pt-4">
-                                    <div className="inline-flex items-center justify-center w-full rounded-xl bg-white/5 border border-white/10 px-3.5 py-2 text-[10px] font-bold uppercase tracking-wider text-white/70 transition-all duration-300 group-hover:bg-[var(--accent)] group-hover:border-[var(--accent)] group-hover:text-black">
-                                      Explore {store.name}
-                                    </div>
-                                  </div>
-                                </Link>
-                              ))
-                            ) : (
-                              <div className="col-span-full rounded-[28px] border border-dashed border-white/10 bg-white/[0.03] p-8 text-white/55">
-                                Add stores from admin to populate the deals preview here.
+                            <div className={cn("border-r border-white/5 bg-[#0a0a0e] p-3.5", detailOpen ? "block" : "hidden")}>
+                              <div className="grid gap-0.5">
+                                {visibleStores.map((store, index) => (
+                                  <Link
+                                    key={store.id || store.slug}
+                                    href={getStoreHref(store)}
+                                    onMouseEnter={() => setActiveStoreSlug(store.slug)}
+                                    onFocus={() => setActiveStoreSlug(store.slug)}
+                                    className={cn(
+                                      "flex items-center justify-between rounded-xl px-3 py-2 transition-all duration-200",
+                                      effectiveActiveStoreSlug === store.slug
+                                        ? "bg-[var(--accent)]/10 text-[var(--accent)] font-semibold"
+                                        : "text-white/60 hover:bg-white/[0.02] hover:text-white"
+                                    )}
+                                  >
+                                    <span className="truncate pr-3 text-[0.88rem]">
+                                      {store.name || POPULAR_STORE_NAMES[index] || "Store"}
+                                    </span>
+                                    <ChevronRightIcon className="h-3.5 w-3.5 shrink-0 text-white/40" />
+                                  </Link>
+                                ))}
                               </div>
-                            )}
-                          </div>
 
+                              {!visibleStores.length ? (
+                                <div className="px-3 py-4 text-[0.82rem] text-white/45">
+                                  {allCategoriesMode ? "No stores available yet." : "No stores in this category yet."}
+                                </div>
+                              ) : null}
+
+                              <Link
+                                href={
+                                  activeCategory
+                                    ? `${buildCountryPath("/stores", selectedCountryCode)}?category=${activeCategory.slug}`
+                                    : buildCountryPath("/stores", selectedCountryCode)
+                                }
+                                onMouseEnter={() => setActiveStoreSlug("")}
+                                onFocus={() => setActiveStoreSlug("")}
+                                className="mt-2.5 flex items-center justify-between px-3 py-1.5 text-[0.88rem] font-semibold text-[var(--accent)] transition-all hover:translate-x-0.5"
+                              >
+                                <span>All {activeCategory ? formatCategoryLabel(activeCategory.name) : "stores"}</span>
+                                <ChevronRightIcon className="h-3.5 w-3.5" />
+                              </Link>
+                            </div>
+
+                            <div className={cn("bg-[#0e0e13] p-3.5", detailOpen ? "block" : "hidden")}>
+                              <div className="grid gap-2.5 md:grid-cols-2">
+                                {featuredOffers.length ? (
+                                  featuredOffers.map(({ offer, store, totalOffers }) => (
+                                    <Link
+                                      key={offer.id}
+                                      href={store ? getStoreHref(store, selectedCountryCode) : buildCountryPath("/stores", selectedCountryCode)}
+                                      className="group flex min-h-[250px] flex-col rounded-2xl border border-white/5 bg-[#13131b]/60 p-4 transition-all duration-300 hover:border-[var(--accent)]/30 hover:bg-[#161622]/85 hover:shadow-[0_8px_25px_rgba(139,92,246,0.06)]"
+                                    >
+                                      <div className="flex items-start justify-between gap-3">
+                                        <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white p-1.5 text-black">
+                                          {store?.logoImage ? (
+                                            <Image
+                                              src={store.logoImage}
+                                              alt={store.name}
+                                              width={56}
+                                              height={56}
+                                              className="h-full w-full object-contain"
+                                              unoptimized
+                                            />
+                                          ) : (
+                                            <span className="px-2 text-center text-[11px] font-black uppercase tracking-[0.18em]">
+                                              {(store?.name || offer.storeName || "OF").slice(0, 2)}
+                                            </span>
+                                          )}
+                                        </div>
+                                        <div className="text-right">
+                                          <p className="text-[1.35rem] font-black leading-none text-[var(--accent)] group-hover:scale-105 transition-transform duration-300">
+                                            {formatOfferValue(offer)}
+                                          </p>
+                                        </div>
+                                      </div>
+
+                                      <div className="mt-4">
+                                        <h3 className="line-clamp-1 text-sm font-bold text-white group-hover:text-[var(--accent)] transition-colors">{store?.name || offer.storeName}</h3>
+                                        <p className="mt-2 min-h-[2.5rem] line-clamp-2 text-xs leading-relaxed text-white/50 font-medium">
+                                          {offer.title || offer.description || `Browse current savings from ${store?.name || offer.storeName}.`}
+                                        </p>
+                                      </div>
+
+                                      <div className="mt-3 flex items-center gap-1.5 text-[10px] text-white/40 font-semibold uppercase tracking-wider">
+                                        <span className="inline-flex h-4.5 w-4.5 items-center justify-center rounded-full border border-white/10 text-[9px]">◷</span>
+                                        <span>{formatOfferAge(offer.createdAt)}</span>
+                                      </div>
+
+                                      <div className="mt-auto pt-4">
+                                        <div className="flex items-center justify-center rounded-xl border border-[var(--accent)]/10 bg-[var(--accent)]/5 px-3 py-2 text-[10px] font-extrabold uppercase tracking-wider text-[var(--accent)]">
+                                          <span>{formatOfferUsage(totalOffers)}</span>
+                                        </div>
+                                      </div>
+                                    </Link>
+                                  ))
+                                ) : featuredStores.length ? (
+                                  featuredStores.map((store) => (
+                                    <Link
+                                      key={store.id || store.slug}
+                                      href={getStoreHref(store, selectedCountryCode)}
+                                      className="group flex min-h-[250px] flex-col rounded-2xl border border-white/5 bg-[#13131b]/60 p-4 transition-all duration-300 hover:border-[var(--accent)]/30 hover:bg-[#161622]/85 hover:shadow-[0_8px_25px_rgba(139,92,246,0.06)]"
+                                    >
+                                      <div className="flex items-start justify-between gap-3">
+                                        <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white p-1 text-black">
+                                          {store.logoImage ? (
+                                            <Image
+                                              src={store.logoImage}
+                                              alt={store.name}
+                                              width={40}
+                                              height={40}
+                                              className="h-full w-full object-contain"
+                                              unoptimized
+                                            />
+                                          ) : (
+                                            <span className="px-2 text-center text-[11px] font-black uppercase tracking-[0.18em]">
+                                              {store.name.slice(0, 2)}
+                                            </span>
+                                          )}
+                                        </div>
+                                        <div className="text-right">
+                                          <p className="text-[1.35rem] font-black leading-none text-[var(--accent)] group-hover:scale-105 transition-transform duration-300">
+                                            {store.offersCount ? `${store.offersCount}+ offers` : "New"}
+                                          </p>
+                                        </div>
+                                      </div>
+
+                                      <div className="mt-4">
+                                        <h3 className="line-clamp-1 text-sm font-bold text-white group-hover:text-[var(--accent)] transition-colors">{store.name}</h3>
+                                        <p className="mt-2 min-h-[2.5rem] line-clamp-2 text-xs leading-relaxed text-white/50 font-medium">
+                                          {store.description || `Browse current savings, coupon codes, and direct offers from ${store.name}.`}
+                                        </p>
+                                      </div>
+
+                                      <div className="mt-3 flex items-center gap-1.5 text-[10px] text-white/40 font-semibold uppercase tracking-wider">
+                                        <span className="inline-flex h-4.5 w-4.5 items-center justify-center rounded-full border border-white/10 text-[9px]">C</span>
+                                        <span>{formatOfferCount(store.offersCount)}</span>
+                                      </div>
+
+                                      <div className="mt-auto pt-4">
+                                        <div className="inline-flex items-center justify-center w-full rounded-xl bg-white/5 border border-white/10 px-3.5 py-2 text-[10px] font-bold uppercase tracking-wider text-white/70 transition-all duration-300 group-hover:bg-[var(--accent)] group-hover:border-[var(--accent)] group-hover:text-black">
+                                          Explore {store.name}
+                                        </div>
+                                      </div>
+                                    </Link>
+                                  ))
+                                ) : (
+                                  <div className="col-span-full rounded-[28px] border border-dashed border-white/10 bg-white/[0.03] p-8 text-white/55">
+                                    Add stores from admin to populate the deals preview here.
+                                  </div>
+                                )}
+                              </div>
+
+                            </div>
                           </div>
-                        </div>
                         </div>
                       </div>
                     ) : null}
@@ -808,7 +822,7 @@ export default function Navbar() {
                 <Link
                   key={item.label}
                   href={buildCountryPath(item.href, selectedCountryCode)}
-                  className="text-[0.88rem] font-semibold text-white transition hover:text-[var(--accent)]"
+                  className="text-[0.88rem] font-semibold text-white/80 transition hover:text-white"
                 >
                   {item.label}
                 </Link>
@@ -818,21 +832,56 @@ export default function Navbar() {
         </div>
 
         <div className="relative flex items-center gap-3">
-          <label className="hidden items-center gap-2 rounded-full border border-white/12 bg-white/[0.03] pl-3 pr-2.5 text-xs font-semibold tracking-[0.08em] text-white/80 lg:flex">
-            <span>Country</span>
-            <select
-              value={selectedCountryCode}
-              onChange={(event) => handleCountryChange(event.target.value)}
-              className="h-8 rounded-full border border-white/12 bg-black px-3 text-xs font-semibold text-white outline-none transition hover:border-white/25 focus:border-[var(--color-primary)]"
-              aria-label="Select country"
-            >
-              {countries.map((country) => (
-                <option key={country.code} value={country.code}>
-                  {country.code}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div className="relative hidden lg:flex items-center gap-2" ref={countryDropdownRef}>
+            <span className="text-xs font-semibold tracking-[0.08em] text-white/80">Country</span>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setCountryDropdownOpen((open) => !open)}
+                className="flex items-center gap-1.5 h-8 rounded-full border border-white/12 bg-black px-2.5 text-white outline-none transition hover:border-white/25 focus:border-[var(--color-primary)] select-none"
+                aria-expanded={countryDropdownOpen}
+                aria-haspopup="listbox"
+                title={selectedCountry.name}
+              >
+                <img
+                  src={selectedCountry?.flagUrl || `https://flagcdn.com/w40/${selectedCountryCode.toLowerCase()}.png`}
+                  alt={selectedCountry.name}
+                  className="h-3 w-4.5 object-cover rounded-[1px]"
+                />
+                <ChevronDownIcon className={cn("h-3.5 w-3.5 text-white/50 transition-transform", countryDropdownOpen ? "rotate-180" : "rotate-0")} />
+              </button>
+
+              {countryDropdownOpen && (
+                <div className="absolute right-0 top-full mt-2 z-50">
+                  <div className="w-[52px] overflow-hidden rounded-[16px] border border-white/10 bg-[#0c0c0c] p-1.5 shadow-[0_20px_50px_rgba(0,0,0,0.85)]">
+                    <div className="grid gap-1">
+                      {countries.map((country) => (
+                        <button
+                          key={country.code}
+                          type="button"
+                          onClick={() => {
+                            handleCountryChange(country.code);
+                            setCountryDropdownOpen(false);
+                          }}
+                          className={cn(
+                            "flex items-center justify-center rounded-[10px] py-2 hover:bg-white/5 transition-colors",
+                            selectedCountryCode === country.code && "bg-white/10"
+                          )}
+                          title={country.name}
+                        >
+                          <img
+                            src={country.flagUrl || `https://flagcdn.com/w40/${country.code.toLowerCase()}.png`}
+                            alt={country.name}
+                            className="h-3.5 w-5 object-cover rounded-[1px]"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
           <button
             type="button"
             onClick={() => setDesktopSearchOpen((current) => !current)}
@@ -887,36 +936,66 @@ export default function Navbar() {
         <div className="mx-auto flex min-h-[100dvh] max-w-[1400px] flex-col overflow-x-hidden px-4 pb-5 pt-4">
           <div className="border-b border-white/8 pb-4">
             <div className="flex items-center justify-between gap-4">
-            <BrandMark countryCode={selectedCountryCode} onClick={() => setMobileOpen(false)} />
-            <div className="flex items-center gap-3 text-white">
-              <button type="button" onClick={() => setDesktopSearchOpen((current) => !current)} className="inline-flex h-10 w-10 items-center justify-center">
-                <SearchIcon className="h-5 w-5" />
-              </button>
-              <button type="button" onClick={() => setMobileOpen(false)} className="inline-flex h-10 w-10 items-center justify-center">
-                <CloseIcon className="h-6 w-6" />
-              </button>
-            </div>
+              <BrandMark countryCode={selectedCountryCode} onClick={() => setMobileOpen(false)} />
+              <div className="flex items-center gap-3 text-white">
+                <button type="button" onClick={() => setDesktopSearchOpen((current) => !current)} className="inline-flex h-10 w-10 items-center justify-center">
+                  <SearchIcon className="h-5 w-5" />
+                </button>
+                <button type="button" onClick={() => setMobileOpen(false)} className="inline-flex h-10 w-10 items-center justify-center">
+                  <CloseIcon className="h-6 w-6" />
+                </button>
+              </div>
             </div>
 
-            <div className="mt-4">
-              <label className="flex items-center justify-between gap-4 rounded-[14px] border border-white/10 bg-white/[0.025] px-4 py-3 text-sm text-white/88">
-                <span className="min-w-0">
-                  <span className="block text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-white/45">Country</span>
-                  <span className="mt-1 block truncate text-[0.98rem] font-semibold text-white">{selectedCountry.name}</span>
-                </span>
-                <select
-                  value={selectedCountryCode}
-                  onChange={(event) => handleCountryChange(event.target.value)}
-                  className="h-10 max-w-[160px] min-w-0 rounded-full border border-white/12 bg-black/95 px-3 text-sm font-semibold text-white outline-none focus:border-[var(--color-primary)]"
-                  aria-label="Select country"
-                >
-                  {countries.map((country) => (
-                    <option key={country.code} value={country.code}>
-                      {country.code} - {country.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
+            <div className="mt-4 relative" ref={mobileCountryDropdownRef}>
+              <div className="flex items-center justify-between gap-4 rounded-[14px] border border-white/10 bg-white/[0.025] px-4 py-3">
+                <span className="text-sm font-semibold tracking-[0.08em] text-white/80">Country</span>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setMobileCountryDropdownOpen((open) => !open)}
+                    className="flex items-center gap-1.5 h-9 rounded-full border border-white/10 bg-black px-3 text-white outline-none"
+                    title={selectedCountry.name}
+                  >
+                    <img
+                      src={selectedCountry?.flagUrl || `https://flagcdn.com/w40/${selectedCountryCode.toLowerCase()}.png`}
+                      alt={selectedCountry.name}
+                      className="h-3.5 w-5 object-cover rounded-[1px]"
+                    />
+                    <ChevronDownIcon className={cn("h-4.5 w-4.5 text-white/55 transition-transform", mobileCountryDropdownOpen ? "rotate-180" : "rotate-0")} />
+                  </button>
+
+                  {mobileCountryDropdownOpen && (
+                    <div className="absolute right-0 top-full mt-2 z-50">
+                      <div className="w-[52px] overflow-hidden rounded-[16px] border border-white/10 bg-[#0c0c0c] p-1.5 shadow-[0_20px_50px_rgba(0,0,0,0.85)]">
+                        <div className="grid gap-1">
+                          {countries.map((country) => (
+                            <button
+                              key={country.code}
+                              type="button"
+                              onClick={() => {
+                                handleCountryChange(country.code);
+                                setMobileCountryDropdownOpen(false);
+                              }}
+                              className={cn(
+                                "flex items-center justify-center rounded-[10px] py-2 hover:bg-white/5 transition-colors",
+                                selectedCountryCode === country.code && "bg-white/10"
+                              )}
+                              title={country.name}
+                            >
+                              <img
+                                src={country.flagUrl || `https://flagcdn.com/w40/${country.code.toLowerCase()}.png`}
+                                alt={country.name}
+                                className="h-3.5 w-5 object-cover rounded-[1px]"
+                              />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
 

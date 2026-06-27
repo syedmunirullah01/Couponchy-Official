@@ -1,10 +1,24 @@
+"use client";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
 import SectionHeader from "@/components/shared/SectionHeader";
 import FeaturedCouponCard from "./FeaturedCouponCard";
 
 export default function FeaturedCouponsSection({ featuredCoupons, title = "Featured Coupons" }) {
-  if (!featuredCoupons.length) {
+  // Filter: Only show 1 main coupon per store (deduplicated by storeSlug or brand)
+  const seenStores = new Set();
+  const deduplicatedCoupons = featuredCoupons.filter((coupon) => {
+    const slug = coupon.storeSlug || coupon.brand;
+    if (seenStores.has(slug)) {
+      return false;
+    }
+    seenStores.add(slug);
+    return true;
+  });
+
+  // Only take the top 3 coupons
+  const topThreeCoupons = deduplicatedCoupons.slice(0, 3);
+
+  if (topThreeCoupons.length === 0) {
     return (
       <section className="relative mt-24">
         {/* Glow backdrop behind section */}
@@ -13,7 +27,6 @@ export default function FeaturedCouponsSection({ featuredCoupons, title = "Featu
         <SectionHeader title={title} href="#" />
         
         <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-          
           {/* Main Empty Callout Card */}
           <div className="relative overflow-hidden rounded-[28px] border border-white/5 bg-[#09090c]/80 p-8 flex flex-col justify-between min-h-[320px] backdrop-blur-xl shadow-2xl">
             <div className="absolute inset-0 bg-gradient-to-br from-[var(--color-primary)]/5 via-transparent to-transparent" />
@@ -38,77 +51,21 @@ export default function FeaturedCouponsSection({ featuredCoupons, title = "Featu
               <span>→</span>
             </Link>
           </div>
-
-          {/* Ghost Skeleton Card 1 */}
-          <div className="relative overflow-hidden rounded-[28px] border border-white/[0.02] bg-[#09090c]/30 p-8 flex flex-col justify-between min-h-[320px] select-none opacity-60">
-            <div className="absolute inset-0 bg-gradient-to-b from-white/[0.01] to-transparent" />
-            <div>
-              <div className="flex justify-between items-center">
-                <span className="w-16 h-5 rounded bg-white/5 animate-pulse" />
-                <span className="w-3 h-3 rounded-full bg-white/5 animate-pulse" />
-              </div>
-              <div className="mt-8 flex flex-col gap-2">
-                <span className="w-8 h-3 rounded bg-white/5 animate-pulse" />
-                <span className="w-2/3 h-10 rounded-lg bg-white/[0.03] animate-pulse" />
-              </div>
-            </div>
-            {/* Cut-out ticket separator */}
-            <div className="relative my-4 flex items-center">
-              <div className="absolute -left-11 h-6 w-6 rounded-full border-r border-white/[0.02] bg-[#020202]" />
-              <div className="w-full border-t border-dashed border-white/5" />
-              <div className="absolute -right-11 h-6 w-6 rounded-full border-l border-white/[0.02] bg-[#020202]" />
-            </div>
-            <div>
-              <span className="block w-full h-8 rounded-lg bg-white/[0.02] animate-pulse mb-4" />
-              <span className="block w-full h-12 rounded-xl bg-white/[0.03] animate-pulse" />
-            </div>
-          </div>
-
-          {/* Ghost Skeleton Card 2 */}
-          <div className="relative overflow-hidden rounded-[28px] border border-white/[0.02] bg-[#09090c]/30 p-8 flex flex-col justify-between min-h-[320px] select-none opacity-30 hidden lg:flex">
-            <div className="absolute inset-0 bg-gradient-to-b from-white/[0.01] to-transparent" />
-            <div>
-              <div className="flex justify-between items-center">
-                <span className="w-16 h-5 rounded bg-white/5 animate-pulse" />
-                <span className="w-3 h-3 rounded-full bg-white/5 animate-pulse" />
-              </div>
-              <div className="mt-8 flex flex-col gap-2">
-                <span className="w-8 h-3 rounded bg-white/5 animate-pulse" />
-                <span className="w-2/3 h-10 rounded-lg bg-white/[0.03] animate-pulse" />
-              </div>
-            </div>
-            {/* Cut-out ticket separator */}
-            <div className="relative my-4 flex items-center">
-              <div className="absolute -left-11 h-6 w-6 rounded-full border-r border-white/[0.02] bg-[#020202]" />
-              <div className="w-full border-t border-dashed border-white/5" />
-              <div className="absolute -right-11 h-6 w-6 rounded-full border-l border-white/[0.02] bg-[#020202]" />
-            </div>
-            <div>
-              <span className="block w-full h-8 rounded-lg bg-white/[0.02] animate-pulse mb-4" />
-              <span className="block w-full h-12 rounded-xl bg-white/[0.03] animate-pulse" />
-            </div>
-          </div>
-
         </div>
       </section>
     );
   }
 
-  const couponGridClassName =
-    featuredCoupons.length === 1
-      ? "max-w-[360px]"
-      : featuredCoupons.length === 2
-        ? "sm:grid-cols-2"
-        : featuredCoupons.length === 3
-          ? "sm:grid-cols-2 xl:grid-cols-3"
-          : "sm:grid-cols-2 xl:grid-cols-4";
-
   return (
-    <section className="relative">
-      <SectionHeader title={title} href="#" />
-      <div className={cn("grid gap-6 items-start", couponGridClassName)}>
-        {featuredCoupons.map((coupon, index) => (
-          <FeaturedCouponCard key={coupon.brand} coupon={coupon} index={index} />
+    <section className="relative w-full">
+      <SectionHeader title={title} href="/stores" />
+
+      {/* Responsive Grid for exactly 3 Coupons */}
+      <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+        {topThreeCoupons.map((coupon, index) => (
+          <div key={`${coupon.storeSlug || coupon.brand}-${index}`}>
+            <FeaturedCouponCard coupon={coupon} index={index} />
+          </div>
         ))}
       </div>
     </section>

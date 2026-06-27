@@ -7,6 +7,7 @@ export const PERMISSIONS = [
   { key: "hero", label: "Hero", href: "/admin/hero" },
   { key: "events", label: "Events", href: "/admin/events" },
   { key: "categories", label: "Categories", href: "/admin/categories" },
+  { key: "blog", label: "Blog Posts", href: "/admin/blog" },
   { key: "settings", label: "Settings", href: "/admin/settings" },
 ];
 
@@ -18,7 +19,7 @@ export const ROLE_LABELS = {
 
 export const ROLE_PERMISSIONS = {
   admin: PERMISSIONS.map((item) => item.key),
-  editor: ["dashboard", "homepage", "stores", "products", "offers", "hero", "events", "categories"],
+  editor: ["dashboard", "homepage", "stores", "products", "offers", "hero", "events", "categories", "blog"],
   "social-media": ["dashboard", "offers"],
 };
 
@@ -47,6 +48,7 @@ export function getPermissionForPath(pathname) {
   if (pathname.startsWith("/admin/events")) return "events";
   if (pathname.startsWith("/admin/settings")) return "settings";
   if (pathname.startsWith("/admin/categories")) return "categories";
+  if (pathname.startsWith("/admin/blog")) return "blog";
   if (pathname.startsWith("/admin/offers")) return "offers";
   if (pathname.startsWith("/admin/stores")) return "stores";
   return "dashboard";

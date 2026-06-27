@@ -6,7 +6,7 @@ export default function StoreCard({ store }) {
   return (
     <Link
       href={`/stores/${store.categorySlug}/${store.slug}`}
-      className="group block rounded-[22px] border border-[var(--border)] bg-[linear-gradient(180deg,#11190a_0%,#102008_100%)] p-6 text-center transition hover:border-[var(--accent)]/60"
+      className="group block rounded-[22px] border border-[var(--border)] bg-[linear-gradient(180deg,var(--surface-soft)_0%,var(--surface)_100%)] p-6 text-center transition hover:border-[var(--accent)]/60"
     >
       {store.logoImage ? (
         <div className="mx-auto flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border border-[var(--border)] bg-[var(--surface-soft)] p-3 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.02)]">

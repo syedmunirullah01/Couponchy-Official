@@ -12,6 +12,7 @@ export const dynamic = "force-dynamic";
 export default async function Page() {
   const countryCode = await resolveRequestCountryCode();
   const homePageData = await getHomePageData(countryCode);
-  return <HomePage {...homePageData} />;
+  console.log("DEBUG: featuredCoupons = ", JSON.stringify(homePageData.featuredCoupons, null, 2));
+  return <HomePage {...homePageData} countryCode={countryCode} />;
 }
 

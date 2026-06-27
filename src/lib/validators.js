@@ -97,3 +97,23 @@ export function validateEventPayload(payload) {
 
   return null;
 }
+
+export function validateBlogPostPayload(payload) {
+  if (!payload?.title?.trim()) {
+    return "Blog title is required.";
+  }
+
+  if (!payload?.slug?.trim()) {
+    return "Blog slug is required.";
+  }
+
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(payload.slug.trim())) {
+    return "Blog slug must be lowercase and URL-friendly.";
+  }
+
+  if (!payload?.content?.trim()) {
+    return "Blog content is required.";
+  }
+
+  return null;
+}

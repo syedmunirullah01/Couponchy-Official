@@ -6,7 +6,8 @@ import { getAllStores } from "@/server/repositories/stores-repository";
 
 const topCategories = ["Fashion", "Food", "Footwear", "Travel", "Beauty", "Furniture", "Home & Garden", "E-Bike"];
 const topStores = ["Waterdrop", "Dorothy Perkins", "Debenhams", "Gousto UK", "EcoFlow", "FlexShopper", "Vitality", "Beginning Boutique AU"];
-const usefulLinks = ["Home", "Stores", "Categories", "Contact Us", "About Us", "Imprint", "Sitemap"];
+const usefulLinks = ["About Us", "Contact Us", "Privacy Policy", "Terms Of Service", "Sitemap"];
+
 
 function toTitleCase(str) {
   if (!str) return "";
@@ -130,16 +131,15 @@ const getStoreSlug = (name) => {
 
 const getUsefulLinkHref = (name) => {
   const mapping = {
-    "Home": "/",
-    "Stores": "/stores",
-    "Categories": "/stores",
-    "Contact Us": "/contact",
     "About Us": "/about",
-    "Imprint": "/imprint",
-    "Sitemap": "/sitemap"
+    "Contact Us": "/contact",
+    "Privacy Policy": "/privacy-policy",
+    "Terms Of Service": "/terms-of-service",
+    "Sitemap": "/sitemap",
   };
   return mapping[name] || "/";
 };
+
 
 export default async function Footer() {
   const settings = await getPublicSiteSettings();
@@ -157,18 +157,18 @@ export default async function Footer() {
   const storesList =
     validStores.length > 0
       ? [...validStores]
-          .sort((a, b) => (b.offersCount || 0) - (a.offersCount || 0))
-          .slice(0, 8)
-          .map((s) => ({
-            name: toTitleCase(s.name),
-            categorySlug: s.categorySlug || "all",
-            slug: s.slug,
-          }))
+        .sort((a, b) => (b.offersCount || 0) - (a.offersCount || 0))
+        .slice(0, 8)
+        .map((s) => ({
+          name: toTitleCase(s.name),
+          categorySlug: s.categorySlug || "all",
+          slug: s.slug,
+        }))
       : topStores.map((store) => ({
-          name: store,
-          categorySlug: "all",
-          slug: getStoreSlug(store),
-        }));
+        name: store,
+        categorySlug: "all",
+        slug: getStoreSlug(store),
+      }));
 
   const getSocialHref = (platform, configUrl) => {
     if (configUrl && configUrl.trim()) return configUrl;
@@ -190,7 +190,7 @@ export default async function Footer() {
       <div className="pointer-events-none absolute -top-24 left-1/2 h-48 w-[800px] -translate-x-1/2 rounded-full bg-[var(--accent)]/5 blur-[120px]" />
 
       <div className="mx-auto max-w-[1400px] px-6 lg:px-10">
-        
+
         {/* Large Watermark Site Title and Centered Social Link Row */}
         <div className="relative mb-20 mt-8 flex flex-col items-center text-center">
           <h2 className="select-none text-[13vw] font-black uppercase leading-none tracking-tighter text-white/[0.03] notranslate">
@@ -217,7 +217,7 @@ export default async function Footer() {
 
         {/* Main Columns Grid */}
         <div className="grid gap-12 sm:grid-cols-2 lg:grid-cols-[1.5fr_0.8fr_0.8fr_1.2fr] lg:gap-8 lg:items-start">
-          
+
           {/* Column 1: HOW WE VERIFY */}
           <div className="flex flex-col gap-6">
             <h4 className="flex items-center gap-2.5 text-[11px] font-black uppercase tracking-[0.25em] text-[var(--color-primary)]">
@@ -226,8 +226,8 @@ export default async function Footer() {
             </h4>
             <div className="flex flex-col gap-4">
               {verifyItems.map((item, idx) => (
-                <div 
-                  key={idx} 
+                <div
+                  key={idx}
                   className="group/card flex items-start gap-4 rounded-2xl border border-white/5 bg-[#09090c]/90 p-4 transition-all duration-300 hover:border-[var(--color-primary)]/20 hover:bg-white/[0.02]"
                 >
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--color-primary)]/20 bg-[var(--color-primary)]/5 text-[var(--color-primary)] transition-all duration-300 group-hover/card:border-[var(--color-primary)]/45 group-hover/card:bg-[var(--color-primary)]/15 group-hover/card:scale-105">
@@ -305,7 +305,7 @@ export default async function Footer() {
                   placeholder="Your Email Address"
                   className="h-14 w-full rounded-2xl border border-white/10 bg-[#050507] px-5 text-sm font-medium text-white outline-none transition-all placeholder:text-white/20 focus:border-[var(--color-primary)]/30 focus:bg-[#07070a]"
                 />
-                <button 
+                <button
                   type="button"
                   className="group/btn relative overflow-hidden flex flex-col items-center justify-center w-full h-16 rounded-2xl bg-[var(--color-primary)] text-black font-bold transition-all hover:scale-[1.01] hover:bg-[var(--color-primary-hover)] active:scale-[0.98] cursor-pointer"
                 >

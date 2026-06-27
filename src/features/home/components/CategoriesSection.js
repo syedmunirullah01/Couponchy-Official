@@ -5,7 +5,7 @@ export default function CategoriesSection({ categories, title = "Browse Categori
   if (!categories || !categories.length) {
     return (
       <section className="relative mt-16">
-        <SectionHeader title={title} href="/stores" />
+        <SectionHeader title={title} href="/categories" />
         <div className="rounded-[28px] border border-white/5 bg-[#09090c] p-8 text-center backdrop-blur-xl">
           <p className="text-lg font-semibold text-white/90">No categories available</p>
           <p className="mt-2 text-sm text-white/40">Categories will show up here once configured.</p>
@@ -19,7 +19,7 @@ export default function CategoriesSection({ categories, title = "Browse Categori
       {/* Laser light backdrop effect */}
       <div className="pointer-events-none absolute -bottom-16 right-1/4 h-32 w-1/2 rounded-full bg-[var(--color-primary)]/5 blur-[120px]" />
 
-      <SectionHeader title={title} href="/stores" />
+      <SectionHeader title={title} href="/categories" />
       
       <div className="grid gap-5 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
         {categories.slice(0, 10).map((category) => (
@@ -63,7 +63,7 @@ export default function CategoriesSection({ categories, title = "Browse Categori
       {categories.length > 10 && (
         <div className="mt-10 flex justify-center">
           <Link
-            href="/stores"
+            href="/categories"
             className="group/btn relative overflow-hidden inline-flex items-center justify-center gap-2.5 rounded-2xl border border-white/5 bg-white/[0.03] px-8 py-4 text-xs font-black uppercase tracking-[0.2em] text-white/80 transition-all duration-300 hover:scale-[1.02] hover:border-[var(--color-primary)]/20 hover:bg-white/[0.05] hover:text-white hover:shadow-[0_0_25px_rgba(139,92,246,0.15)] active:scale-[0.98]"
           >
             {/* Shimmer Light Sweep Hover Effect */}

@@ -1,13 +1,27 @@
 export const COUNTRY_COOKIE_KEY = "couponchy_country";
 
+export function getCountryFlag(countryCode) {
+  if (!countryCode || typeof countryCode !== "string" || countryCode.length !== 2) return "";
+  const codePoints = countryCode
+    .toUpperCase()
+    .split("")
+    .map((char) => 127397 + char.charCodeAt(0));
+  try {
+    return String.fromCodePoint(...codePoints);
+  } catch {
+    return "";
+  }
+}
+
 export const SUPPORTED_COUNTRIES = [
-  { code: "US", name: "United States" },
-  { code: "GB", name: "United Kingdom" },
-  { code: "CA", name: "Canada" },
-  { code: "AU", name: "Australia" },
-  { code: "IN", name: "India" },
-  { code: "AE", name: "United Arab Emirates" },
-  { code: "SA", name: "Saudi Arabia" },
+  { code: "US", name: "United States", flag: "🇺🇸", flagUrl: "https://flagcdn.com/w40/us.png" },
+  { code: "GB", name: "United Kingdom", flag: "🇬🇧", flagUrl: "https://flagcdn.com/w40/gb.png" },
+  { code: "CA", name: "Canada", flag: "🇨🇦", flagUrl: "https://flagcdn.com/w40/ca.png" },
+  { code: "AU", name: "Australia", flag: "🇦🇺", flagUrl: "https://flagcdn.com/w40/au.png" },
+  { code: "IN", name: "India", flag: "🇮🇳", flagUrl: "https://flagcdn.com/w40/in.png" },
+  { code: "AE", name: "United Arab Emirates", flag: "🇦🇪", flagUrl: "https://flagcdn.com/w40/ae.png" },
+  { code: "SA", name: "Saudi Arabia", flag: "🇸🇦", flagUrl: "https://flagcdn.com/w40/sa.png" },
+  { code: "DE", name: "Germany", flag: "🇩🇪", flagUrl: "https://flagcdn.com/w40/de.png" },
 ];
 
 export const DEFAULT_COUNTRY_CODE = "US";
@@ -39,12 +53,19 @@ export function sanitizeCountryList(countries) {
       return {
         code,
         name: name || code,
+        flag: country?.flag || getCountryFlag(code),
+        flagUrl: country?.flagUrl || `https://flagcdn.com/w40/${code.toLowerCase()}.png`,
       };
     })
     .filter(Boolean);
 
   if (!normalized.some((country) => country.code === DEFAULT_COUNTRY_CODE)) {
-    normalized.unshift({ code: DEFAULT_COUNTRY_CODE, name: "United States" });
+    normalized.unshift({
+      code: DEFAULT_COUNTRY_CODE,
+      name: "United States",
+      flag: getCountryFlag(DEFAULT_COUNTRY_CODE),
+      flagUrl: `https://flagcdn.com/w40/${DEFAULT_COUNTRY_CODE.toLowerCase()}.png`,
+    });
   }
 
   return normalized;
@@ -55,7 +76,7 @@ export function normalizeCountryCode(value) {
     .trim()
     .toUpperCase();
 
-  const isSupported = SUPPORTED_COUNTRIES.some((c) => c.code === normalized);
+  const isSupported = /^[A-Z]{2}$/.test(normalized);
   return isSupported ? normalized : DEFAULT_COUNTRY_CODE;
 }
 
@@ -74,7 +95,7 @@ export function getCountryCodeFromSegment(value) {
     .trim()
     .toUpperCase();
 
-  const isSupported = SUPPORTED_COUNTRIES.some((c) => c.code === normalized);
+  const isSupported = /^[A-Z]{2}$/.test(normalized);
   return isSupported ? normalized : null;
 }
 

@@ -11,9 +11,14 @@ function getStoreHealth(store) {
   return 88 + (hash % 13);
 }
 
-export default function TrendingStoresSection({ trendingStores }) {
-  const [categories, setCategories] = useState([]);
-  const [allStores, setAllStores] = useState([]);
+export default function TrendingStoresSection({
+  trendingStores = [],
+  title,
+  countryCode = DEFAULT_COUNTRY_CODE,
+  initialCategories = [],
+  totalStoresCount = 0,
+}) {
+  const categories = initialCategories;
   const [selectedCategorySlug, setSelectedCategorySlug] = useState("popular");
   const [hoveredCard, setHoveredCard] = useState(null);
   const [logoErrors, setLogoErrors] = useState({});
@@ -32,52 +37,19 @@ export default function TrendingStoresSection({ trendingStores }) {
     setIsExpanded(false);
   }, [selectedCategorySlug]);
 
-  const [countryCode] = useState(() => {
-    if (typeof document === "undefined") return DEFAULT_COUNTRY_CODE;
-    const matchedCookie = document.cookie
-      .split("; ")
-      .find((entry) => entry.startsWith(`${COUNTRY_COOKIE_KEY}=`))
-      ?.split("=")[1];
-    return normalizeCountryCode(decodeURIComponent(matchedCookie || DEFAULT_COUNTRY_CODE));
-  });
-
-  useEffect(() => {
-    let cancelled = false;
-    async function loadData() {
-      try {
-        const [catsRes, storesRes] = await Promise.all([
-          fetch("/api/categories", { cache: "no-store" }),
-          fetch(`/api/stores?country=${countryCode}`, { cache: "no-store" })
-        ]);
-        const [catsPayload, storesPayload] = await Promise.all([
-          catsRes.json(),
-          storesRes.json()
-        ]);
-        if (!cancelled) {
-          setCategories(Array.isArray(catsPayload.data) ? catsPayload.data : []);
-          setAllStores(Array.isArray(storesPayload.data) ? storesPayload.data : []);
-        }
-      } catch (err) {
-        // Fallback to trendingStores handled gracefully
-      }
-    }
-    loadData();
-    return () => { cancelled = true; };
-  }, [countryCode]);
-
-  const displayStores = allStores.length > 0 ? allStores : trendingStores;
-
+  // Only use admin-selected trendingStores — max 12 (3 rows × 4 cols)
   const filtered = selectedCategorySlug === "popular"
-    ? [...displayStores]
+    ? [...trendingStores]
       .sort((a, b) => (b.offersCount || 0) - (a.offersCount || 0))
       .slice(0, 12)
-    : displayStores
+    : trendingStores
       .filter((store) => store.categorySlug === selectedCategorySlug)
       .slice(0, 12);
 
-  const limit = isMobile && !isExpanded ? 5 : filtered.length;
+  const MOBILE_INITIAL = 4; // 1 row of 4 on mobile initially
+  const limit = isMobile && !isExpanded ? MOBILE_INITIAL : filtered.length;
   const visibleFiltered = filtered.slice(0, limit);
-  const remainingCount = filtered.length - 5;
+  const remainingCount = filtered.length - MOBILE_INITIAL;
 
   return (
     <section style={{ position: "relative", width: "100%", paddingTop: "8px" }}>
@@ -120,7 +92,9 @@ export default function TrendingStoresSection({ trendingStores }) {
               margin: 0,
             }}
           >
-            612,473+ stores.<br />Every code verified.
+            {totalStoresCount > 0
+              ? `${totalStoresCount.toLocaleString()}+ stores.`
+              : "612,473+ stores."}<br />Every code verified.
           </h2>
         </div>
 
@@ -141,7 +115,7 @@ export default function TrendingStoresSection({ trendingStores }) {
             Browse all stores →
           </Link>
           <Link
-            href={buildCountryPath("/stores", countryCode)}
+            href={buildCountryPath("/categories", countryCode)}
             style={{
               fontSize: "14px",
               fontWeight: 700,

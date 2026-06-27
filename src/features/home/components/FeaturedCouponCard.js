@@ -17,7 +17,7 @@ export default function FeaturedCouponCard({ coupon, index = 0 }) {
     if (!url || !url.trim() || url === "Manual") {
       url = `/stores/all/${coupon.storeSlug || ""}`;
     }
-    
+
     if (url && url !== "/stores/all/") {
       window.open(url, "_blank", "noopener,noreferrer");
     }
@@ -66,7 +66,7 @@ export default function FeaturedCouponCard({ coupon, index = 0 }) {
 
     const updateTimer = () => {
       const difference = targetDate.getTime() - Date.now();
-      
+
       if (difference <= 0) {
         setTimeLeft({ days: "00", hours: "00", minutes: "00", seconds: "00" });
         return;
@@ -108,17 +108,32 @@ export default function FeaturedCouponCard({ coupon, index = 0 }) {
       {/* Top Section */}
       <div className="relative flex flex-col p-6 pb-7 z-10">
         <div className="flex items-center justify-between">
-          <span
-            className={cn(
-              "rounded-lg border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider",
-              isHighlight
-                ? "bg-[var(--color-primary)]/10 border-[var(--color-primary)]/20 text-[var(--color-primary)]"
-                : "bg-white/5 border-white/10 text-white/50"
-            )}
-          >
-            {coupon.brand || "STORE"}
-          </span>
-          
+          {coupon.logoImage ? (
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-[8px] bg-white p-1 shadow-sm border border-white/10">
+                <img
+                  src={coupon.logoImage}
+                  alt=""
+                  className="h-full w-full object-contain"
+                />
+              </div>
+              <span className="text-[11px] font-bold tracking-wide uppercase text-white/70">
+                {coupon.brand}
+              </span>
+            </div>
+          ) : (
+            <span
+              className={cn(
+                "rounded-lg border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider",
+                isHighlight
+                  ? "bg-[var(--color-primary)]/10 border-[var(--color-primary)]/20 text-[var(--color-primary)]"
+                  : "bg-white/5 border-white/10 text-white/50"
+              )}
+            >
+              {coupon.brand || "STORE"}
+            </span>
+          )}
+
           {/* Glowing Status Dot */}
           <div className="flex items-center gap-1.5 rounded-full bg-[var(--color-primary)]/5 border border-[var(--color-primary)]/20 px-2 py-0.5">
             <span className="relative flex h-1.5 w-1.5">
@@ -133,11 +148,11 @@ export default function FeaturedCouponCard({ coupon, index = 0 }) {
           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30">
             {coupon.tag || "EXCLUSIVE DEAL"}
           </p>
-          <h3 
+          <h3
             className={cn(
               "mt-2 text-[22px] font-extrabold tracking-tight leading-[1.3] transition-all duration-300 min-h-[3.5rem] line-clamp-2",
-              isHighlight 
-                ? "text-white drop-shadow-[0_0_12px_rgba(139,92,246,0.2)]" 
+              isHighlight
+                ? "text-white drop-shadow-[0_0_12px_rgba(139,92,246,0.2)]"
                 : "text-[var(--color-primary)]"
             )}
           >
@@ -146,7 +161,7 @@ export default function FeaturedCouponCard({ coupon, index = 0 }) {
           <p className="mt-3 text-xs leading-relaxed text-white/40 font-medium line-clamp-2 min-h-[2.5rem]">
             {coupon.description}
           </p>
-          
+
           {/* Timer countdown below description */}
           <div className="mt-5 flex items-center gap-3">
             <div className="flex items-center gap-1.5 text-white/40">
@@ -155,7 +170,7 @@ export default function FeaturedCouponCard({ coupon, index = 0 }) {
               </svg>
               <span className="text-[10px] font-bold uppercase tracking-wider">Expires in:</span>
             </div>
-            
+
             <div className="flex items-center gap-1.5">
               <div className="flex flex-col items-center justify-center h-10 w-10 rounded-xl bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 text-[var(--color-primary)] shadow-[0_0_10px_rgba(139,92,246,0.1)]">
                 <span className="text-xs font-bold leading-none">{timeLeft.days}</span>
@@ -216,8 +231,8 @@ export default function FeaturedCouponCard({ coupon, index = 0 }) {
           </div>
           <div className={cn(
             "relative flex h-full items-center justify-center px-4 py-4 border-l border-dashed",
-            isHighlight 
-              ? "border-black/20 bg-black/5" 
+            isHighlight
+              ? "border-black/20 bg-black/5"
               : "border-white/10 bg-white/5 group-hover/btn:border-black/20 group-hover/btn:bg-black/5"
           )}>
             <span className="text-[10px] font-black uppercase tracking-wider">

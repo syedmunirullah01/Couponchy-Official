@@ -79,7 +79,7 @@ const STAT_ICONS = {
 
 const STATS = [
   {
-    value: "612K+",
+    value: null, // filled dynamically from totalStoresCount
     label: "Stores Verified",
     icon: (
       <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round">
@@ -158,21 +158,20 @@ function PulseIcon() {
   );
 }
 
-export default function HeroSection({ hero }) {
+function formatStoreCount(count) {
+  if (!count) return "0";
+  if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M+`;
+  if (count >= 1000) return `${Math.floor(count / 1000)}K+`;
+  return `${count}+`;
+}
+
+export default function HeroSection({ hero, countryCode = DEFAULT_COUNTRY_CODE, totalStoresCount = 0 }) {
   const router = useRouter();
   const [searchValue, setSearchValue] = useState("");
   const [stores, setStores] = useState([]);
   const [hoveredCard, setHoveredCard] = useState(null);
   const cards = hero?.cards?.length ? hero.cards : COUPON_CARDS;
   const stats = hero?.stats?.length ? hero.stats : STATS;
-  const [countryCode] = useState(() => {
-    if (typeof document === "undefined") return DEFAULT_COUNTRY_CODE;
-    const matchedCookie = document.cookie
-      .split("; ")
-      .find((entry) => entry.startsWith(`${COUNTRY_COOKIE_KEY}=`))
-      ?.split("=")[1];
-    return normalizeCountryCode(decodeURIComponent(matchedCookie || DEFAULT_COUNTRY_CODE));
-  });
 
   const [showDropdown, setShowDropdown] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState(-1);
@@ -199,11 +198,11 @@ export default function HeroSection({ hero }) {
   const query = searchValue.trim().toLowerCase();
   const filteredStores = query
     ? stores
-        .filter((store) =>
-          store.name.toLowerCase().includes(query) ||
-          store.slug.toLowerCase().includes(query)
-        )
-        .slice(0, 6)
+      .filter((store) =>
+        store.name.toLowerCase().includes(query) ||
+        store.slug.toLowerCase().includes(query)
+      )
+      .slice(0, 6)
     : [];
 
   useEffect(() => {
@@ -270,8 +269,15 @@ export default function HeroSection({ hero }) {
   const searchPlaceholder = "Search any store (e.g. nike.com)";
   const popularTags = ["Adidas", "J.Crew", "Sephora", "Crocs", "Abercrombie", "ASUS"];
 
+  // Build stats: replace null (Stores Verified) with live count
+  const storeCountLabel = formatStoreCount(totalStoresCount);
+  const displayStats = (hero?.stats?.length ? hero.stats : STATS).map((stat) =>
+    stat.value === null ? { ...stat, value: storeCountLabel } : stat
+  );
+
   return (
-    <section style={{ position: "relative", overflow: "hidden" }}>
+    <section suppressHydrationWarning style={{ position: "relative", overflow: "hidden" }}>
+
       {/* Grid background pattern */}
       <div
         aria-hidden="true"
@@ -765,7 +771,7 @@ export default function HeroSection({ hero }) {
           }}
           className="stats-grid"
         >
-          {stats.map((stat, i) => {
+          {displayStats.map((stat, i) => {
             const isHovered = hoveredStat === i;
             return (
               <div

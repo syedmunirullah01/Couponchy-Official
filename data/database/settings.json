@@ -2,35 +2,55 @@
   "general": {
     "siteName": "Couponchy",
     "tagline": "Smart shopping, better saving.",
-    "supportEmail": "support@couponchy.com",
+    "supportEmail": "contact@couponchy.com",
     "countries": [
       {
         "code": "US",
-        "name": "United States"
+        "name": "United States",
+        "flag": "🇺🇸",
+        "flagUrl": "https://flagcdn.com/w40/us.png"
       },
       {
         "code": "GB",
-        "name": "United Kingdom"
+        "name": "United Kingdom",
+        "flag": "🇬🇧",
+        "flagUrl": "https://flagcdn.com/w40/gb.png"
       },
       {
         "code": "CA",
-        "name": "Canada"
+        "name": "Canada",
+        "flag": "🇨🇦",
+        "flagUrl": "https://flagcdn.com/w40/ca.png"
       },
       {
         "code": "AU",
-        "name": "Australia"
+        "name": "Australia",
+        "flag": "🇦🇺",
+        "flagUrl": "https://flagcdn.com/w40/au.png"
       },
       {
         "code": "IN",
-        "name": "India"
+        "name": "India",
+        "flag": "🇮🇳",
+        "flagUrl": "https://flagcdn.com/w40/in.png"
       },
       {
         "code": "AE",
-        "name": "United Arab Emirates"
+        "name": "United Arab Emirates",
+        "flag": "🇦🇪",
+        "flagUrl": "https://flagcdn.com/w40/ae.png"
       },
       {
         "code": "SA",
-        "name": "Saudi Arabia"
+        "name": "Saudi Arabia",
+        "flag": "🇸🇦",
+        "flagUrl": "https://flagcdn.com/w40/sa.png"
+      },
+      {
+        "code": "DE",
+        "name": "Germany",
+        "flag": "🇩🇪",
+        "flagUrl": "https://flagcdn.com/w40/de.png"
       }
     ],
     "customHeadScript": "",
@@ -183,13 +203,31 @@
     "sections": {
       "trendingStores": {
         "title": "Trending Stores",
-        "selectedStoreSlugs": [],
-        "limit": 5
+        "selectedStoreSlugs": [
+          "crz-yoga",
+          "cult-gaia",
+          "her-fantasy-box",
+          "smackin",
+          "wandernana",
+          "cefinn",
+          "esmi",
+          "mystershirt",
+          "vivobarefoot",
+          "club-l-london",
+          "viator",
+          "bigdug",
+          "okweed"
+        ],
+        "limit": 12
       },
       "featuredCoupons": {
         "title": "Featured Coupons",
-        "selectedOfferIds": [],
-        "limit": 4
+        "selectedOfferIds": [
+          "offer_crz-yoga_gm517fbz",
+          "offer_club-l-london_9ngluvsq",
+          "offer_nanoleaf_kqpz851y"
+        ],
+        "limit": 3
       },
       "featuredProducts": {
         "title": "Featured Products",
