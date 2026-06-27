@@ -29,6 +29,8 @@ export async function middleware(req) {
 });
 
 console.log("TOKEN:", token);
+console.log("COOKIE:", req.headers.get("cookie"));
+console.log("NEXTAUTH_SECRET:", !!process.env.NEXTAUTH_SECRET);
 
     if (!token) {
       const redirectUrl = req.nextUrl.clone();
