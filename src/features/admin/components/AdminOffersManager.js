@@ -21,6 +21,7 @@ const initialForm = {
   expiryDate: "",
   status: "Active",
   code: "",
+  position: 0,
 };
 
 function RefreshIcon() {
@@ -104,6 +105,7 @@ export default function AdminOffersManager() {
       expiryDate: offer.expiryDate,
       status: offer.status,
       code: offer.code || "",
+      position: offer.position || 0,
     });
     affiliateEditedRef.current = Boolean(offer.affiliateLink);
     setError("");
@@ -370,6 +372,16 @@ export default function AdminOffersManager() {
                 <option>Manual</option>
                 <option>Network</option>
               </select>
+            </label>
+            <label className="grid gap-2 text-sm text-[var(--muted)]">
+              Position / Sort Order
+              <Input
+                name="position"
+                type="number"
+                value={form.position}
+                onChange={handleChange}
+                placeholder="0 (Lower shows first)"
+              />
             </label>
             <label className="grid gap-2 text-sm text-[var(--muted)] md:col-span-2">
               {form.type === "Deal" ? "Deal Code Optional" : "Coupon Code"}

@@ -17,6 +17,7 @@ function mapDbOfferToJs(dbOffer) {
     code: dbOffer.code || "",
     affiliateLink: dbOffer.affiliate_link || "",
     ctaLabel: dbOffer.cta_label || (dbOffer.type === "Deal" ? "Get Deal" : "Get Code"),
+    position: dbOffer.position || 0,
     createdAt: dbOffer.created_at,
     updatedAt: dbOffer.updated_at,
   };
@@ -39,6 +40,7 @@ function serializeOfferForDb(offer) {
     code: offer.code?.trim() || "",
     affiliate_link: offer.affiliateLink?.trim() || "",
     cta_label: offer.ctaLabel?.trim() || (offer.type === "Deal" ? "Get Deal" : "Get Code"),
+    position: Number(offer.position || 0),
     created_at: offer.createdAt || now,
     updated_at: now,
   };
@@ -74,6 +76,7 @@ export async function getOffersByStoreSlug(storeSlug) {
     .from("offers")
     .select("*")
     .eq("store_slug", storeSlug.trim().toLowerCase())
+    .order("position", { ascending: true })
     .order("created_at", { ascending: false });
 
   if (error) {

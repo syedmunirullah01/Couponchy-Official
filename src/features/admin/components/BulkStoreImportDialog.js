@@ -173,6 +173,125 @@ export default function BulkStoreImportDialog({ open, onOpenChange, stores, cate
     setFinalSummary(null);
   }
 
+  async function validateCsv(file, fileContent) {
+    const csvSource = fileContent || file;
+    const results = await parseCsvFile(csvSource);
+    const headers = Array.isArray(results.meta?.fields) ? results.meta.fields.map((field) => field.trim()) : [];
+    const missingHeaders = REQUIRED_HEADERS.filter((header) => !headers.includes(header));
+
+    if (missingHeaders.length) {
+      const headerErrors = missingHeaders.map((header) => ({
+        rowNumber: 1,
+        reason: `Missing required CSV header: ${header}`,
+      }));
+      return {
+        validRows: [],
+        errors: headerErrors,
+        summary: {
+          totalRecords: 0,
+          validRows: 0,
+          duplicates: 0,
+          validationErrors: headerErrors.length,
+        },
+      };
+    }
+
+    const parsedRows = Array.isArray(results.data) ? results.data : [];
+    const nextErrors = [];
+    const nextValidRows = [];
+    const duplicateSlugs = new Set();
+    const knownSlugs = new Set(existingSlugs);
+    let duplicates = 0;
+
+    parsedRows.forEach((row, index) => {
+      const rowNumber = index + 2;
+      const name = normalizeValue(row.name);
+      const incomingSlug = normalizeValue(row.slug);
+      const derivedSlug = slugify(incomingSlug || name);
+      const category = normalizeValue(row.category) || "General";
+      const matchedCategory = categoryNameMap.get(category.toLowerCase());
+      const description = normalizeValue(row.description);
+      const trustStatus = normalizeValue(row.trustStatus);
+      const affiliateLink = normalizeValue(row.affiliateLink);
+      const logoText = normalizeValue(row.logoText);
+      const logoFile = normalizeValue(row.logoFile);
+      const countryCode = normalizeCountryCode(row.countryCode || row.country);
+
+      if (!name) {
+        nextErrors.push({ rowNumber, reason: "Store name is required." });
+        return;
+      }
+
+      if (!derivedSlug) {
+        nextErrors.push({ rowNumber, reason: "Slug could not be generated." });
+        return;
+      }
+
+      if (incomingSlug && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(incomingSlug)) {
+        nextErrors.push({ rowNumber, reason: "Slug contains illegal characters." });
+        return;
+      }
+
+      if (!matchedCategory) {
+        nextErrors.push({ rowNumber, reason: "Category must match an existing managed category." });
+        return;
+      }
+
+      if (description.length < 20) {
+        nextErrors.push({ rowNumber, reason: "Description should be at least 20 characters." });
+        return;
+      }
+
+      if (!allowedCountries.has(countryCode)) {
+        nextErrors.push({ rowNumber, reason: "Country code is not available in settings." });
+        return;
+      }
+
+      if (knownSlugs.has(derivedSlug) || duplicateSlugs.has(derivedSlug)) {
+        duplicates += 1;
+        duplicateSlugs.add(derivedSlug);
+        return;
+      }
+
+      knownSlugs.add(derivedSlug);
+
+      nextValidRows.push({
+        name,
+        slug: derivedSlug,
+        category: matchedCategory.name,
+        categorySlug: matchedCategory.slug,
+        countryCode,
+        description,
+        trustStatus: TRUST_STATUSES.has(trustStatus) ? trustStatus : "Active",
+        affiliateLink,
+        logoText: logoText || name,
+        logoFile,
+        contentIntroTitle: normalizeValue(row.contentIntroTitle),
+        contentIntroParagraph1: normalizeValue(row.contentIntroParagraph1),
+        contentIntroParagraph2: normalizeValue(row.contentIntroParagraph2),
+        contentWhyItemsText: normalizeValue(row.contentWhyItemsText).replace(/\\n/g, "\n"),
+        contentOutro: normalizeValue(row.contentOutro),
+        faq1Question: normalizeValue(row.faq1Question),
+        faq1Answer: normalizeValue(row.faq1Answer),
+        faq2Question: normalizeValue(row.faq2Question),
+        faq2Answer: normalizeValue(row.faq2Answer),
+        faq3Question: normalizeValue(row.faq3Question),
+        faq3Answer: normalizeValue(row.faq3Answer),
+      });
+    });
+
+    return {
+      validRows: nextValidRows,
+      errors: nextErrors,
+      summary: {
+        totalRecords: parsedRows.length,
+        validRows: nextValidRows.length,
+        duplicates,
+        validationErrors: nextErrors.length,
+      },
+    };
+  }
+
   async function runDryValidation() {
     if (!selectedFile) {
       toast.error("Choose a CSV file first.");
@@ -186,119 +305,10 @@ export default function BulkStoreImportDialog({ open, onOpenChange, stores, cate
     setErrors([]);
 
     try {
-      const csvSource = selectedFileContent || selectedFile;
-      const results = await parseCsvFile(csvSource);
-      const headers = Array.isArray(results.meta?.fields) ? results.meta.fields.map((field) => field.trim()) : [];
-      const missingHeaders = REQUIRED_HEADERS.filter((header) => !headers.includes(header));
-
-      if (missingHeaders.length) {
-        const headerErrors = missingHeaders.map((header) => ({
-          rowNumber: 1,
-          reason: `Missing required CSV header: ${header}`,
-        }));
-        setErrors(headerErrors);
-        setDryRunSummary({
-          totalRecords: 0,
-          validRows: 0,
-          duplicates: 0,
-          validationErrors: headerErrors.length,
-        });
-        toast.error("CSV template headers are invalid.");
-        return;
-      }
-
-      const parsedRows = Array.isArray(results.data) ? results.data : [];
-      const nextErrors = [];
-      const nextValidRows = [];
-      const duplicateSlugs = new Set();
-      const knownSlugs = new Set(existingSlugs);
-      let duplicates = 0;
-
-      parsedRows.forEach((row, index) => {
-        const rowNumber = index + 2;
-        const name = normalizeValue(row.name);
-        const incomingSlug = normalizeValue(row.slug);
-        const derivedSlug = slugify(incomingSlug || name);
-        const category = normalizeValue(row.category) || "General";
-        const matchedCategory = categoryNameMap.get(category.toLowerCase());
-        const description = normalizeValue(row.description);
-        const trustStatus = normalizeValue(row.trustStatus);
-        const affiliateLink = normalizeValue(row.affiliateLink);
-        const logoText = normalizeValue(row.logoText);
-        const logoFile = normalizeValue(row.logoFile);
-        const countryCode = normalizeCountryCode(row.countryCode || row.country);
-
-        if (!name) {
-          nextErrors.push({ rowNumber, reason: "Store name is required." });
-          return;
-        }
-
-        if (!derivedSlug) {
-          nextErrors.push({ rowNumber, reason: "Slug could not be generated." });
-          return;
-        }
-
-        if (incomingSlug && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(incomingSlug)) {
-          nextErrors.push({ rowNumber, reason: "Slug contains illegal characters." });
-          return;
-        }
-
-        if (!matchedCategory) {
-          nextErrors.push({ rowNumber, reason: "Category must match an existing managed category." });
-          return;
-        }
-
-        if (description.length < 20) {
-          nextErrors.push({ rowNumber, reason: "Description should be at least 20 characters." });
-          return;
-        }
-
-        if (!allowedCountries.has(countryCode)) {
-          nextErrors.push({ rowNumber, reason: "Country code is not available in settings." });
-          return;
-        }
-
-        if (knownSlugs.has(derivedSlug) || duplicateSlugs.has(derivedSlug)) {
-          duplicates += 1;
-          duplicateSlugs.add(derivedSlug);
-          return;
-        }
-
-        knownSlugs.add(derivedSlug);
-
-        nextValidRows.push({
-          name,
-          slug: derivedSlug,
-          category: matchedCategory.name,
-          categorySlug: matchedCategory.slug,
-          countryCode,
-          description,
-          trustStatus: TRUST_STATUSES.has(trustStatus) ? trustStatus : "Active",
-          affiliateLink,
-          logoText: logoText || name,
-          logoFile,
-          contentIntroTitle: normalizeValue(row.contentIntroTitle),
-          contentIntroParagraph1: normalizeValue(row.contentIntroParagraph1),
-          contentIntroParagraph2: normalizeValue(row.contentIntroParagraph2),
-          contentWhyItemsText: normalizeValue(row.contentWhyItemsText).replace(/\\n/g, "\n"),
-          contentOutro: normalizeValue(row.contentOutro),
-          faq1Question: normalizeValue(row.faq1Question),
-          faq1Answer: normalizeValue(row.faq1Answer),
-          faq2Question: normalizeValue(row.faq2Question),
-          faq2Answer: normalizeValue(row.faq2Answer),
-          faq3Question: normalizeValue(row.faq3Question),
-          faq3Answer: normalizeValue(row.faq3Answer),
-        });
-      });
-
+      const { validRows: nextValidRows, errors: nextErrors, summary } = await validateCsv(selectedFile, selectedFileContent);
       setValidRows(nextValidRows);
       setErrors(nextErrors);
-      setDryRunSummary({
-        totalRecords: parsedRows.length,
-        validRows: nextValidRows.length,
-        duplicates,
-        validationErrors: nextErrors.length,
-      });
+      setDryRunSummary(summary);
 
       if (nextValidRows.length) {
         toast.success("Dry-run validation complete.");
@@ -313,19 +323,37 @@ export default function BulkStoreImportDialog({ open, onOpenChange, stores, cate
   }
 
   async function handleImport() {
-    if (!validRows.length) {
-      toast.error("Run validation first.");
+    if (!selectedFile) {
+      toast.error("Choose a CSV file first.");
       return;
     }
 
     setIsUploading(true);
+    let rowsToImport = validRows;
 
     try {
+      // If validation has not run yet, run it now automatically
+      if (!rowsToImport.length) {
+        setIsValidating(true);
+        const { validRows: nextValidRows, errors: nextErrors, summary } = await validateCsv(selectedFile, selectedFileContent);
+        setValidRows(nextValidRows);
+        setErrors(nextErrors);
+        setDryRunSummary(summary);
+        setIsValidating(false);
+
+        if (!nextValidRows.length) {
+          toast.error("No valid store rows found to import. Check validation errors below.");
+          setIsUploading(false);
+          return;
+        }
+        rowsToImport = nextValidRows;
+      }
+
       const response = await fetch("/api/stores/bulk", {
         method: "POST",
         body: (() => {
           const formData = new FormData();
-          formData.append("rows", JSON.stringify(validRows));
+          formData.append("rows", JSON.stringify(rowsToImport));
           if (selectedZipFile) {
             formData.append("logosZip", selectedZipFile);
           }
@@ -351,6 +379,7 @@ export default function BulkStoreImportDialog({ open, onOpenChange, stores, cate
       toast.error(error.message || "Unable to import stores.");
     } finally {
       setIsUploading(false);
+      setIsValidating(false);
     }
   }
 
@@ -364,8 +393,17 @@ export default function BulkStoreImportDialog({ open, onOpenChange, stores, cate
       <DialogContent
         titleId={titleId}
         descriptionId={descriptionId}
-        className="max-w-[1080px] rounded-[32px] border border-[var(--border)] bg-[var(--surface)] p-0"
+        className="relative max-w-[1080px] rounded-[32px] border border-[var(--border)] bg-[var(--surface)] p-0"
       >
+        <button
+          type="button"
+          onClick={() => handleOpenChange(false)}
+          className="absolute top-5 right-5 z-50 flex h-8 w-8 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-soft)] active:scale-95"
+          style={{ fontSize: "13px", cursor: "pointer", outline: "none" }}
+          aria-label="Close dialog"
+        >
+          ❌
+        </button>
         <div className="grid gap-0 lg:grid-cols-[0.74fr_1.26fr]">
           <div className="border-b border-[var(--border)] bg-[linear-gradient(180deg,var(--surface-soft),var(--surface))] p-6 lg:border-r lg:border-b-0 lg:p-8">
             <DialogHeader className="mb-7">
@@ -542,7 +580,7 @@ export default function BulkStoreImportDialog({ open, onOpenChange, stores, cate
                     "Run Dry Validation"
                   )}
                 </Button>
-                <Button type="button" className="w-full rounded-xl" disabled={!dryRunSummary?.validRows || isUploading || isValidating} onClick={handleImport}>
+                <Button type="button" className="w-full rounded-xl" disabled={!selectedFile || isUploading || isValidating} onClick={handleImport}>
                   {isUploading ? (
                     <span className="inline-flex items-center justify-center gap-2 whitespace-nowrap">
                       <Spinner />

@@ -57,6 +57,18 @@ export default function StoreHeader({ singleStore, storeTabs, offerTabs, offers 
   const year = now.getFullYear();
   const dynamicTitle = `${singleStore.name} Discount & Coupons Code ${month} ${year}`;
 
+  const dynamicRating = (() => {
+    let hash = 0;
+    const seedString = `${singleStore.name}_${now.getMonth()}_${year}`;
+    for (let i = 0; i < seedString.length; i++) {
+      hash = seedString.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const ratingIndex = Math.abs(hash) % 4; // 0, 1, 2, 3
+    const ratingVal = (4.6 + ratingIndex * 0.1).toFixed(1); // 4.6, 4.7, 4.8, 4.9
+    const reviewsVal = (Math.abs(hash) % 187) + 12; // 12 to 198 reviews
+    return `${ratingVal} (${reviewsVal} reviews)`;
+  })();
+
   const couponsCount = offers?.filter(o => o.type === "Coupon").length || 0;
   const topCoupon = offers?.find(o => o.type === "Coupon");
   const topCouponValue = topCoupon ? getOfferValue(topCoupon) : "Active";
@@ -114,7 +126,7 @@ export default function StoreHeader({ singleStore, storeTabs, offerTabs, offers 
               {/* Rating and Verification Source Row */}
               <div className="mt-4 flex flex-wrap items-center gap-2.5 text-xs font-bold text-white/30">
                 <span className="text-[var(--color-primary)] select-none">★★★★★</span>
-                <span className="text-[var(--color-primary)] font-black text-sm">{singleStore.rating}</span>
+                <span className="text-[var(--color-primary)] font-black text-sm" suppressHydrationWarning>{dynamicRating}</span>
                 <span className="text-white/10 select-none">•</span>
                 <span className="uppercase tracking-wider text-white/50">
                   Active and verified source for {singleStore.name} Promo Codes

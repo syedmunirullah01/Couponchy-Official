@@ -200,9 +200,9 @@ export default function OfferCard({ offer, store, isFirst }) {
 
         {/* Desktop Card Layout */}
         <div className="hidden md:flex flex-row md:items-stretch">
-          <div className="flex min-w-[150px] flex-col items-center justify-center border-b border-white/[0.04] px-4 py-5 text-center md:border-b-0 md:border-r md:min-w-[175px] bg-[var(--color-primary)]/[0.06]">
-            <p className={`${offerValue.length > 7 ? "text-xs font-black tracking-normal uppercase" : "text-[32px] md:text-[36px] font-black tracking-[-0.04em]"
-              } leading-none text-[var(--color-primary)] whitespace-nowrap`}>
+          <div className="flex w-[150px] md:w-[175px] shrink-0 flex-col items-center justify-center border-b border-white/[0.04] px-4 py-5 text-center md:border-b-0 md:border-r bg-[var(--color-primary)]/[0.06]">
+            <p className={`${offerValue.length > 7 ? "text-lg md:text-[22px] font-black tracking-[-0.04em]" : "text-[32px] md:text-[36px] font-black tracking-[-0.04em]"
+              } leading-tight text-[var(--color-primary)] text-center px-1`}>
               {offerValue}
             </p>
             <p className="mt-1.5 text-[10px] font-black uppercase tracking-[0.22em] text-white/30">
@@ -288,7 +288,7 @@ export default function OfferCard({ offer, store, isFirst }) {
           </div>
 
           {/* Right: CTA */}
-          <div className="flex items-center justify-center border-t border-white/[0.04] px-5 py-4 md:border-t-0 md:border-l md:min-w-[180px]">
+          <div className="flex w-full md:w-[180px] shrink-0 items-center justify-center border-t border-white/[0.04] px-5 py-4 md:border-t-0 md:border-l">
             {isCoupon && offer.code ? (
               <div className="flex w-full flex-col items-center gap-2">
                 {revealed ? (
@@ -381,18 +381,18 @@ export default function OfferCard({ offer, store, isFirst }) {
                 <button
                   onClick={handleReveal}
                   className={cn(
-                    "flex h-10 items-center justify-center rounded-xl px-4 text-xs font-black uppercase tracking-wider transition-all duration-300 active:scale-[0.96] cursor-pointer shadow-lg shadow-violet-500/10",
+                    "flex h-8 items-center justify-center rounded-lg px-3 text-[10px] font-black uppercase tracking-wider transition-all duration-300 active:scale-[0.96] cursor-pointer shadow-md shadow-violet-500/5",
                     revealed
-                      ? "border border-[var(--color-primary)]/20 bg-[var(--color-primary)]/10 text-[var(--color-primary)] font-mono tracking-widest text-[11px]"
+                      ? "border border-[var(--color-primary)]/20 bg-[var(--color-primary)]/10 text-[var(--color-primary)] font-mono tracking-widest text-[9.5px]"
                       : "bg-[var(--color-primary)] text-black"
                   )}
                 >
-                  {revealed ? offer.code : "Show Code"}
+                  {revealed ? offer.code : "Get Code"}
                 </button>
               ) : (
                 <button
                   onClick={handleGetDeal}
-                  className="flex h-10 items-center justify-center rounded-xl bg-[var(--color-primary)] text-black px-4 text-xs font-black uppercase tracking-wider transition-all duration-300 active:scale-[0.96] shadow-lg shadow-violet-500/10"
+                  className="flex h-8 items-center justify-center rounded-lg bg-[var(--color-primary)] text-black px-3 text-[10px] font-black uppercase tracking-wider transition-all duration-300 active:scale-[0.96] shadow-md shadow-violet-500/5"
                 >
                   Get Deal
                 </button>
@@ -479,7 +479,7 @@ export default function OfferCard({ offer, store, isFirst }) {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-[450px] overflow-hidden rounded-[28px] border-2 border-[var(--color-primary)] bg-[#0c0c11] p-7 text-center shadow-[0_0_40px_rgba(139,92,246,0.25)]"
+            className="relative w-[92%] sm:w-full max-w-[440px] max-h-[90vh] overflow-y-auto rounded-[24px] sm:rounded-[28px] border border-white/10 sm:border-2 sm:border-[var(--color-primary)] bg-[#0c0c11] p-5 sm:p-7 text-center shadow-[0_0_40px_rgba(139,92,246,0.25)]"
             style={{
               animation: "scaleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards"
             }}
@@ -498,7 +498,7 @@ export default function OfferCard({ offer, store, isFirst }) {
             {/* Close Button */}
             <button
               onClick={() => setIsModalOpen(false)}
-              className="absolute top-4 right-4 h-7 w-7 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 text-white/50 hover:text-white transition-colors duration-200 cursor-pointer"
+              className="absolute top-3.5 right-3.5 sm:top-4 sm:right-4 h-8 w-8 sm:h-7 sm:w-7 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 text-white/55 hover:text-white transition-colors duration-200 cursor-pointer z-10"
             >
               <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <path d="M18 6 6 18M6 6l12 12" />
@@ -506,7 +506,7 @@ export default function OfferCard({ offer, store, isFirst }) {
             </button>
 
             {/* Logo */}
-            <div className="mx-auto mb-5 h-16 w-16 overflow-hidden rounded-2xl border border-white/10 bg-white p-0.5 flex items-center justify-center shadow-md">
+            <div className="mx-auto mb-3.5 sm:mb-5 h-14 w-14 sm:h-16 sm:w-16 overflow-hidden rounded-2xl border border-white/10 bg-white p-0.5 flex items-center justify-center shadow-md">
               {store.logoImage ? (
                 <img src={store.logoImage} alt={`${store.name} logo`} className="h-full w-full object-contain rounded-xl" />
               ) : (
@@ -579,7 +579,7 @@ export default function OfferCard({ offer, store, isFirst }) {
             </p>
 
             {/* Divider */}
-            <div className="my-5 border-t border-white/[0.04]" />
+            <div className="my-3.5 sm:my-5 border-t border-white/[0.04]" />
 
             {/* Feedback */}
             <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/25 mb-3">
@@ -595,7 +595,7 @@ export default function OfferCard({ offer, store, isFirst }) {
             </div>
 
             {/* Divider */}
-            <div className="my-5 border-t border-white/[0.04]" />
+            <div className="my-3.5 sm:my-5 border-t border-white/[0.04]" />
 
             {/* Follow */}
             <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/25 mb-3">
@@ -620,7 +620,7 @@ export default function OfferCard({ offer, store, isFirst }) {
             </div>
 
             {/* Divider */}
-            <div className="my-5 border-t border-white/[0.04]" />
+            <div className="my-3.5 sm:my-5 border-t border-white/[0.04]" />
 
             {/* Share */}
             <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/25 mb-3">
