@@ -83,3 +83,10 @@ input {
     transform: translate3d(-50%, 0, 0);
   }
 }
+
+/* Hide sticky header/navbar on mobile when code reveal modal is open */
+@media (max-width: 1023px) {
+  body.modal-open header {
+    display: none !important;
+  }
+}

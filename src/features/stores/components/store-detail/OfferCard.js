@@ -79,6 +79,17 @@ export default function OfferCard({ offer, store, isFirst }) {
   const expiryText = formatExpiry(offer.expiryDate);
 
   useEffect(() => {
+    if (isModalOpen) {
+      document.body.classList.add("modal-open");
+    } else {
+      document.body.classList.remove("modal-open");
+    }
+    return () => {
+      document.body.classList.remove("modal-open");
+    };
+  }, [isModalOpen]);
+
+  useEffect(() => {
     if (!isCoupon) return;
 
     const calculateTargetDate = () => {
