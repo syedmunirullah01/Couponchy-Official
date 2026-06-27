@@ -25,7 +25,10 @@ export const authOptions = {
           .eq("email", emailLower)
           .maybeSingle();
 
-        if (user && user.is_active) {
+        if (user) {
+          if (!user.is_active) {
+            throw new Error("This account is currently inactive.");
+          }
           const isPasswordCorrect = await bcrypt.compare(credentials.password, user.password);
           if (isPasswordCorrect) {
             return {
@@ -35,24 +38,33 @@ export const authOptions = {
               role: user.role,
               permissions: getPermissionsForRole(user.role, user.permissions),
             };
+          } else {
+            throw new Error("Incorrect password.");
           }
         }
 
-        // Fallback: If user is not in database, or password check failed,
-        // allow authentication with the entered email as an administrator.
-        // Generate a deterministic integer ID based on the email.
-        const emailHash = Math.abs(
-          emailLower.split("").reduce((acc, char) => (acc << 5) - acc + char.charCodeAt(0), 0)
-        );
-        const fallbackId = (100000 + (emailHash % 899999)).toString();
+        // Fallback check: If the users table is completely empty (no users found),
+        // we allow initial login to let the owner access the dashboard and set up the first user.
+        const { count, error: countError } = await supabase
+          .from("users")
+          .select("id", { count: "exact", head: true });
 
-        return {
-          id: fallbackId,
-          name: credentials.email.split("@")[0] || "Admin User",
-          email: emailLower,
-          role: "admin",
-          permissions: getPermissionsForRole("admin", []),
-        };
+        if (!countError && count === 0) {
+          const emailHash = Math.abs(
+            emailLower.split("").reduce((acc, char) => (acc << 5) - acc + char.charCodeAt(0), 0)
+          );
+          const fallbackId = (100000 + (emailHash % 899999)).toString();
+
+          return {
+            id: fallbackId,
+            name: credentials.email.split("@")[0] || "Admin User",
+            email: emailLower,
+            role: "admin",
+            permissions: getPermissionsForRole("admin", []),
+          };
+        }
+
+        throw new Error("Access denied: Unauthorized email.");
       },
     }),
   ],
