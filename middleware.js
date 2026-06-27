@@ -23,7 +23,12 @@ export async function middleware(req) {
   const { pathname, search } = req.nextUrl;
 
   if (pathname.startsWith("/admin")) {
-    const token = await getToken({ req });
+    const token = await getToken({
+  req,
+  secret: process.env.NEXTAUTH_SECRET,
+});
+
+console.log("TOKEN:", token);
 
     if (!token) {
       const redirectUrl = req.nextUrl.clone();
