@@ -41,10 +41,13 @@ export async function middleware(req) {
 
   // ================= ADMIN =================
   if (pathname.startsWith("/admin")) {
-    const token = await getToken({
-      req,
-      secret: process.env.NEXTAUTH_SECRET,
-    });
+   const token = await getToken({
+  req,
+  secret: process.env.NEXTAUTH_SECRET,
+  secureCookie: process.env.NODE_ENV === "production",
+});
+
+console.log("NODE_ENV:", process.env.NODE_ENV);
 
     // Debug Logs
     console.log("=========== MIDDLEWARE ===========");
