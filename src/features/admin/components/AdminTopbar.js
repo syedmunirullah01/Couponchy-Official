@@ -97,12 +97,45 @@ function SearchBar() {
 export default function AdminTopbar({ title, breadcrumbTrail = [] }) {
   const [mounted, setMounted] = useState(false);
   const [theme, setTheme] = useState("dark");
+  const [notifications, setNotifications] = useState([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+
+  const fetchNotifications = async () => {
+    try {
+      const res = await fetch("/api/notifications");
+      if (res.ok) {
+        const data = await res.json();
+        setNotifications(data || []);
+      }
+    } catch (err) {
+      console.error("Failed to load notifications:", err);
+    }
+  };
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("admin-theme") || "dark";
     setTheme(savedTheme);
     setMounted(true);
+    
+    fetchNotifications();
+    // Poll every 10 seconds for real-time coupon feedback notifications
+    const interval = setInterval(fetchNotifications, 10000);
+    return () => clearInterval(interval);
   }, []);
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
+  const handleToggleNotifications = async () => {
+    setShowNotifications(!showNotifications);
+    if (!showNotifications && unreadCount > 0) {
+      try {
+        await fetch("/api/notifications", { method: "POST" });
+        setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+      } catch (err) {
+        console.error("Failed to mark notifications as read:", err);
+      }
+    }
+  };
 
   const toggleTheme = () => {
     const nextTheme = theme === "dark" ? "light" : "dark";
@@ -125,7 +158,7 @@ export default function AdminTopbar({ title, breadcrumbTrail = [] }) {
   };
 
   return (
-    <header className="border-b border-[var(--border)] bg-[var(--surface)]/80 px-4 py-4 backdrop-blur-xl sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-50 border-b border-[var(--border)] bg-[var(--surface)]/80 px-4 py-4 backdrop-blur-xl sm:px-6 lg:px-8">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div>
           <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-[var(--muted)] uppercase tracking-wider">
@@ -157,12 +190,102 @@ export default function AdminTopbar({ title, breadcrumbTrail = [] }) {
               <GlobeIcon />
             </button>
 
-            {/* Notifications Button */}
-            <button className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] hover:bg-[var(--surface)] transition duration-200 cursor-pointer shadow-sm" aria-label="Notifications">
-              <NotificationIcon />
-              <span className="absolute top-2.5 right-2.5 h-1.5 w-1.5 rounded-full bg-blue-500 animate-ping" />
-              <span className="absolute top-2.5 right-2.5 h-1.5 w-1.5 rounded-full bg-blue-500" />
-            </button>
+              {/* Notifications Button */}
+              <div className="relative">
+                <button
+                  onClick={handleToggleNotifications}
+                  className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] hover:bg-[var(--surface)] transition-all duration-200 cursor-pointer shadow-sm text-[var(--text)] active:scale-95"
+                  aria-label="Notifications"
+                >
+                  <NotificationIcon />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-violet-600 text-[9px] font-black text-white shadow-md shadow-violet-500/50">
+                      {unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                {showNotifications && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)} />
+                    
+                    <div className="absolute right-0 mt-3 w-[360px] max-h-[420px] overflow-y-auto rounded-2xl border border-white/10 bg-[var(--surface)]/95 backdrop-blur-xl p-3 shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-50 origin-top-right transition-all duration-200 animate-in fade-in slide-in-from-top-2">
+                      <div className="px-3.5 py-2.5 border-b border-white/10 mb-2 flex items-center justify-between">
+                        <span className="text-[11px] font-black uppercase tracking-wider text-[var(--muted)]">Recent Activity</span>
+                        {unreadCount > 0 ? (
+                          <span className="text-[10px] font-black uppercase tracking-wider bg-violet-500/25 text-violet-400 border border-violet-500/30 px-2.5 py-0.5 rounded-md">
+                            {unreadCount} New
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-black uppercase tracking-wider text-white/30">
+                            Up to date
+                          </span>
+                        )}
+                      </div>
+                      {notifications.length === 0 ? (
+                        <div className="py-12 text-center text-xs text-[var(--muted)]/50 italic">
+                          No notifications yet
+                        </div>
+                      ) : (
+                        <div className="flex flex-col gap-2">
+                          {notifications.map((n) => (
+                            <div
+                              key={n.id}
+                              className={`relative p-3.5 rounded-xl border transition-all duration-200 text-left flex gap-3.5 ${
+                                !n.read 
+                                  ? "bg-white/[0.05] border-violet-500/30 shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]" 
+                                  : "bg-transparent border-transparent hover:bg-white/[0.02]"
+                              }`}
+                            >
+                              {/* Icon column */}
+                              <div className="flex-shrink-0 mt-0.5">
+                                {n.feedback === "yes" ? (
+                                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.1)]">
+                                    <svg viewBox="0 0 24 24" className="h-4.5 w-4.5 stroke-current" fill="none" strokeWidth="2.5">
+                                      <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
+                                    </svg>
+                                  </div>
+                                ) : (
+                                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20 shadow-[0_0_10px_rgba(244,63,94,0.1)]">
+                                    <svg viewBox="0 0 24 24" className="h-4.5 w-4.5 stroke-current" fill="none" strokeWidth="2.5">
+                                      <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm12-7h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3" />
+                                    </svg>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Content column */}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between gap-2 mb-1">
+                                  <span className={`text-[10.5px] font-black uppercase tracking-wider ${
+                                    n.feedback === "yes" ? "text-emerald-400" : "text-rose-400"
+                                  }`}>
+                                    {n.feedback === "yes" ? "Coupon Works" : "Coupon Broken"}
+                                  </span>
+                                  <span className="text-[10px] font-bold text-[var(--muted)]/50">
+                                    {new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                  </span>
+                                </div>
+                                <p className="text-sm font-black text-white leading-normal truncate">
+                                  {n.storeName}
+                                </p>
+                                <p className="text-[11px] font-semibold text-[var(--muted)]/70 leading-normal truncate">
+                                  {n.offerTitle}
+                                </p>
+                              </div>
+                              
+                              {/* Unread indicator dot */}
+                              {!n.read && (
+                                <span className="absolute top-4 right-4 h-1.5 w-1.5 rounded-full bg-violet-500" />
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
 
             {/* Theme Toggle Button */}
             <button

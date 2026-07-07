@@ -234,23 +234,25 @@ export default function Navbar({
   }, []);
 
   const [selectedCountryCode, setSelectedCountryCode] = useState(() => {
-    const countryFromPath = getCountryCodeFromPathname(pathname);
-    if (countryFromPath) {
-      return countryFromPath;
-    }
-
-    if (typeof document === "undefined") {
-      return DEFAULT_COUNTRY_CODE;
-    }
-
-    const matchedCookie = document.cookie
-      .split("; ")
-      .find((entry) => entry.startsWith(`${COUNTRY_COOKIE_KEY}=`))
-      ?.split("=")[1];
-
-    return normalizeCountryCode(decodeURIComponent(matchedCookie || DEFAULT_COUNTRY_CODE));
+    return getCountryCodeFromPathname(pathname) || DEFAULT_COUNTRY_CODE;
   });
   const selectedCountry = getCountryByCode(selectedCountryCode, countries);
+
+  useEffect(() => {
+    const countryFromPath = getCountryCodeFromPathname(pathname);
+    if (!countryFromPath && typeof document !== "undefined") {
+      const matchedCookie = document.cookie
+        .split("; ")
+        .find((entry) => entry.startsWith(`${COUNTRY_COOKIE_KEY}=`))
+        ?.split("=")[1];
+      if (matchedCookie) {
+        const decoded = normalizeCountryCode(decodeURIComponent(matchedCookie));
+        if (decoded && decoded !== selectedCountryCode) {
+          setSelectedCountryCode(decoded);
+        }
+      }
+    }
+  }, [pathname]);
 
   useEffect(() => {
     if (categories.length > 0) {

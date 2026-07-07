@@ -69,6 +69,8 @@ export default function OfferCard({ offer, store, isFirst }) {
   const [copied, setCopied] = useState(false);
   const [revealed, setRevealed] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [feedback, setFeedback] = useState(null);
+  const [linkCopied, setLinkCopied] = useState(false);
   const [timeLeft, setTimeLeft] = useState({ days: "00", hours: "00", minutes: "00", seconds: "00" });
   const { lastUsedNum, unit, usesTodayNum } = getSeededStats(offer.id, offer.title);
 
@@ -79,9 +81,39 @@ export default function OfferCard({ offer, store, isFirst }) {
   const isCoupon = offer.type === "Coupon";
   const expiryText = formatExpiry(offer.expiryDate);
 
+  const submitFeedback = async (val) => {
+    setFeedback(val);
+    try {
+      await fetch("/api/offers/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          storeName: store.name,
+          offerTitle: offer.title,
+          feedback: val,
+        }),
+      });
+    } catch (err) {
+      console.error("Failed to send feedback:", err);
+    }
+  };
+
+  const handleCopyLink = () => {
+    if (typeof window !== "undefined") {
+      copyToClipboard(window.location.href).then((success) => {
+        if (success) {
+          setLinkCopied(true);
+          setTimeout(() => setLinkCopied(false), 2000);
+        }
+      });
+    }
+  };
+
   useEffect(() => {
     if (isModalOpen) {
       document.body.classList.add("modal-open");
+      setFeedback(null);
+      setLinkCopied(false);
     } else {
       document.body.classList.remove("modal-open");
     }
@@ -490,7 +522,7 @@ export default function OfferCard({ offer, store, isFirst }) {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="relative w-[92%] sm:w-full max-w-[440px] max-h-[90vh] overflow-y-auto rounded-[24px] sm:rounded-[28px] border border-white/10 sm:border-2 sm:border-[var(--color-primary)] bg-[#0c0c11] p-5 sm:p-7 text-center shadow-[0_0_40px_rgba(139,92,246,0.25)]"
+            className="relative w-[92%] sm:w-full max-w-[440px] max-h-[90vh] overflow-y-auto modal-container-scroll rounded-[24px] sm:rounded-[28px] border border-white/10 sm:border-2 sm:border-[var(--color-primary)] bg-[#0c0c11] p-5 sm:p-7 text-center shadow-[0_0_40px_rgba(139,92,246,0.25)]"
             style={{
               animation: "scaleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards"
             }}
@@ -503,6 +535,13 @@ export default function OfferCard({ offer, store, isFirst }) {
               @keyframes scaleIn {
                 from { transform: scale(0.95); opacity: 0; }
                 to { transform: scale(1); opacity: 1; }
+              }
+              .modal-container-scroll::-webkit-scrollbar {
+                display: none !important;
+              }
+              .modal-container-scroll {
+                -ms-overflow-style: none !important;
+                scrollbar-width: none !important;
               }
             `}</style>
 
@@ -598,14 +637,38 @@ export default function OfferCard({ offer, store, isFirst }) {
             <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/25 mb-3">
               Did this {isCoupon ? "coupon" : "deal"} work?
             </p>
-            <div className="flex gap-3 justify-center">
-              <button className="flex items-center gap-1.5 rounded-xl border border-white/5 bg-white/[0.02] px-4 py-2 text-xs font-bold text-white/60 hover:bg-white/10 hover:text-white transition-colors duration-200 cursor-pointer">
-                👍 Yes, it worked!
-              </button>
-              <button className="flex items-center gap-1.5 rounded-xl border border-white/5 bg-white/[0.02] px-4 py-2 text-xs font-bold text-white/60 hover:bg-white/10 hover:text-white transition-colors duration-200 cursor-pointer">
-                👎 Didn't work
-              </button>
-            </div>
+            {feedback === null ? (
+              <div className="flex gap-3 justify-center">
+                <button
+                  onClick={() => submitFeedback("yes")}
+                  className="flex items-center gap-1.5 rounded-xl border border-white/5 bg-white/[0.02] px-4 py-2 text-xs font-bold text-white/60 hover:bg-white/10 hover:text-white transition-colors duration-200 cursor-pointer active:scale-95"
+                >
+                  👍 Yes, it worked!
+                </button>
+                <button
+                  onClick={() => submitFeedback("no")}
+                  className="flex items-center gap-1.5 rounded-xl border border-white/5 bg-white/[0.02] px-4 py-2 text-xs font-bold text-white/60 hover:bg-white/10 hover:text-white transition-colors duration-200 cursor-pointer active:scale-95"
+                >
+                  👎 Didn't work
+                </button>
+              </div>
+            ) : feedback === "yes" ? (
+              <div className="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-4 py-2.5 inline-flex items-center gap-1.5 animate-fadeIn">
+                <svg viewBox="0 0 24 24" className="h-4 w-4 stroke-current" fill="none" strokeWidth="3">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                Thank you! We've marked this coupon as working.
+              </div>
+            ) : (
+              <div className="text-xs font-bold text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-2.5 inline-flex items-center gap-1.5 animate-fadeIn">
+                <svg viewBox="0 0 24 24" className="h-4 w-4 stroke-current" fill="none" strokeWidth="3">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+                Thanks for letting us know. We will verify this shortly.
+              </div>
+            )}
 
             {/* Divider */}
             <div className="my-3.5 sm:my-5 border-t border-white/[0.04]" />
@@ -615,19 +678,64 @@ export default function OfferCard({ offer, store, isFirst }) {
               Follow us for more deals
             </p>
             <div className="flex gap-2.5 justify-center">
-              <a href="#" className="h-8 w-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 text-white/60 hover:text-white transition-colors">
+              {/* Facebook */}
+              <a
+                href="https://facebook.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="h-8 w-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-[#1877F2] hover:border-[#1877F2] text-white/60 hover:text-white transition-all duration-200"
+                title="Follow on Facebook"
+              >
                 <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
                   <path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c4.56-.93 8-4.96 8-9.75z" />
                 </svg>
               </a>
-              <a href="#" className="h-8 w-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 text-white/60 hover:text-white transition-colors">
+              {/* Instagram */}
+              <a
+                href="https://instagram.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="h-8 w-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-gradient-to-tr hover:from-[#f9ce34] hover:via-[#ee2a7b] hover:to-[#6228d7] hover:border-transparent text-white/60 hover:text-white transition-all duration-200"
+                title="Follow on Instagram"
+              >
                 <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
                   <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.051.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z" />
                 </svg>
               </a>
-              <a href="#" className="h-8 w-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 text-white/60 hover:text-white transition-colors">
+              {/* TikTok */}
+              <a
+                href="https://tiktok.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="h-8 w-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-black hover:border-white/10 text-white/60 hover:text-white transition-all duration-200"
+                title="Follow on TikTok"
+              >
                 <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
-                  <path d="M11.525.07c1.312.012 2.614.07 3.906.177A12.094 12.094 0 0 1 21.93 5.4a12.094 12.094 0 0 1 1.9 5.5c.107 1.292.165 2.594.177 3.906v.784c-.012 1.312-.07 2.614-.177 3.906a12.094 12.094 0 0 1-5.5 5.5c-1.292.107-2.594.165-3.906.177h-.784c-1.312-.012-2.614-.07-3.906-.177a12.094 12.094 0 0 1-5.5-5.5 12.094 12.094 0 0 1-1.9-5.5c-.107-1.292-.165-2.594-.177-3.906v-.784c.012-1.312.07-2.614.177-3.906a12.094 12.094 0 0 1 5.5-5.5 12.094 12.094 0 0 1 5.5-1.9c1.292-.107 2.594-.165 3.906-.177h.784Zm.936 9.69a1.986 1.986 0 1 0 0-3.972 1.986 1.986 0 0 0 0 3.972Zm4.872 3.123c-.768-.11-1.543-.195-2.316-.255a4.237 4.237 0 0 0-3.23-1.637 4.237 4.237 0 0 0-3.23 1.637c-.773.06-1.548.145-2.316.255a2.124 2.124 0 0 0-1.83 2.1v2.3a2.124 2.124 0 0 0 1.83 2.1c.768.11 1.543.195 2.316.255a4.237 4.237 0 0 0 3.23 1.637 4.237 4.237 0 0 0 3.23-1.637c.773-.06 1.548-.145 2.316-.255a2.124 2.124 0 0 0 1.83-2.1v-2.3a2.124 2.124 0 0 0-1.83-2.1Z" />
+                  <path d="M12.525.07c1.312.012 2.614.07 3.906.177A12.094 12.094 0 0 1 21.93 5.4a12.094 12.094 0 0 1 1.9 5.5c.107 1.292.165 2.594.177 3.906v.784c-.012 1.312-.07 2.614-.177 3.906a12.094 12.094 0 0 1-5.5 5.5c-1.292.107-2.594.165-3.906.177h-.784c-1.312-.012-2.614-.07-3.906-.177a12.094 12.094 0 0 1-5.5-5.5 12.094 12.094 0 0 1-1.9-5.5c-.107-1.292-.165-2.594-.177-3.906v-.784c.012-1.312.07-2.614.177-3.906a12.094 12.094 0 0 1 5.5-5.5 12.094 12.094 0 0 1 5.5-1.9c1.292-.107 2.594-.165 3.906-.177h.784Zm.936 9.69a1.986 1.986 0 1 0 0-3.972 1.986 1.986 0 0 0 0 3.972Zm4.872 3.123c-.768-.11-1.543-.195-2.316-.255a4.237 4.237 0 0 0-3.23-1.637 4.237 4.237 0 0 0-3.23 1.637c-.773.06-1.548.145-2.316.255a2.124 2.124 0 0 0-1.83 2.1v2.3a2.124 2.124 0 0 0 1.83 2.1c.768.11 1.543.195 2.316.255a4.237 4.237 0 0 0 3.23 1.637 4.237 4.237 0 0 0 3.23-1.637c.773-.06 1.548-.145 2.316-.255a2.124 2.124 0 0 0 1.83-2.1v-2.3a2.124 2.124 0 0 0-1.83-2.1Z" />
+                </svg>
+              </a>
+              {/* Pinterest */}
+              <a
+                href="https://pinterest.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="h-8 w-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-[#BD081C] hover:border-[#BD081C] text-white/60 hover:text-white transition-all duration-200"
+                title="Follow on Pinterest"
+              >
+                <svg viewBox="0 0 24 24" className="h-4.5 w-4.5" fill="currentColor">
+                  <path d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 5.079 3.158 9.417 7.618 11.162-.105-.949-.199-2.403.041-3.439.219-.937 1.406-5.966 1.406-5.966s-.359-.719-.359-1.782c0-1.668.967-2.914 2.171-2.914 1.023 0 1.518.769 1.518 1.69 0 1.029-.655 2.568-.994 3.995-.283 1.194.599 2.169 1.777 2.169 2.133 0 3.772-2.249 3.772-5.495 0-2.873-2.064-4.882-5.012-4.882-3.414 0-5.418 2.561-5.418 5.207 0 1.031.397 2.138.893 2.738.098.119.112.224.083.345l-.333 1.36c-.053.22-.174.267-.402.161-1.499-.698-2.436-2.889-2.436-4.649 0-3.785 2.75-7.262 7.929-7.262 4.163 0 7.398 2.967 7.398 6.931 0 4.136-2.607 7.464-6.227 7.464-1.216 0-2.359-.631-2.75-1.378l-.748 2.853c-.271 1.043-1.002 2.35-1.492 3.146C9.57 23.812 10.763 24 12.017 24c6.62 0 11.988-5.367 11.988-11.987C24.005 5.367 18.636 0 12.017 0z" />
+                </svg>
+              </a>
+              {/* Discord */}
+              <a
+                href="https://discord.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="h-8 w-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-[#5865F2] hover:border-[#5865F2] text-white/60 hover:text-white transition-all duration-200"
+                title="Join our Discord"
+              >
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
+                  <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.094 13.094 0 0 1-1.873-.894.077.077 0 0 1-.008-.128c.126-.093.252-.19.372-.287a.075.075 0 0 1 .077-.011c3.92 1.793 8.18 1.793 12.061 0a.073.073 0 0 1 .078.009c.12.099.246.195.373.289a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.894.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.156-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.156 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.156-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.156 2.418z" />
                 </svg>
               </a>
             </div>
@@ -637,40 +745,23 @@ export default function OfferCard({ offer, store, isFirst }) {
 
             {/* Share */}
             <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/25 mb-3">
-              Share this {isCoupon ? "coupon" : "deal"}
+              Share this coupon
             </p>
             <div className="flex gap-2.5 justify-center">
-              <a
-                href={`https://api.whatsapp.com/send?text=${encodeURIComponent(offer.title + " " + actionHref)}`}
-                target="_blank"
-                rel="noreferrer"
-                className="h-8 w-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 text-white/60 hover:text-white transition-colors"
-              >
-                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
-                  <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.455L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.86-4.42 9.863-9.864.001-2.637-1.03-5.116-2.905-6.993C16.55 1.87 14.077.84 11.445.84c-5.441 0-9.866 4.424-9.869 9.87-.001 1.745.485 3.326 1.446 4.887L1.93 21.09l5.717-1.936z" />
-                </svg>
-              </a>
-              <a
-                href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(offer.title + " " + actionHref)}`}
-                target="_blank"
-                rel="noreferrer"
-                className="h-8 w-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 text-white/60 hover:text-white transition-colors"
-              >
-                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
-                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                </svg>
-              </a>
+              {/* Copy Link */}
               <button
-                onClick={() => {
-                  copyToClipboard(actionHref).then((success) => {
-                    if (success) alert("Link copied to clipboard!");
-                  });
-                }}
-                className="h-8 w-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 text-white/60 hover:text-white transition-colors cursor-pointer"
+                onClick={handleCopyLink}
+                className="h-8 w-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-violet-600 hover:border-violet-600 text-white/60 hover:text-white transition-all duration-200 cursor-pointer"
+                title="Copy Coupon Link"
               >
-                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-                </svg>
+                {linkCopied ? (
+                  <span className="text-[10px] font-black text-white">✓</span>
+                ) : (
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                  </svg>
+                )}
               </button>
             </div>
           </div>

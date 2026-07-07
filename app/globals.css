@@ -48,6 +48,8 @@
 
 html {
   scroll-behavior: smooth;
+  -ms-overflow-style: none !important;  /* IE and Edge */
+  scrollbar-width: none !important;  /* Firefox */
 }
 
 body {
@@ -80,20 +82,7 @@ input {
 }
 
 ::-webkit-scrollbar {
-  width: 10px;
-}
-
-::-webkit-scrollbar-track {
-  background: #080808;
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--color-secondary-muted);
-  border-radius: 999px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #40532b;
+  display: none !important;
 }
 
 @keyframes activityMarquee {
