@@ -312,8 +312,13 @@ export default function Navbar({
     [activeCategorySlug, categories]
   );
 
+  const countryStores = useMemo(() => {
+    const code = normalizeCountryCode(selectedCountryCode);
+    return stores.filter((store) => normalizeCountryCode(store.countryCode) === code);
+  }, [stores, selectedCountryCode]);
+
   const storesByCategory = useMemo(() => {
-    return stores.reduce((accumulator, store) => {
+    return countryStores.reduce((accumulator, store) => {
       const key = store.categorySlug || "uncategorized";
       if (!accumulator[key]) {
         accumulator[key] = [];
@@ -321,9 +326,9 @@ export default function Navbar({
       accumulator[key].push(store);
       return accumulator;
     }, {});
-  }, [stores]);
+  }, [countryStores]);
 
-  const storeMap = useMemo(() => new Map(stores.map((store) => [store.slug, store])), [stores]);
+  const storeMap = useMemo(() => new Map(countryStores.map((store) => [store.slug, store])), [countryStores]);
 
   const offersByStoreSlug = useMemo(() => {
     return offers.reduce((accumulator, offer) => {
@@ -348,10 +353,10 @@ export default function Navbar({
   }, [activeCategory, storesByCategory]);
 
   const allStoresPreview = useMemo(() => {
-    return [...stores]
+    return [...countryStores]
       .sort((left, right) => (right.offersCount || 0) - (left.offersCount || 0) || left.name.localeCompare(right.name))
       .slice(0, 7);
-  }, [stores]);
+  }, [countryStores]);
 
   const visibleStores = allCategoriesMode ? allStoresPreview : activeStores;
 
@@ -395,7 +400,7 @@ export default function Navbar({
       return [];
     }
 
-    return stores
+    return countryStores
       .filter((store) => {
         return (
           store.name?.toLowerCase().includes(query) ||
@@ -404,14 +409,14 @@ export default function Navbar({
         );
       })
       .slice(0, 6);
-  }, [searchValue, stores]);
+  }, [searchValue, countryStores]);
 
   function handleSearchSubmit(event) {
     event.preventDefault();
 
     const rawQuery = searchValue.trim();
     const normalizedQuery = rawQuery.toLowerCase();
-    const exactStoreMatch = stores.find((store) => isExactStoreMatch(store, normalizedQuery));
+    const exactStoreMatch = countryStores.find((store) => isExactStoreMatch(store, normalizedQuery));
 
     if (exactStoreMatch) {
       router.push(getStoreHref(exactStoreMatch, selectedCountryCode));
