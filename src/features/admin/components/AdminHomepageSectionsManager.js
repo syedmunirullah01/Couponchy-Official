@@ -341,6 +341,8 @@ export default function AdminHomepageSectionsManager() {
   const [stores, setStores] = useState([]);
   const [offers, setOffers] = useState([]);
   const [products, setProducts] = useState([]);
+  const [countries, setCountries] = useState([]);
+  const [selectedCountry, setSelectedCountry] = useState("ALL");
   const [trendingStoreSearch, setTrendingStoreSearch] = useState("");
   const [featuredOfferSearch, setFeaturedOfferSearch] = useState("");
   const [featuredProductSearch, setFeaturedProductSearch] = useState("");
@@ -355,18 +357,20 @@ export default function AdminHomepageSectionsManager() {
 
     async function loadData() {
       try {
-        const [sectionsResponse, storesResponse, offersResponse, productsResponse] = await Promise.all([
+        const [sectionsResponse, storesResponse, offersResponse, productsResponse, countriesResponse] = await Promise.all([
           fetch("/api/homepage/sections", { cache: "no-store" }),
           fetch("/api/stores", { cache: "no-store" }),
           fetch("/api/offers", { cache: "no-store" }),
           fetch("/api/products", { cache: "no-store" }),
+          fetch("/api/public/countries", { cache: "no-store" }),
         ]);
 
-        const [sectionsPayload, storesPayload, offersPayload, productsPayload] = await Promise.all([
+        const [sectionsPayload, storesPayload, offersPayload, productsPayload, countriesPayload] = await Promise.all([
           sectionsResponse.json(),
           storesResponse.json(),
           offersResponse.json(),
           productsResponse.json(),
+          countriesResponse.json(),
         ]);
 
         if (!sectionsResponse.ok) {
@@ -384,6 +388,7 @@ export default function AdminHomepageSectionsManager() {
           setStores(filteredStores);
           setOffers(offersPayload.data || []);
           setProducts(productsPayload.data || []);
+          setCountries(countriesPayload.data || []);
         }
       } catch (error) {
         toast.error(error.message);
@@ -406,12 +411,41 @@ export default function AdminHomepageSectionsManager() {
   }, [trendingStoreSearch]);
 
   useEffect(() => {
+    setFeaturedProductVisibleCount(10);
+  }, [featuredProductSearch]);
+
+  useEffect(() => {
     setFeaturedVisibleCount(10);
   }, [featuredOfferSearch]);
 
-  useEffect(() => {
-    setFeaturedProductVisibleCount(10);
-  }, [featuredProductSearch]);
+  const filteredStoresByCountry = useMemo(() => {
+    if (selectedCountry === "ALL") {
+      return stores;
+    }
+    return stores.filter((store) => store.countryCode === selectedCountry);
+  }, [stores, selectedCountry]);
+
+  const filteredOffersByCountry = useMemo(() => {
+    if (selectedCountry === "ALL") {
+      return offers;
+    }
+    const storeMap = new Map(stores.map((s) => [s.slug, s]));
+    return offers.filter((offer) => {
+      const store = storeMap.get(offer.storeSlug);
+      return store && store.countryCode === selectedCountry;
+    });
+  }, [offers, stores, selectedCountry]);
+
+  const filteredProductsByCountry = useMemo(() => {
+    if (selectedCountry === "ALL") {
+      return products;
+    }
+    const storeMap = new Map(stores.map((s) => [s.slug, s]));
+    return products.filter((product) => {
+      const store = storeMap.get(product.storeSlug);
+      return store && store.countryCode === selectedCountry;
+    });
+  }, [products, stores, selectedCountry]);
 
   function updateSectionField(sectionKey, field, value) {
     setSections((current) => ({
@@ -514,16 +548,30 @@ export default function AdminHomepageSectionsManager() {
           <CardTitle className="text-base font-bold tracking-tight text-[var(--text)]">Homepage Sections Manager</CardTitle>
           <CardDescription className="text-xs text-[var(--muted)] mt-0.5">Choose exactly which stores, coupons, and products appear on the homepage.</CardDescription>
         </div>
-        <Button
-          type="button"
-          size="md"
-          className="rounded-xl font-bold bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white shadow-sm transition-all duration-200 px-4 py-2 cursor-pointer text-xs"
-          onClick={saveSections}
-          disabled={isSaving}
-          leadingIcon={isSaving ? <Spinner /> : null}
-        >
-          {isSaving ? "Saving Sections..." : "Save Sections"}
-        </Button>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <select
+            value={selectedCountry}
+            onChange={(event) => setSelectedCountry(event.target.value)}
+            className="h-10 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 text-xs font-bold text-[var(--text)] outline-none cursor-pointer focus:border-[var(--color-primary)]"
+          >
+            <option value="ALL">All Countries</option>
+            {countries.map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.code} - {c.name}
+              </option>
+            ))}
+          </select>
+          <Button
+            type="button"
+            size="md"
+            className="rounded-xl font-bold bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white shadow-sm transition-all duration-200 px-4 py-2 cursor-pointer text-xs h-10"
+            onClick={saveSections}
+            disabled={isSaving}
+            leadingIcon={isSaving ? <Spinner /> : null}
+          >
+            {isSaving ? "Saving..." : "Save Sections"}
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="grid gap-6 p-6">
         <SettingsSection
@@ -552,7 +600,7 @@ export default function AdminHomepageSectionsManager() {
             </label>
           </div>
           <StoreSelectionList
-            stores={stores}
+            stores={filteredStoresByCountry}
             selectedStoreSlugs={sections.trendingStores.selectedStoreSlugs || []}
             onToggle={(storeSlug) => toggleStoreSelection("trendingStores", storeSlug)}
             searchValue={trendingStoreSearch}
@@ -591,7 +639,7 @@ export default function AdminHomepageSectionsManager() {
             </label>
           </div>
           <OfferSelectionList
-            offers={offers}
+            offers={filteredOffersByCountry}
             selectedOfferIds={sections.featuredCoupons.selectedOfferIds || []}
             onToggle={toggleOfferSelection}
             searchValue={featuredOfferSearch}
@@ -630,7 +678,7 @@ export default function AdminHomepageSectionsManager() {
             </label>
           </div>
           <ProductSelectionList
-            products={products}
+            products={filteredProductsByCountry}
             selectedProductIds={sections.featuredProducts.selectedProductIds || []}
             onToggle={toggleProductSelection}
             searchValue={featuredProductSearch}
