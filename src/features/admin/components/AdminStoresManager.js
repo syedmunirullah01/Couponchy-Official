@@ -595,7 +595,30 @@ export default function AdminStoresManager() {
                         />
                       </label>
                     </TableCell>
-                    <TableCell className="font-semibold text-[var(--text)] text-xs py-3 px-4">{store.name}</TableCell>
+                    <TableCell className="py-3 px-4">
+                      <div className="flex items-center gap-3.5">
+                        {store.logoImage ? (
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[var(--border)] bg-[var(--surface)] p-1 shadow-sm">
+                            <div className="relative h-full w-full">
+                              <Image
+                                src={store.logoImage}
+                                alt={`${store.name} logo`}
+                                fill
+                                className="object-contain rounded-full"
+                                unoptimized
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface-soft)] font-black text-[10px] text-[var(--muted)] shadow-sm">
+                            {store.logoText?.slice(0, 2).toUpperCase() || store.name?.slice(0, 2).toUpperCase() || "ST"}
+                          </div>
+                        )}
+                        <span className="font-semibold text-[var(--text)] text-xs truncate max-w-[200px]">
+                          {store.name}
+                        </span>
+                      </div>
+                    </TableCell>
                     <TableCell className="text-[var(--muted)] text-xs py-3 px-4">/{store.slug}</TableCell>
                     <TableCell className="text-[var(--text)]/80 text-xs py-3 px-4 capitalize font-semibold">{store.category}</TableCell>
                     <TableCell className="text-[var(--text)]/80 text-xs py-3 px-4 font-mono font-semibold">{store.countryCode || DEFAULT_COUNTRY_CODE}</TableCell>
