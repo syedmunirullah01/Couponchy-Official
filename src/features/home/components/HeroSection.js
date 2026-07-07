@@ -675,12 +675,12 @@ export default function HeroSection({ hero, countryCode = DEFAULT_COUNTRY_CODE, 
                 key={card.id}
                 onMouseEnter={() => setHoveredCard(card.id)}
                 onMouseLeave={() => setHoveredCard(null)}
+                className="hero-floating-card"
                 style={{
                   position: "absolute",
                   top: `${i * 52}px`,
                   left: `${i * 18}px`,
                   width: "260px",
-                  background: "rgba(17,17,17,0.92)",
                   border: `1px solid ${hoveredCard === card.id ? "rgba(139, 92, 246,0.4)" : "rgba(255,255,255,0.07)"}`,
                   borderRadius: "18px",
                   padding: "20px",
@@ -925,7 +925,15 @@ export default function HeroSection({ hero, countryCode = DEFAULT_COUNTRY_CODE, 
           0%, 100% { transform: translateY(0); }
           50%       { transform: translateY(-6px); }
         }
+        .hero-floating-card {
+          background: rgb(17, 17, 17) !important;
+        }
         @media (min-width: 1024px) {
+          .hero-floating-card {
+            background: rgba(17, 17, 17, 0.92) !important;
+            backdrop-filter: blur(20px) !important;
+            -webkit-backdrop-filter: blur(20px) !important;
+          }
           .hero-grid {
             grid-template-columns: 1.1fr 0.9fr !important;
           }
