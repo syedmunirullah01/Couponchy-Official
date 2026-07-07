@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCompanyContent, updateCompanyContent } from "@/server/repositories/company-repository";
 import { requirePermission } from "@/server/auth";
+import { revalidatePath } from "next/cache";
 
 export async function GET() {
   const access = await requirePermission("company");
@@ -21,6 +22,7 @@ export async function PUT(request) {
   try {
     const payload = await request.json();
     const content = await updateCompanyContent(payload);
+    revalidatePath("/", "layout");
     return NextResponse.json({ data: content });
   } catch (error) {
     return NextResponse.json({ error: error.message || "Unable to save company content." }, { status: 400 });

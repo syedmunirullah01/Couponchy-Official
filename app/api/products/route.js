@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createProduct, getAllProducts } from "@/server/repositories/products-repository";
 import { validateProductPayload } from "@/lib/validators";
 import { requirePermission } from "@/server/auth";
+import { revalidatePath } from "next/cache";
 
 export async function GET() {
   const products = await getAllProducts();
@@ -23,6 +24,7 @@ export async function POST(request) {
     }
 
     const product = await createProduct(payload);
+    revalidatePath("/", "layout");
     return NextResponse.json({ data: product }, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: error.message || "Unable to create product." }, { status: 400 });

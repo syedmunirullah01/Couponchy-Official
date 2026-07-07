@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createCategory, getAllCategories } from "@/server/repositories/categories-repository";
 import { validateCategoryPayload } from "@/lib/validators";
 import { requirePermission } from "@/server/auth";
+import { revalidatePath } from "next/cache";
 
 export async function GET() {
   const categories = await getAllCategories();
@@ -23,6 +24,7 @@ export async function POST(request) {
     }
 
     const category = await createCategory(payload);
+    revalidatePath("/", "layout");
     return NextResponse.json({ data: category }, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: error.message || "Unable to create category." }, { status: 400 });

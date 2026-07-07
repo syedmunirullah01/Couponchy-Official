@@ -3,6 +3,7 @@ import { deleteOffer, getAllOffers, getOfferById, updateOffer } from "@/server/r
 import { getStoreBySlug, syncStoreOfferCount } from "@/server/repositories/stores-repository";
 import { validateOfferPayload } from "@/lib/validators";
 import { requirePermission } from "@/server/auth";
+import { revalidatePath } from "next/cache";
 
 export async function GET(_request, { params }) {
   const { id } = await params;
@@ -53,6 +54,7 @@ export async function PUT(request, { params }) {
       await syncStoreOfferCount(existingOffer.storeSlug, previousStoreCount);
     }
 
+    revalidatePath("/", "layout");
     return NextResponse.json({ data: offer });
   } catch (error) {
     return NextResponse.json({ error: error.message || "Unable to update offer." }, { status: 400 });
@@ -79,5 +81,6 @@ export async function DELETE(_request, { params }) {
     await syncStoreOfferCount(existingOffer.storeSlug, storeOfferCount);
   }
 
+  revalidatePath("/", "layout");
   return NextResponse.json({ success: true });
 }

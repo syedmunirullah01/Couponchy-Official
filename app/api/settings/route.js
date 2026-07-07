@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSettings, updateSettings } from "@/server/repositories/settings-repository";
 import { requirePermission } from "@/server/auth";
+import { revalidatePath } from "next/cache";
 
 export async function GET() {
   const access = await requirePermission("settings");
@@ -21,6 +22,8 @@ export async function PUT(request) {
   try {
     const payload = await request.json();
     const settings = await updateSettings(payload);
+    // Purge Next.js full-route cache so frontend reflects changes immediately
+    revalidatePath("/", "layout");
     return NextResponse.json({ data: settings });
   } catch (error) {
     return NextResponse.json({ error: error.message || "Unable to save settings." }, { status: 400 });

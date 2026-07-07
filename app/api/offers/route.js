@@ -4,6 +4,7 @@ import { getAllStores, getStoreBySlug, syncStoreOfferCount } from "@/server/repo
 import { normalizeCountryCode } from "@/lib/countries";
 import { validateOfferPayload } from "@/lib/validators";
 import { requirePermission } from "@/server/auth";
+import { revalidatePath } from "next/cache";
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
@@ -49,6 +50,7 @@ export async function POST(request) {
     const offers = await getAllOffers();
     const storeOfferCount = offers.filter((item) => item.storeSlug === payload.storeSlug).length;
     await syncStoreOfferCount(payload.storeSlug, storeOfferCount);
+    revalidatePath("/", "layout");
     return NextResponse.json({ data: offer }, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: error.message || "Unable to create offer." }, { status: 400 });

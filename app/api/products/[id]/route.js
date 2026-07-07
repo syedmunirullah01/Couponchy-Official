@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { deleteProduct, getProductById, updateProduct } from "@/server/repositories/products-repository";
 import { validateProductPayload } from "@/lib/validators";
 import { requirePermission } from "@/server/auth";
+import { revalidatePath } from "next/cache";
 
 export async function GET(_request, { params }) {
   const { id } = await params;
@@ -35,6 +36,7 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ error: "Product not found." }, { status: 404 });
     }
 
+    revalidatePath("/", "layout");
     return NextResponse.json({ data: product });
   } catch (error) {
     return NextResponse.json({ error: error.message || "Unable to update product." }, { status: 400 });
@@ -54,5 +56,6 @@ export async function DELETE(_request, { params }) {
     return NextResponse.json({ error: "Product not found." }, { status: 404 });
   }
 
+  revalidatePath("/", "layout");
   return NextResponse.json({ success: true });
 }

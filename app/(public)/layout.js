@@ -7,6 +7,9 @@ import { getAllEvents } from "@/server/repositories/events-repository";
 import { getSettings } from "@/server/repositories/settings-repository";
 import { sanitizeCountryList, SUPPORTED_COUNTRIES } from "@/lib/countries";
 
+// Always fetch fresh data — never serve stale cached layout
+export const dynamic = "force-dynamic";
+
 export default async function PublicLayout({ children }) {
   const [categories, stores, offers, events, settings] = await Promise.all([
     getAllCategories(),

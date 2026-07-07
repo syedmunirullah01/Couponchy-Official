@@ -3,6 +3,7 @@ import { deleteStore, getStoreBySlug, updateStore } from "@/server/repositories/
 import { deleteOffersByStoreSlug } from "@/server/repositories/offers-repository";
 import { validateStorePayload } from "@/lib/validators";
 import { requirePermission } from "@/server/auth";
+import { revalidatePath } from "next/cache";
 
 export async function GET(_request, { params }) {
   const { slug } = await params;
@@ -36,6 +37,7 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ error: "Store not found." }, { status: 404 });
     }
 
+    revalidatePath("/", "layout");
     return NextResponse.json({ data: store });
   } catch (error) {
     return NextResponse.json({ error: error.message || "Unable to update store." }, { status: 400 });
@@ -56,6 +58,6 @@ export async function DELETE(_request, { params }) {
   }
 
   await deleteOffersByStoreSlug(slug);
-
+  revalidatePath("/", "layout");
   return NextResponse.json({ success: true });
 }

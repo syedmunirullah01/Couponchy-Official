@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/server/auth";
 import { getSettings, updateSettings } from "@/server/repositories/settings-repository";
+import { revalidatePath } from "next/cache";
 
 export async function GET() {
   const access = await requirePermission("hero");
@@ -26,6 +27,7 @@ export async function PUT(request) {
       },
     });
 
+    revalidatePath("/", "layout");
     return NextResponse.json({ data: settings.homepage.sections });
   } catch (error) {
     return NextResponse.json({ error: error.message || "Unable to save homepage sections." }, { status: 400 });

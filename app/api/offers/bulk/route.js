@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requirePermission } from "@/server/auth";
 import { createOffersBulk, getAllOffers } from "@/server/repositories/offers-repository";
 import { getAllStores, syncStoreOfferCount } from "@/server/repositories/stores-repository";
+import { revalidatePath } from "next/cache";
 
 function normalizeCsvValue(value) {
   return String(value || "").trim();
@@ -196,6 +197,7 @@ export async function POST(request) {
           )
         )
       );
+      revalidatePath("/", "layout");
     }
 
     return NextResponse.json(

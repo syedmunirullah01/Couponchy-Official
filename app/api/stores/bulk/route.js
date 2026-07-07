@@ -6,6 +6,7 @@ import { getAllCategories } from "@/server/repositories/categories-repository";
 import { getSettings } from "@/server/repositories/settings-repository";
 import { uploadImageBuffer } from "@/server/cloudinary";
 import { normalizeCountryCode } from "@/lib/countries";
+import { revalidatePath } from "next/cache";
 
 function slugify(value) {
   return String(value || "")
@@ -208,6 +209,7 @@ export async function POST(request) {
 
     if (preparedStores.length) {
       await createStoresBulk(preparedStores);
+      revalidatePath("/", "layout");
     }
 
     return NextResponse.json(
