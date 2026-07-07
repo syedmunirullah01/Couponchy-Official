@@ -148,16 +148,7 @@ export default function OfferCard({ offer, store, isFirst }) {
   const handleReveal = (e) => {
     if (e && typeof e.preventDefault === "function") e.preventDefault();
     
-    // 1. Open new tab in background to stay on Couponchy screen
-    if (isExternal && actionHref !== "#") {
-      let targetUrl = actionHref;
-      if (actionHref && !/^https?:\/\//i.test(actionHref)) {
-        targetUrl = `https://${actionHref}`;
-      }
-      openInBackground(targetUrl);
-    }
-
-    // 2. Perform copy & state changes
+    // 1. Perform copy & state changes first (under active user gesture)
     if (isCoupon && offer.code) {
       setRevealed(true);
       copyToClipboard(offer.code).then((success) => {
@@ -166,6 +157,15 @@ export default function OfferCard({ offer, store, isFirst }) {
           setTimeout(() => setCopied(false), 2000);
         }
       });
+    }
+
+    // 2. Open new tab in background to stay on Couponchy screen
+    if (isExternal && actionHref !== "#") {
+      let targetUrl = actionHref;
+      if (actionHref && !/^https?:\/\//i.test(actionHref)) {
+        targetUrl = `https://${actionHref}`;
+      }
+      openInBackground(targetUrl);
     }
 
     // 3. Open modal overlay on current page
