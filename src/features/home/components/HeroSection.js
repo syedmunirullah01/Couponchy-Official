@@ -165,10 +165,10 @@ function formatStoreCount(count) {
   return `${count}+`;
 }
 
-export default function HeroSection({ hero, countryCode = DEFAULT_COUNTRY_CODE, totalStoresCount = 0 }) {
+export default function HeroSection({ hero, countryCode = DEFAULT_COUNTRY_CODE, totalStoresCount = 0, initialStores = [] }) {
   const router = useRouter();
   const [searchValue, setSearchValue] = useState("");
-  const [stores, setStores] = useState([]);
+  const [stores, setStores] = useState(initialStores);
   const [hoveredCard, setHoveredCard] = useState(null);
   const cards = hero?.cards?.length ? hero.cards : COUPON_CARDS;
   const stats = hero?.stats?.length ? hero.stats : STATS;
@@ -181,24 +181,8 @@ export default function HeroSection({ hero, countryCode = DEFAULT_COUNTRY_CODE, 
   const formRef = useRef(null);
 
   useEffect(() => {
-    let cancelled = false;
-    async function loadStores() {
-      try {
-        const res = await fetch(`/api/stores?country=${countryCode}`, { cache: "no-store" });
-        const payload = await res.json();
-        if (!cancelled) setStores(Array.isArray(payload.data) ? payload.data : []);
-      } catch {
-        if (!cancelled) setStores([]);
-      }
-    }
-    const delayTimer = setTimeout(() => {
-      loadStores();
-    }, 1000);
-    return () => {
-      cancelled = true;
-      clearTimeout(delayTimer);
-    };
-  }, [countryCode]);
+    setStores(initialStores);
+  }, [initialStores]);
 
   const query = searchValue.trim().toLowerCase();
   const filteredStores = query

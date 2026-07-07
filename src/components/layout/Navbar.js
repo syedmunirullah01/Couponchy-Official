@@ -187,7 +187,13 @@ function isExactStoreMatch(store, query) {
   return [store.name, store.slug].filter(Boolean).some((value) => value.trim().toLowerCase() === query);
 }
 
-export default function Navbar() {
+export default function Navbar({
+  initialCategories = [],
+  initialStores = [],
+  initialOffers = [],
+  initialEvents = [],
+  initialCountries = SUPPORTED_COUNTRIES,
+}) {
   const pathname = usePathname();
   const pathWithoutCountry = removeCountryPrefix(pathname);
   const router = useRouter();
@@ -202,11 +208,11 @@ export default function Navbar() {
   const [countryDropdownOpen, setCountryDropdownOpen] = useState(false);
   const [mobileCountryDropdownOpen, setMobileCountryDropdownOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
-  const [categories, setCategories] = useState([]);
-  const [stores, setStores] = useState([]);
-  const [offers, setOffers] = useState([]);
-  const [events, setEvents] = useState([]);
-  const [countries, setCountries] = useState(SUPPORTED_COUNTRIES);
+  const [categories, setCategories] = useState(initialCategories);
+  const [stores, setStores] = useState(initialStores);
+  const [offers, setOffers] = useState(initialOffers);
+  const [events, setEvents] = useState(initialEvents);
+  const [countries, setCountries] = useState(initialCountries);
   const [activeCategorySlug, setActiveCategorySlug] = useState("");
   const [activeStoreSlug, setActiveStoreSlug] = useState("");
   const [allCategoriesMode, setAllCategoriesMode] = useState(false);
@@ -233,69 +239,25 @@ export default function Navbar() {
   const selectedCountry = getCountryByCode(selectedCountryCode, countries);
 
   useEffect(() => {
-    let cancelled = false;
-
-    async function loadNavigationData() {
-      try {
-        const [categoriesResponse, storesResponse, offersResponse, countriesResponse, eventsResponse] = await Promise.all([
-          fetch("/api/categories", { cache: "no-store" }),
-          fetch(`/api/stores?country=${selectedCountryCode}`, { cache: "no-store" }),
-          fetch(`/api/offers?country=${selectedCountryCode}`, { cache: "no-store" }),
-          fetch("/api/public/countries", { cache: "no-store" }),
-          fetch("/api/public/events", { cache: "no-store" }),
-        ]);
-
-        const [categoriesPayload, storesPayload, offersPayload, countriesPayload, eventsPayload] = await Promise.all([
-          categoriesResponse.json(),
-          storesResponse.json(),
-          offersResponse.json(),
-          countriesResponse.json(),
-          eventsResponse.json(),
-        ]);
-
-        if (cancelled) {
-          return;
+    if (categories.length > 0) {
+      setActiveCategorySlug((current) => {
+        if (current && categories.some((item) => item.slug === current)) {
+          return current;
         }
-
-        const nextCategories = Array.isArray(categoriesPayload.data) ? categoriesPayload.data : [];
-        const nextStores = Array.isArray(storesPayload.data) ? storesPayload.data : [];
-        const nextOffers = Array.isArray(offersPayload.data) ? offersPayload.data : [];
-        const nextCountries = sanitizeCountryList(countriesPayload.data || SUPPORTED_COUNTRIES);
-
-        setCategories(nextCategories);
-        setStores(nextStores);
-        setOffers(nextOffers);
-        setCountries(nextCountries);
-        setEvents(Array.isArray(eventsPayload.data) ? eventsPayload.data : []);
-
-        setActiveCategorySlug((current) => {
-          if (current && nextCategories.some((item) => item.slug === current)) {
-            return current;
-          }
-
-          const categoryFromPath = nextCategories.find((item) => pathname.includes(`/${item.slug}`));
-          return categoryFromPath?.slug || nextCategories[0]?.slug || "";
-        });
-      } catch {
-        if (!cancelled) {
-          setCategories([]);
-          setStores([]);
-          setOffers([]);
-          setCountries(SUPPORTED_COUNTRIES);
-          setEvents([]);
-        }
-      }
+        const categoryFromPath = categories.find((item) => pathname.includes(`/${item.slug}`));
+        return categoryFromPath?.slug || categories[0]?.slug || "";
+      });
     }
+  }, [pathname, categories]);
 
-    const delayTimer = setTimeout(() => {
-      loadNavigationData();
-    }, 1200);
-
-    return () => {
-      cancelled = true;
-      clearTimeout(delayTimer);
-    };
-  }, [pathname, selectedCountryCode]);
+  // Sync props to state on layout updates
+  useEffect(() => {
+    setCategories(initialCategories);
+    setStores(initialStores);
+    setOffers(initialOffers);
+    setEvents(initialEvents);
+    setCountries(initialCountries);
+  }, [initialCategories, initialStores, initialOffers, initialEvents, initialCountries]);
 
   function handleCountryChange(nextCountryCode) {
     const normalizedCountryCode = normalizeCountryCode(nextCountryCode);
