@@ -915,16 +915,16 @@ export default function HeroSection({ hero, countryCode = DEFAULT_COUNTRY_CODE, 
           75%, 100% { transform: scale(2); opacity: 0; }
         }
         @keyframes cardFloat1 {
-          0%, 100% { translate: 0 0px; }
-          50%       { translate: 0 -8px; }
+          0%, 100% { transform: translateY(0); }
+          50%       { transform: translateY(-8px); }
         }
         @keyframes cardFloat2 {
-          0%, 100% { translate: 0 0px; }
-          50%       { translate: 0 -10px; }
+          0%, 100% { transform: translateY(0); }
+          50%       { transform: translateY(-10px); }
         }
         @keyframes cardFloat3 {
-          0%, 100% { translate: 0 0px; }
-          50%       { translate: 0 -6px; }
+          0%, 100% { transform: translateY(0); }
+          50%       { transform: translateY(-6px); }
         }
         @media (min-width: 1024px) {
           .hero-grid {

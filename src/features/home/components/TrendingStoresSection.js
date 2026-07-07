@@ -433,17 +433,13 @@ export default function TrendingStoresSection({
 
       <style>{`
         @keyframes pulse {
-          0% {
-            transform: scale(0.95);
-            box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.7);
+          0%, 100% {
+            transform: scale(0.8);
+            opacity: 0.6;
           }
-          70% {
-            transform: scale(1);
-            box-shadow: 0 0 0 6px rgba(139, 92, 246, 0);
-          }
-          100% {
-            transform: scale(0.95);
-            box-shadow: 0 0 0 0 rgba(139, 92, 246, 0);
+          50% {
+            transform: scale(1.15);
+            opacity: 1;
           }
         }
         .explore-more-btn {

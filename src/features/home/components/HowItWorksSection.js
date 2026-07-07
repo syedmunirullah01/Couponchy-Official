@@ -68,7 +68,7 @@ export default function HowItWorksSection() {
           <h3 className="text-[18px] font-black text-white tracking-tight mt-6">
             1. Scan & Discover
           </h3>
-          <p className="mt-2 text-xs leading-relaxed text-white/40 font-medium">
+          <p className="mt-2 text-xs leading-relaxed text-white/60 font-medium">
             Our automated crawlers scan thousands of retail brands every minute to discover new coupons, promo codes, and special clearance events.
           </p>
 
@@ -78,7 +78,7 @@ export default function HowItWorksSection() {
             
             <div className="flex items-center gap-2 border-b border-white/5 pb-2 mb-3">
               <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-primary)] animate-pulse" />
-              <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest">Live Discovery Feed</span>
+              <span className="text-[9px] font-bold text-white/60 uppercase tracking-widest">Live Discovery Feed</span>
             </div>
 
             <div className="flex flex-col gap-2 relative">
@@ -121,14 +121,14 @@ export default function HowItWorksSection() {
           <h3 className="text-[18px] font-black text-white tracking-tight mt-6">
             2. Test & Verify
           </h3>
-          <p className="mt-2 text-xs leading-relaxed text-white/40 font-medium">
+          <p className="mt-2 text-xs leading-relaxed text-white/60 font-medium">
             We simulate checkout carts on headless Chrome browsers, applying discount codes automatically. If a code fails or is expired, we throw it out instantly.
           </p>
 
           {/* Test & Verification Visual Mockup */}
           <div className="relative mt-6 rounded-2xl border border-white/5 bg-black/60 p-4 h-[160px] flex flex-col justify-between overflow-hidden">
             <div className="flex items-center justify-between border-b border-white/5 pb-2">
-              <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest">Cart Simulation</span>
+              <span className="text-[9px] font-bold text-white/60 uppercase tracking-widest">Cart Simulation</span>
               <span className="text-[8px] font-mono text-[#d946ef] bg-[#d946ef]/10 border border-[#d946ef]/20 rounded-full px-2 py-0.5 animate-pulse">Running Bot...</span>
             </div>
 
@@ -193,7 +193,7 @@ export default function HowItWorksSection() {
           <h3 className="text-[18px] font-black text-white tracking-tight mt-6">
             3. Copy & Save
           </h3>
-          <p className="mt-2 text-xs leading-relaxed text-white/40 font-medium">
+          <p className="mt-2 text-xs leading-relaxed text-white/60 font-medium">
             Only the working, highest-saving codes are published to the vaults. One click copies the code and routes you to the store for instant checkout savings.
           </p>
 
@@ -205,7 +205,7 @@ export default function HowItWorksSection() {
             <div className="relative w-full max-w-[190px] rounded-xl border border-[#60a5fa]/20 bg-[#60a5fa]/5 px-3.5 py-3 shadow-[0_0_15px_rgba(96,165,250,0.1)] flex items-center justify-between">
               <div className="text-left">
                 <p className="text-[14px] font-black text-white leading-none">NIKE STORE</p>
-                <p className="text-[7px] font-bold text-white/40 uppercase tracking-widest mt-1">Verified Coupon</p>
+                <p className="text-[7px] font-extrabold tracking-wider leading-none mt-0.5 text-white/70">Verified Coupon</p>
               </div>
               <span className="text-[11px] font-black text-[#60a5fa]">25% OFF</span>
             </div>

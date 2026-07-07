@@ -145,7 +145,7 @@ export default function FeaturedCouponCard({ coupon, index = 0 }) {
         </div>
 
         <div className="mt-6 flex flex-col">
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/55">
             {coupon.tag || "EXCLUSIVE DEAL"}
           </p>
           <h3
@@ -158,14 +158,14 @@ export default function FeaturedCouponCard({ coupon, index = 0 }) {
           >
             {coupon.title || (isDeal ? "Exclusive Deal" : "Exclusive Coupon")}
           </h3>
-          <p className="mt-3 text-xs leading-relaxed text-white/40 font-medium line-clamp-2 min-h-[2.5rem]">
+          <p className="mt-3 text-xs leading-relaxed text-white/60 font-medium line-clamp-2 min-h-[2.5rem]">
             {coupon.description}
           </p>
 
           {/* Timer countdown below description */}
           <div className="mt-5 flex items-center gap-3">
-            <div className="flex items-center gap-1.5 text-white/40">
-              <svg className="h-4 w-4 text-white/30" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+            <div className="flex items-center gap-1.5 text-white/60">
+              <svg className="h-4 w-4 text-white/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
               </svg>
               <span className="text-[10px] font-bold uppercase tracking-wider">Expires in:</span>
