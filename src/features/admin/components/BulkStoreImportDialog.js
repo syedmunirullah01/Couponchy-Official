@@ -11,29 +11,22 @@ import { DEFAULT_COUNTRY_CODE, normalizeCountryCode } from "@/lib/countries";
 import { cn } from "@/lib/utils";
 
 const TEMPLATE_HEADERS = [
-  "name",
-  "slug",
-  "category",
-  "countryCode",
-  "description",
-  "trustStatus",
-  "affiliateLink",
-  "logoText",
-  "logoFile",
-  "contentIntroTitle",
-  "contentIntroParagraph1",
-  "contentIntroParagraph2",
-  "contentWhyItemsText",
-  "contentOutro",
-  "faq1Question",
-  "faq1Answer",
-  "faq2Question",
-  "faq2Answer",
-  "faq3Question",
-  "faq3Answer",
+  "Store Name",
+  "Slug",
+  "Category",
+  "Country",
+  "Trust Status",
+  "Affiliate Tracking Link",
 ];
 const TRUST_STATUSES = new Set(["Verified", "Trusted", "Pending", "Active"]);
-const REQUIRED_HEADERS = ["name"];
+const REQUIRED_HEADERS = [
+  "Store Name",
+  "Slug",
+  "Category",
+  "Country",
+  "Trust Status",
+  "Affiliate Tracking Link",
+];
 
 function Spinner() {
   return (
@@ -116,7 +109,7 @@ export default function BulkStoreImportDialog({ open, onOpenChange, stores, cate
   function downloadTemplate() {
     const csv = [
       TEMPLATE_HEADERS.join(","),
-      'Nike Store,nike-store,Fashion,US,"Editorial summary for the Nike page with at least twenty characters.",Active,https://example.com/track/nike,Nike,nike.png,More Information On Nike Deals,"Nike intro paragraph one.","Nike intro paragraph two.","Verified deals\\nCoupon codes\\nStore updates","Nike outro copy","How often are Nike offers updated?","Offers are reviewed regularly.","Are Nike deals verified?","Couponchy tracks trust signals.","Can I use both deals and coupons?","Yes, both can appear on the store page."',
+      'Nike Store,nike-store,Fashion,US,Verified,https://example.com/track/nike',
     ].join("\n");
 
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -183,7 +176,7 @@ export default function BulkStoreImportDialog({ open, onOpenChange, stores, cate
     if (missingHeaders.length) {
       const headerErrors = missingHeaders.map((header) => ({
         rowNumber: 1,
-        reason: `Missing required CSV header: ${header}`,
+        reason: `Missing required CSV header: "${header}"`,
       }));
       return {
         validRows: [],
@@ -206,20 +199,22 @@ export default function BulkStoreImportDialog({ open, onOpenChange, stores, cate
 
     parsedRows.forEach((row, index) => {
       const rowNumber = index + 2;
-      const name = normalizeValue(row.name);
-      const incomingSlug = normalizeValue(row.slug);
+      const name = normalizeValue(row["Store Name"]);
+      const incomingSlug = normalizeValue(row["Slug"]);
       const derivedSlug = slugify(incomingSlug || name);
-      const category = normalizeValue(row.category) || "General";
+      const category = normalizeValue(row["Category"]);
       const matchedCategory = categoryNameMap.get(category.toLowerCase());
-      const description = normalizeValue(row.description);
-      const trustStatus = normalizeValue(row.trustStatus);
-      const affiliateLink = normalizeValue(row.affiliateLink);
-      const logoText = normalizeValue(row.logoText);
-      const logoFile = normalizeValue(row.logoFile);
-      const countryCode = normalizeCountryCode(row.countryCode || row.country);
+      const trustStatus = normalizeValue(row["Trust Status"]);
+      const affiliateLink = normalizeValue(row["Affiliate Tracking Link"]);
+      const countryCode = normalizeCountryCode(row["Country"]);
 
       if (!name) {
-        nextErrors.push({ rowNumber, reason: "Store name is required." });
+        nextErrors.push({ rowNumber, reason: "Store Name is required." });
+        return;
+      }
+
+      if (!incomingSlug) {
+        nextErrors.push({ rowNumber, reason: "Slug is required." });
         return;
       }
 
@@ -233,15 +228,38 @@ export default function BulkStoreImportDialog({ open, onOpenChange, stores, cate
         return;
       }
 
-      if (!matchedCategory) {
-        nextErrors.push({ rowNumber, reason: "Category must match an existing managed category." });
+      if (!category) {
+        nextErrors.push({ rowNumber, reason: "Category is required." });
         return;
       }
 
+      if (!matchedCategory) {
+        nextErrors.push({ rowNumber, reason: `Category "${category}" must match an existing managed category.` });
+        return;
+      }
 
+      if (!row["Country"]) {
+        nextErrors.push({ rowNumber, reason: "Country is required." });
+        return;
+      }
 
       if (!allowedCountries.has(countryCode)) {
-        nextErrors.push({ rowNumber, reason: "Country code is not available in settings." });
+        nextErrors.push({ rowNumber, reason: `Country "${row["Country"]}" is not available in settings.` });
+        return;
+      }
+
+      if (!trustStatus) {
+        nextErrors.push({ rowNumber, reason: "Trust Status is required." });
+        return;
+      }
+
+      if (!TRUST_STATUSES.has(trustStatus)) {
+        nextErrors.push({ rowNumber, reason: `Trust Status must be one of: ${[...TRUST_STATUSES].join(", ")}` });
+        return;
+      }
+
+      if (!affiliateLink) {
+        nextErrors.push({ rowNumber, reason: "Affiliate Tracking Link is required." });
         return;
       }
 
@@ -259,22 +277,22 @@ export default function BulkStoreImportDialog({ open, onOpenChange, stores, cate
         category: matchedCategory.name,
         categorySlug: matchedCategory.slug,
         countryCode,
-        description,
-        trustStatus: TRUST_STATUSES.has(trustStatus) ? trustStatus : "Active",
+        description: `${name} deals and coupons updated by Couponchy.`,
+        trustStatus,
         affiliateLink,
-        logoText: logoText || name,
-        logoFile,
-        contentIntroTitle: normalizeValue(row.contentIntroTitle),
-        contentIntroParagraph1: normalizeValue(row.contentIntroParagraph1),
-        contentIntroParagraph2: normalizeValue(row.contentIntroParagraph2),
-        contentWhyItemsText: normalizeValue(row.contentWhyItemsText).replace(/\\n/g, "\n"),
-        contentOutro: normalizeValue(row.contentOutro),
-        faq1Question: normalizeValue(row.faq1Question),
-        faq1Answer: normalizeValue(row.faq1Answer),
-        faq2Question: normalizeValue(row.faq2Question),
-        faq2Answer: normalizeValue(row.faq2Answer),
-        faq3Question: normalizeValue(row.faq3Question),
-        faq3Answer: normalizeValue(row.faq3Answer),
+        logoText: name,
+        logoFile: "",
+        contentIntroTitle: "",
+        contentIntroParagraph1: "",
+        contentIntroParagraph2: "",
+        contentWhyItemsText: "",
+        contentOutro: "",
+        faq1Question: "",
+        faq1Answer: "",
+        faq2Question: "",
+        faq2Answer: "",
+        faq3Question: "",
+        faq3Answer: "",
       });
     });
 
