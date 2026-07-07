@@ -19,12 +19,9 @@ import {
 
 const PRIMARY_NAV = [
   { label: "Find Merchants", href: "/stores", kind: "mega" },
-  {
-    label: "Events", href: "#", kind
-      : "events"
-  },
-  { label: "Exclusive", href: "/exclusive" },
-  { label: "Blog", href: "/blog" },
+  { label: "Events", href: "#", kind: "events" },
+  { label: "Exclusive", href: "/exclusive", kind: "exclusive" },
+  { label: "Blog", href: "/blog", kind: "blog" },
 ];
 
 const POPULAR_STORE_NAMES = ["Nike", "Old Navy", "Fashion Nova", "SHEIN", "SKIMS", "DSW", "Carter's"];
@@ -219,6 +216,23 @@ export default function Navbar({
   const [mobileDealsOpen, setMobileDealsOpen] = useState(false);
   const [mobileActiveCategorySlug, setMobileActiveCategorySlug] = useState("");
   const [desktopSearchOpen, setDesktopSearchOpen] = useState(false);
+  const [exclusiveOpen, setExclusiveOpen] = useState(false);
+  const [blogOpen, setBlogOpen] = useState(false);
+  const [blogPosts, setBlogPosts] = useState([]);
+
+  useEffect(() => {
+    async function loadBlogs() {
+      try {
+        const res = await fetch("/api/blog");
+        const json = await res.json();
+        setBlogPosts(json.data || []);
+      } catch (e) {
+        console.error("Failed to load blog posts in Navbar:", e);
+      }
+    }
+    loadBlogs();
+  }, []);
+
   const [selectedCountryCode, setSelectedCountryCode] = useState(() => {
     const countryFromPath = getCountryCodeFromPathname(pathname);
     if (countryFromPath) {
@@ -274,6 +288,8 @@ export default function Navbar({
       if (!menuRef.current?.contains(event.target)) {
         setMegaOpen(false);
         setEventsOpen(false);
+        setExclusiveOpen(false);
+        setBlogOpen(false);
       }
       if (!countryDropdownRef.current?.contains(event.target)) {
         setCountryDropdownOpen(false);
@@ -295,6 +311,8 @@ export default function Navbar({
         setMobileEventsOpen(false);
         setCountryDropdownOpen(false);
         setMobileCountryDropdownOpen(false);
+        setExclusiveOpen(false);
+        setBlogOpen(false);
       }
     }
 
@@ -329,6 +347,20 @@ export default function Navbar({
   }, [countryStores]);
 
   const storeMap = useMemo(() => new Map(countryStores.map((store) => [store.slug, store])), [countryStores]);
+
+  const exclusiveOffers = useMemo(() => {
+    const activeCode = selectedCountryCode.toUpperCase();
+    const countryFilteredOffers = offers.filter((o) => {
+      const store = storeMap.get(o.storeSlug);
+      return store && normalizeCountryCode(store.countryCode) === activeCode;
+    });
+
+    return countryFilteredOffers.filter((offer) => {
+      const isActive = offer.status?.toLowerCase() === "active";
+      const searchableText = `${offer.title} ${offer.description} ${offer.code} ${offer.ctaLabel}`.toLowerCase();
+      return isActive && searchableText.includes("exclusive");
+    });
+  }, [offers, storeMap, selectedCountryCode]);
 
   const offersByStoreSlug = useMemo(() => {
     return offers.reduce((accumulator, offer) => {
@@ -784,6 +816,128 @@ export default function Navbar({
                         </div>
                       </div>
                     ) : null}
+                  </div>
+                );
+              }
+
+              if (item.kind === "exclusive") {
+                const visibleExclusive = exclusiveOffers.slice(0, 3);
+                return (
+                  <div
+                    key={item.label}
+                    className="relative"
+                    onMouseEnter={() => setExclusiveOpen(true)}
+                    onMouseLeave={() => setExclusiveOpen(false)}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setExclusiveOpen((current) => !current)}
+                      className="flex items-center gap-1.5 font-sans text-sm font-bold text-white transition hover:text-white/80"
+                      aria-expanded={exclusiveOpen}
+                      aria-haspopup="true"
+                    >
+                      {item.label}
+                      <ChevronDownIcon className={cn("h-3.5 w-3.5 transition-transform", exclusiveOpen ? "rotate-180" : "rotate-0")} />
+                    </button>
+
+                    {exclusiveOpen && (
+                      <div className="absolute left-0 top-full pt-3 z-50">
+                        <div className="absolute inset-x-0 -top-3 h-3" />
+                        <div
+                          className="w-[200px] overflow-hidden rounded-[16px] border border-white/10 bg-[#0c0c0c] p-2 shadow-[0_20px_50px_rgba(0,0,0,0.85)]"
+                        >
+                          <div className="grid gap-1">
+                            {visibleExclusive.length ? (
+                              visibleExclusive.map((offer) => (
+                                <Link
+                                  key={offer.id}
+                                  href={buildCountryPath(`/stores/${offer.storeSlug}`, selectedCountryCode)}
+                                  className="flex items-center justify-between rounded-[10px] px-3.5 py-2.5 text-left text-white/80 transition hover:bg-white/5 hover:text-white"
+                                >
+                                  <span className="truncate text-[0.88rem] font-medium max-w-[140px]">{offer.storeName}</span>
+                                  <ChevronRightIcon className="h-3.5 w-3.5 text-white/30 shrink-0" />
+                                </Link>
+                              ))
+                            ) : (
+                              <div className="px-3.5 py-2.5 text-[0.82rem] text-white/45">
+                                No offers yet.
+                              </div>
+                            )}
+                            <div className="mt-1 border-t border-white/5 pt-1">
+                              <Link
+                                href={buildCountryPath("/exclusive", selectedCountryCode)}
+                                onClick={() => setExclusiveOpen(false)}
+                                className="flex items-center justify-between rounded-[10px] bg-white/5 px-3.5 py-2 text-center text-xs font-bold text-[var(--accent)] hover:bg-white/10 transition"
+                              >
+                                <span>See More</span>
+                                <span>→</span>
+                              </Link>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
+              if (item.kind === "blog") {
+                const visibleBlogs = blogPosts.slice(0, 3);
+                return (
+                  <div
+                    key={item.label}
+                    className="relative"
+                    onMouseEnter={() => setBlogOpen(true)}
+                    onMouseLeave={() => setBlogOpen(false)}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setBlogOpen((current) => !current)}
+                      className="flex items-center gap-1.5 font-sans text-sm font-bold text-white transition hover:text-white/80"
+                      aria-expanded={blogOpen}
+                      aria-haspopup="true"
+                    >
+                      {item.label}
+                      <ChevronDownIcon className={cn("h-3.5 w-3.5 transition-transform", blogOpen ? "rotate-180" : "rotate-0")} />
+                    </button>
+
+                    {blogOpen && (
+                      <div className="absolute left-0 top-full pt-3 z-50">
+                        <div className="absolute inset-x-0 -top-3 h-3" />
+                        <div
+                          className="w-[200px] overflow-hidden rounded-[16px] border border-white/10 bg-[#0c0c0c] p-2 shadow-[0_20px_50px_rgba(0,0,0,0.85)]"
+                        >
+                          <div className="grid gap-1">
+                            {visibleBlogs.length ? (
+                              visibleBlogs.map((post) => (
+                                <Link
+                                  key={post.id || post.slug}
+                                  href={buildCountryPath(`/blog/${post.slug}`, selectedCountryCode)}
+                                  className="flex items-center justify-between rounded-[10px] px-3.5 py-2.5 text-left text-white/80 transition hover:bg-white/5 hover:text-white"
+                                >
+                                  <span className="truncate text-[0.88rem] font-medium max-w-[140px]">{post.title}</span>
+                                  <ChevronRightIcon className="h-3.5 w-3.5 text-white/30 shrink-0" />
+                                </Link>
+                              ))
+                            ) : (
+                              <div className="px-3.5 py-2.5 text-[0.82rem] text-white/45">
+                                No posts yet.
+                              </div>
+                            )}
+                            <div className="mt-1 border-t border-white/5 pt-1">
+                              <Link
+                                href={buildCountryPath("/blog", selectedCountryCode)}
+                                onClick={() => setBlogOpen(false)}
+                                className="flex items-center justify-between rounded-[10px] bg-white/5 px-3.5 py-2 text-center text-xs font-bold text-[var(--accent)] hover:bg-white/10 transition"
+                              >
+                                <span>See More</span>
+                                <span>→</span>
+                              </Link>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               }

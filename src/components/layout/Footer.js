@@ -303,19 +303,19 @@ export default async function Footer() {
                 <input
                   type="email"
                   placeholder="Your Email Address"
-                  className="h-14 w-full rounded-2xl border border-white/10 bg-[#050507] px-5 text-sm font-medium text-white outline-none transition-all placeholder:text-white/20 focus:border-[var(--color-primary)]/30 focus:bg-[#07070a]"
+                  className="h-12 w-full rounded-xl border border-white/10 bg-[#050507] px-5 text-sm font-medium text-white outline-none transition-all placeholder:text-white/20 focus:border-[var(--color-primary)]/30 focus:bg-[#07070a]"
                 />
                 <button
                   type="button"
-                  className="group/btn relative overflow-hidden flex flex-col items-center justify-center w-full h-16 rounded-2xl bg-[var(--color-primary)] text-black font-bold transition-all hover:scale-[1.01] hover:bg-[var(--color-primary-hover)] active:scale-[0.98] cursor-pointer"
+                  className="group/btn relative overflow-hidden flex items-center justify-center gap-2 w-full h-12 rounded-xl bg-[var(--color-primary)] text-black font-bold transition-all hover:scale-[1.01] hover:bg-[var(--color-primary-hover)] active:scale-[0.98] cursor-pointer"
                 >
                   {/* Shimmer Light Sweep Hover Effect */}
                   <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/35 to-transparent transition-transform duration-1000 group-hover/btn:translate-x-full" />
 
-                  <span className="relative z-10 text-[15px] font-bold">Subscribe Now</span>
-                  <span className="relative z-10 text-[18px] leading-none mt-0.5">→</span>
+                  <span className="relative z-10 text-[14px] font-extrabold">Subscribe Now</span>
+                  <span className="relative z-10 text-[16px] transition-transform duration-300 group-hover/btn:translate-x-1">→</span>
                 </button>
-                <p className="text-[10px] text-center text-white/20 font-bold uppercase tracking-[0.05em] mt-2">
+                <p className="text-[10px] text-center text-white/20 font-bold uppercase tracking-[0.05em] mt-1">
                   No Spam. Unsubscribe Anytime.
                 </p>
               </div>

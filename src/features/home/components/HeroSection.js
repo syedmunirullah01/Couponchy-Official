@@ -314,8 +314,8 @@ export default function HeroSection({ hero, countryCode = DEFAULT_COUNTRY_CODE, 
             gridTemplateColumns: "1fr",
             gap: "48px",
             alignItems: "center",
-            paddingTop: "40px",
-            paddingBottom: "16px",
+            paddingTop: "80px",
+            paddingBottom: "48px",
           }}
           className="hero-grid"
         >
@@ -354,11 +354,11 @@ export default function HeroSection({ hero, countryCode = DEFAULT_COUNTRY_CODE, 
               style={{
                 fontSize: "clamp(44px, 6vw, 76px)",
                 fontWeight: 900,
-                lineHeight: 0.92,
+                lineHeight: 1.05,
                 letterSpacing: "-0.04em",
                 color: "#ffffff",
                 margin: 0,
-                marginBottom: "8px",
+                marginBottom: "16px",
                 animation: "fadeSlideUp 0.7s 0.1s cubic-bezier(0.22,1,0.36,1) both",
               }}
             >
@@ -366,13 +366,13 @@ export default function HeroSection({ hero, countryCode = DEFAULT_COUNTRY_CODE, 
               <br />
               <span style={{ color: "var(--color-primary)" }}>{accent}</span>
               <br />
-              <span style={{ color: "#ffffff" }}>You Money.</span>
+              <span style={{ color: "#ffffff" }}>You Money</span>
             </h1>
 
             {/* Subtext */}
             <p
               style={{
-                marginTop: "24px",
+                marginTop: "32px",
                 fontSize: "16px",
                 lineHeight: 1.75,
                 color: "var(--color-muted)",
@@ -388,7 +388,7 @@ export default function HeroSection({ hero, countryCode = DEFAULT_COUNTRY_CODE, 
               ref={formRef}
               onSubmit={handleSearchSubmit}
               style={{
-                marginTop: "36px",
+                marginTop: "44px",
                 display: "flex",
                 alignItems: "center",
                 gap: "0",
