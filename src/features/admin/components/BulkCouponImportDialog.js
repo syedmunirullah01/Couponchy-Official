@@ -9,8 +9,18 @@ import { Card, CardContent } from "@/components/ui/Card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, useDialogA11yIds } from "@/components/ui/Dialog";
 import { cn } from "@/lib/utils";
 
-const TEMPLATE_HEADERS = ["storeSlug", "title", "description", "type", "code", "expiryDate", "status", "source", "affiliateLink"];
-const REQUIRED_FIELDS = ["storeSlug", "title", "type"];
+const TEMPLATE_HEADERS = [
+  "Store",
+  "Title",
+  "Description",
+  "Type",
+  "Affiliate Link",
+  "Expiry Date",
+  "Status",
+  "Position/Sort Order",
+  "Coupon Code",
+];
+const REQUIRED_FIELDS = ["Store", "Title", "Type"];
 
 function Spinner() {
   return (
@@ -162,7 +172,7 @@ export default function BulkCouponImportDialog({ open, onOpenChange, stores, off
   function downloadTemplate() {
     const csv = [
       TEMPLATE_HEADERS.join(","),
-      "nike-store,Spring launch coupon,Use this on selected sneakers,Coupon,NIKE20,2026-04-30,Active,Manual,https://example.com/track/nike",
+      "nike-store,Spring launch coupon,Use this on selected sneakers,Coupon,https://example.com/track/nike,2026-04-30,Active,1,NIKE20",
     ].join("\n");
 
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -214,7 +224,7 @@ export default function BulkCouponImportDialog({ open, onOpenChange, stores, off
       if (missingHeaders.length) {
         const headerErrors = missingHeaders.map((header) => ({
           rowNumber: 1,
-          reason: `Missing required CSV header: ${header}`,
+          reason: `Missing required CSV header: "${header}"`,
         }));
 
         setErrors(headerErrors);
@@ -238,28 +248,38 @@ export default function BulkCouponImportDialog({ open, onOpenChange, stores, off
 
       parsedRows.forEach((row, index) => {
         const rowNumber = index + 2;
-        const storeSlug = normalizeCsvValue(row.storeSlug).toLowerCase() || fallbackStoreSlug;
-        const title = normalizeCsvValue(row.title);
-        const description = normalizeCsvValue(row.description);
-        const type = normalizeType(row.type);
-        const code = normalizeCsvValue(row.code);
-        const expiryDate = normalizeExpiryDate(row.expiryDate);
-        const status = normalizeStatus(row.status);
-        const source = normalizeCsvValue(row.source) || "Manual";
-        const affiliateLink = normalizeCsvValue(row.affiliateLink);
+        const storeVal = normalizeCsvValue(row["Store"]);
+        const storeSlug = storeVal.toLowerCase() || fallbackStoreSlug;
+        const title = normalizeCsvValue(row["Title"]);
+        const description = normalizeCsvValue(row["Description"]);
+        const type = normalizeType(row["Type"]);
+        const code = normalizeCsvValue(row["Coupon Code"]);
+        const expiryDate = normalizeExpiryDate(row["Expiry Date"]);
+        const status = normalizeStatus(row["Status"]);
+        const source = "Manual";
+        const affiliateLink = normalizeCsvValue(row["Affiliate Link"]);
 
         if (storeSlug) {
           fallbackStoreSlug = storeSlug;
         }
 
-        const missingField = REQUIRED_FIELDS.find((field) => !({ storeSlug, title, type })[field]);
-        if (missingField) {
-          clientErrors.push({ rowNumber, reason: `Missing required field: ${missingField}` });
+        if (!storeVal && !fallbackStoreSlug) {
+          clientErrors.push({ rowNumber, reason: "Store slug is required." });
+          return;
+        }
+
+        if (!title) {
+          clientErrors.push({ rowNumber, reason: "Title is required." });
+          return;
+        }
+
+        if (!type) {
+          clientErrors.push({ rowNumber, reason: "Type must be either 'Coupon' or 'Deal'." });
           return;
         }
 
         if (type === "Coupon" && !code) {
-          clientErrors.push({ rowNumber, reason: "Coupon rows require a code." });
+          clientErrors.push({ rowNumber, reason: "Coupon rows require a Coupon Code." });
           return;
         }
 
@@ -308,6 +328,7 @@ export default function BulkCouponImportDialog({ open, onOpenChange, stores, off
           affiliateLink: affiliateLink || store.affiliateLink || "",
         });
       });
+
 
       setValidRows(nextValidRows);
       setErrors(clientErrors);
