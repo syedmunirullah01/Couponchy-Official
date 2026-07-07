@@ -223,7 +223,6 @@ export default function TrendingStoresSection({
                   : "1px solid rgba(255, 255, 255, 0.05)",
                 borderRadius: "24px",
                 padding: "26px 24px",
-                backdropFilter: "blur(12px)",
                 boxShadow: isHovered
                   ? "0 20px 40px rgba(0, 0, 0, 0.65), 0 0 20px rgba(139, 92, 246, 0.1), inset 0 1px 0 rgba(255,255,255,0.08)"
                   : "0 10px 30px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255,255,255,0.02)",

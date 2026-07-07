@@ -54,7 +54,7 @@ export default function HowItWorksSection() {
       <div className="grid gap-8 grid-cols-1 md:grid-cols-3">
         
         {/* Step 1: Scan & Discover */}
-        <article className="group relative flex flex-col overflow-hidden rounded-[28px] border border-white/5 bg-[#09090c]/80 p-8 shadow-2xl backdrop-blur-xl transition duration-500 hover:-translate-y-1.5 hover:border-[var(--color-primary)]/20 hover:shadow-[0_20px_45px_rgba(139,92,246,0.06)]">
+        <article className="group relative flex flex-col overflow-hidden rounded-[28px] border border-white/5 bg-[#09090c]/90 p-8 shadow-2xl transition duration-500 hover:-translate-y-1.5 hover:border-[var(--color-primary)]/20 hover:shadow-[0_20px_45px_rgba(139,92,246,0.06)]">
           <span className="text-6xl font-black text-white/[0.02] tracking-tight absolute top-4 right-6 select-none group-hover:text-white/[0.04] transition-colors duration-300">
             01
           </span>
@@ -107,7 +107,7 @@ export default function HowItWorksSection() {
         </article>
 
         {/* Step 2: Test & Verify */}
-        <article className="group relative flex flex-col overflow-hidden rounded-[28px] border border-white/5 bg-[#09090c]/80 p-8 shadow-2xl backdrop-blur-xl transition duration-500 hover:-translate-y-1.5 hover:border-[#d946ef]/20 hover:shadow-[0_20px_45px_rgba(217,70,239,0.06)]">
+        <article className="group relative flex flex-col overflow-hidden rounded-[28px] border border-white/5 bg-[#09090c]/90 p-8 shadow-2xl transition duration-500 hover:-translate-y-1.5 hover:border-[#d946ef]/20 hover:shadow-[0_20px_45px_rgba(217,70,239,0.06)]">
           <span className="text-6xl font-black text-white/[0.02] tracking-tight absolute top-4 right-6 select-none group-hover:text-white/[0.04] transition-colors duration-300">
             02
           </span>
@@ -179,7 +179,7 @@ export default function HowItWorksSection() {
         </article>
 
         {/* Step 3: Copy & Save */}
-        <article className="group relative flex flex-col overflow-hidden rounded-[28px] border border-white/5 bg-[#09090c]/80 p-8 shadow-2xl backdrop-blur-xl transition duration-500 hover:-translate-y-1.5 hover:border-[#60a5fa]/20 hover:shadow-[0_20px_45px_rgba(96,165,250,0.06)]">
+        <article className="group relative flex flex-col overflow-hidden rounded-[28px] border border-white/5 bg-[#09090c]/90 p-8 shadow-2xl transition duration-500 hover:-translate-y-1.5 hover:border-[#60a5fa]/20 hover:shadow-[0_20px_45px_rgba(96,165,250,0.06)]">
           <span className="text-6xl font-black text-white/[0.02] tracking-tight absolute top-4 right-6 select-none group-hover:text-white/[0.04] transition-colors duration-300">
             03
           </span>

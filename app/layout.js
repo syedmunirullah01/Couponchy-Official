@@ -8,6 +8,7 @@ import { getSettings } from "@/server/repositories/settings-repository";
 const plusJakartaSans = Plus_Jakarta_Sans({
   variable: "--font-plus-jakarta",
   subsets: ["latin"],
+  display: "swap",
 });
 
 export async function generateMetadata() {
