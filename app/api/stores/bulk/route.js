@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import JSZip from "jszip";
 import { requirePermission } from "@/server/auth";
-import { upsertStoresBulk, getAllStores } from "@/server/repositories/stores-repository";
+import { upsertStoresBulk, getAllStores, updateStore } from "@/server/repositories/stores-repository";
 import { getAllCategories } from "@/server/repositories/categories-repository";
 import { getSettings } from "@/server/repositories/settings-repository";
 import { uploadImageBuffer } from "@/server/cloudinary";
@@ -55,7 +55,81 @@ export async function POST(request) {
     }
 
     if (!rows.length) {
-      return NextResponse.json({ error: "No store rows were provided." }, { status: 400 });
+      if (logoZipFile) {
+        const zipBuffer = Buffer.from(await logoZipFile.arrayBuffer());
+        const zip = await JSZip.loadAsync(zipBuffer);
+        const fileEntries = Object.values(zip.files).filter((file) => !file.dir);
+
+        const existingStores = await getAllStores();
+        const existingStoresMap = new Map(existingStores.map((store) => [store.slug, store]));
+
+        const matchedEntries = [];
+        for (const entry of fileEntries) {
+          const fileName = entry.name.split("/").at(-1) || "";
+          const baseName = fileName.replace(/\.[^.]+$/, "").toLowerCase();
+          const ext = getExtension(fileName);
+          
+          if (!ALLOWED_LOGO_EXTENSIONS.has(ext)) {
+            continue;
+          }
+
+          const existingStore = existingStoresMap.get(baseName);
+          if (existingStore) {
+            matchedEntries.push({
+              entry,
+              store: existingStore,
+              ext,
+              fileName,
+            });
+          }
+        }
+
+        const updatedStores = await Promise.all(
+          matchedEntries.map(async ({ entry, store, ext }) => {
+            const fileBuffer = await entry.async("nodebuffer");
+            const cleanExt = ext.startsWith(".") ? ext.slice(1) : ext;
+            const mimeType = cleanExt === "svg" ? "image/svg+xml" : `image/${cleanExt}`;
+
+            try {
+              const uploadResult = await uploadImageBuffer(fileBuffer, {
+                folder: "couponchy/stores",
+                public_id: `${store.slug}.${cleanExt}`,
+                contentType: mimeType,
+                overwrite: true,
+                resource_type: "image",
+              });
+
+              const updated = await updateStore(store.slug, { logoImage: uploadResult.secure_url });
+              return updated;
+            } catch (err) {
+              console.error(`Failed to upload logo zip-only for ${store.slug}:`, err);
+              return null;
+            }
+          })
+        );
+
+        const successfulCount = updatedStores.filter(Boolean).length;
+        if (successfulCount > 0) {
+          revalidatePath("/", "layout");
+        }
+
+        return NextResponse.json(
+          {
+            data: {
+              totalRecords: fileEntries.length,
+              successfullyImported: 0,
+              duplicatesSkipped: 0,
+              validationErrors: fileEntries.length - matchedEntries.length,
+              matchedLogos: successfulCount,
+              missingLogos: fileEntries.length - successfulCount,
+              errors: [],
+            },
+          },
+          { status: 200 }
+        );
+      } else {
+        return NextResponse.json({ error: "No store rows were provided." }, { status: 400 });
+      }
     }
 
     const zipAssets = new Map();

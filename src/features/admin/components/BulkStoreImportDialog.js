@@ -351,8 +351,8 @@ export default function BulkStoreImportDialog({ open, onOpenChange, stores, cate
   }
 
   async function handleImport() {
-    if (!selectedFile) {
-      toast.error("Choose a CSV file first.");
+    if (!selectedFile && !selectedZipFile) {
+      toast.error("Choose a CSV file or Logos ZIP folder first.");
       return;
     }
 
@@ -360,8 +360,8 @@ export default function BulkStoreImportDialog({ open, onOpenChange, stores, cate
     let rowsToImport = validRows;
 
     try {
-      // If validation has not run yet, run it now automatically
-      if (!rowsToImport.length) {
+      // If a CSV file is present, validate it if not already done
+      if (selectedFile && !rowsToImport.length) {
         setIsValidating(true);
         const { validRows: nextValidRows, errors: nextErrors, summary } = await validateCsv(selectedFile, selectedFileContent);
         setValidRows(nextValidRows);
@@ -381,7 +381,9 @@ export default function BulkStoreImportDialog({ open, onOpenChange, stores, cate
         method: "POST",
         body: (() => {
           const formData = new FormData();
-          formData.append("rows", JSON.stringify(rowsToImport));
+          if (selectedFile) {
+            formData.append("rows", JSON.stringify(rowsToImport));
+          }
           if (selectedZipFile) {
             formData.append("logosZip", selectedZipFile);
           }
@@ -400,8 +402,11 @@ export default function BulkStoreImportDialog({ open, onOpenChange, stores, cate
       if (payload.data.successfullyImported > 0) {
         await onImported?.();
         toast.success(`${payload.data.successfullyImported} stores imported.`);
+      } else if (payload.data.matchedLogos > 0) {
+        await onImported?.();
+        toast.success(`${payload.data.matchedLogos} logos updated successfully.`);
       } else {
-        toast.error("Import finished, but no new stores were created.");
+        toast.error("Import finished, but no new stores or logos were updated.");
       }
     } catch (error) {
       toast.error(error.message || "Unable to import stores.");
@@ -558,7 +563,7 @@ export default function BulkStoreImportDialog({ open, onOpenChange, stores, cate
               type="button" 
               variant="outline" 
               className="w-full rounded-xl text-xs font-bold h-9.5 border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-soft)] text-[var(--text)] cursor-pointer disabled:opacity-50" 
-              disabled={isValidating || isUploading} 
+              disabled={!selectedFile || isValidating || isUploading} 
               onClick={runDryValidation}
             >
               {isValidating ? "Validating..." : "Run Validation"}
@@ -566,7 +571,7 @@ export default function BulkStoreImportDialog({ open, onOpenChange, stores, cate
             <Button 
               type="button" 
               className="w-full rounded-xl text-xs font-bold h-9.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white shadow-sm cursor-pointer disabled:opacity-50" 
-              disabled={!selectedFile || isUploading || isValidating} 
+              disabled={(!selectedFile && !selectedZipFile) || isUploading || isValidating} 
               onClick={handleImport}
             >
               {isUploading ? "Importing..." : "Import Stores"}
