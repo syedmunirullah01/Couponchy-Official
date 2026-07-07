@@ -707,7 +707,7 @@ export default function HeroSection({ hero, countryCode = DEFAULT_COUNTRY_CODE, 
                     >
                       {card.amount}
                     </div>
-                    <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.4)", letterSpacing: "0.1em", marginTop: "2px" }}>
+                    <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.75)", letterSpacing: "0.1em", marginTop: "2px" }}>
                       {card.max}
                     </div>
                   </div>
@@ -715,7 +715,7 @@ export default function HeroSection({ hero, countryCode = DEFAULT_COUNTRY_CODE, 
                     style={{
                       background: "rgba(139, 92, 246,0.12)",
                       border: "1px solid rgba(139, 92, 246,0.25)",
-                      color: "var(--color-primary)",
+                      color: "#d8b4fe",
                       fontSize: "9px",
                       fontWeight: 800,
                       letterSpacing: "0.18em",
@@ -743,7 +743,7 @@ export default function HeroSection({ hero, countryCode = DEFAULT_COUNTRY_CODE, 
                       fontSize: "9px",
                       letterSpacing: "0.14em",
                       textTransform: "uppercase",
-                      color: card.verified ? "var(--color-primary)" : "rgba(255,255,255,0.3)",
+                      color: card.verified ? "#d8b4fe" : "rgba(255,255,255,0.75)",
                       display: "flex",
                       alignItems: "center",
                       gap: "4px",

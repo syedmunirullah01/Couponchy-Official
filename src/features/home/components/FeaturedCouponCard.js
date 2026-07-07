@@ -172,21 +172,21 @@ export default function FeaturedCouponCard({ coupon, index = 0 }) {
             </div>
 
             <div className="flex items-center gap-1.5">
-              <div className="flex flex-col items-center justify-center h-10 w-10 rounded-xl bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 text-[var(--color-primary)] shadow-[0_0_10px_rgba(139,92,246,0.1)]">
+              <div className="flex flex-col items-center justify-center h-10 w-10 rounded-xl bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 text-[#d8b4fe] shadow-[0_0_10px_rgba(139,92,246,0.1)]">
                 <span className="text-xs font-bold leading-none">{timeLeft.days}</span>
-                <span className="text-[7px] font-extrabold tracking-wider leading-none mt-0.5 opacity-80 text-white/55">DAYS</span>
+                <span className="text-[7px] font-extrabold tracking-wider leading-none mt-0.5 text-white/75">DAYS</span>
               </div>
-              <div className="flex flex-col items-center justify-center h-10 w-10 rounded-xl bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 text-[var(--color-primary)] shadow-[0_0_10px_rgba(139,92,246,0.1)]">
+              <div className="flex flex-col items-center justify-center h-10 w-10 rounded-xl bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 text-[#d8b4fe] shadow-[0_0_10px_rgba(139,92,246,0.1)]">
                 <span className="text-xs font-bold leading-none">{timeLeft.hours}</span>
-                <span className="text-[7px] font-extrabold tracking-wider leading-none mt-0.5 opacity-80 text-white/55">HRS</span>
+                <span className="text-[7px] font-extrabold tracking-wider leading-none mt-0.5 text-white/75">HRS</span>
               </div>
-              <div className="flex flex-col items-center justify-center h-10 w-10 rounded-xl bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 text-[var(--color-primary)] shadow-[0_0_10px_rgba(139,92,246,0.1)]">
+              <div className="flex flex-col items-center justify-center h-10 w-10 rounded-xl bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 text-[#d8b4fe] shadow-[0_0_10px_rgba(139,92,246,0.1)]">
                 <span className="text-xs font-bold leading-none">{timeLeft.minutes}</span>
-                <span className="text-[7px] font-extrabold tracking-wider leading-none mt-0.5 opacity-80 text-white/55">MIN</span>
+                <span className="text-[7px] font-extrabold tracking-wider leading-none mt-0.5 text-white/75">MIN</span>
               </div>
-              <div className="flex flex-col items-center justify-center h-10 w-10 rounded-xl bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 text-[var(--color-primary)] shadow-[0_0_10px_rgba(139,92,246,0.1)]">
+              <div className="flex flex-col items-center justify-center h-10 w-10 rounded-xl bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 text-[#d8b4fe] shadow-[0_0_10px_rgba(139,92,246,0.1)]">
                 <span className="text-xs font-bold leading-none">{timeLeft.seconds}</span>
-                <span className="text-[7px] font-extrabold tracking-wider leading-none mt-0.5 opacity-80 text-white/55">SEC</span>
+                <span className="text-[7px] font-extrabold tracking-wider leading-none mt-0.5 text-white/75">SEC</span>
               </div>
             </div>
           </div>

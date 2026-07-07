@@ -193,7 +193,7 @@ export default function FeaturedProductsSection({ featuredProducts, title = "Fea
                         <div className="absolute inset-0 flex items-center justify-center text-sm text-[var(--muted)]">No image</div>
                       )}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
-                      <div className="absolute left-4 top-4 inline-flex rounded-full border border-[var(--border)] bg-black/45 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--color-primary)] backdrop-blur">
+                      <div className="absolute left-4 top-4 inline-flex rounded-full border border-[var(--border)] bg-black/45 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#d8b4fe] backdrop-blur">
                         {product.status || "Active"}
                       </div>
                     </div>

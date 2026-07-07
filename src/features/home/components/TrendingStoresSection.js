@@ -320,7 +320,7 @@ export default function TrendingStoresSection({
               <div
                 style={{
                   fontSize: "13px",
-                  color: "rgba(255, 255, 255, 0.65)",
+                  color: "rgba(255, 255, 255, 0.78)",
                   marginTop: "20px",
                   display: "flex",
                   alignItems: "center",
@@ -370,7 +370,7 @@ export default function TrendingStoresSection({
               <div
                 style={{
                   fontSize: "11px",
-                  color: isHovered ? "rgba(255, 255, 255, 0.5)" : "rgba(255, 255, 255, 0.3)",
+                  color: isHovered ? "rgba(255, 255, 255, 0.85)" : "rgba(255, 255, 255, 0.7)",
                   marginTop: "8px",
                   fontWeight: 700,
                   textTransform: "uppercase",

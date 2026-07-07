@@ -193,9 +193,9 @@ export default async function Footer() {
 
         {/* Large Watermark Site Title and Centered Social Link Row */}
         <div className="relative mb-20 mt-8 flex flex-col items-center text-center">
-          <h2 className="select-none text-[13vw] font-black uppercase leading-none tracking-tighter text-white/[0.03] notranslate">
+          <div aria-hidden="true" className="select-none text-[13vw] font-black uppercase leading-none tracking-tighter text-white/[0.03] notranslate">
             {settings.siteName || "Couponchy"}
-          </h2>
+          </div>
           <div className="mt-6 flex items-center justify-center gap-3 flex-wrap z-10">
             {socialLinks.map((link) => (
               <Link
