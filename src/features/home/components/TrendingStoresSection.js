@@ -309,8 +309,15 @@ export default function TrendingStoresSection({
                     color: isHovered ? "var(--color-primary-hover)" : "#ffffff",
                     textAlign: "left",
                     flex: 1,
+                    paddingRight: "72px",
+                    display: "-webkit-box",
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
                     transition: "color 0.3s ease",
                   }}
+                  title={store.name}
                 >
                   {store.name}
                 </div>
