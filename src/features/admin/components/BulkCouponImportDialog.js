@@ -104,6 +104,14 @@ function normalizeStatus(value) {
   return "Active";
 }
 
+function slugify(value) {
+  return String(value || "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 function parseCsvFile(input) {
   return new Promise((resolve, reject) => {
     Papa.parse(input, {
@@ -151,7 +159,7 @@ async function validateCsv(file, fileContent, storesBySlug, existingDuplicateKey
   parsedRows.forEach((row, index) => {
     const rowNumber = index + 2;
     const storeVal = normalizeCsvValue(row["Store"]);
-    const storeSlug = storeVal.toLowerCase() || fallbackStoreSlug;
+    const storeSlug = slugify(storeVal) || fallbackStoreSlug;
     const title = normalizeCsvValue(row["Title"]);
     const description = normalizeCsvValue(row["Description"]);
     const type = normalizeType(row["Type"]);
