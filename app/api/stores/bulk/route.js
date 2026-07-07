@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import JSZip from "jszip";
 import { requirePermission } from "@/server/auth";
-import { createStoresBulk, getAllStores } from "@/server/repositories/stores-repository";
+import { upsertStoresBulk, getAllStores } from "@/server/repositories/stores-repository";
 import { getAllCategories } from "@/server/repositories/categories-repository";
 import { getSettings } from "@/server/repositories/settings-repository";
 import { uploadImageBuffer } from "@/server/cloudinary";
@@ -82,12 +82,14 @@ export async function POST(request) {
     const allowedCountryCodes = new Set(
       (settings.general?.countries || []).map((country) => normalizeCountryCode(country.code))
     );
-    const preparedStores = [];
+    const existingStoresMap = new Map(existingStores.map((store) => [store.slug, store]));
+    const batchSlugs = new Set();
     const errors = [];
     let duplicatesSkipped = 0;
     let matchedLogos = 0;
     let missingLogos = 0;
 
+    const validatedRows = [];
     for (const [index, row] of rows.entries()) {
       const rowNumber = index + 2;
       const name = normalizeValue(row.name);
@@ -121,94 +123,133 @@ export async function POST(request) {
         continue;
       }
 
-
-
       if (!allowedCountryCodes.has(countryCode)) {
         errors.push({ rowNumber, reason: "Country code is not available in settings." });
         continue;
       }
 
-      if (existingSlugs.has(slug)) {
+      if (batchSlugs.has(slug)) {
         duplicatesSkipped += 1;
         continue;
       }
 
-      existingSlugs.add(slug);
+      batchSlugs.add(slug);
 
-      let logoImage = "";
-      if (logoFile && zipAssets.size) {
-        const normalizedLogoPath = normalizeZipPath(logoFile);
-        const directMatch =
-          zipAssets.get(normalizedLogoPath) ||
-          zipAssets.get(normalizedLogoPath.split("/").at(-1));
-        const fallbackBySlug = [...zipAssets.entries()].find(([filePath]) => {
-          const fileName = filePath.split("/").at(-1) || "";
-          const baseName = fileName.replace(/\.[^.]+$/, "");
-          return baseName === slug && ALLOWED_LOGO_EXTENSIONS.has(getExtension(fileName));
-        })?.[1];
-        const zipMatch = directMatch || fallbackBySlug;
-
-        if (zipMatch) {
-          let ext = ".png";
-          if (directMatch) {
-            ext = getExtension(logoFile) || ".png";
-          } else {
-            const matchedPath = [...zipAssets.keys()].find((filePath) => {
-              const fileName = filePath.split("/").at(-1) || "";
-              const baseName = fileName.replace(/\.[^.]+$/, "");
-              return baseName === slug && ALLOWED_LOGO_EXTENSIONS.has(getExtension(fileName));
-            });
-            if (matchedPath) {
-              ext = getExtension(matchedPath) || ".png";
-            }
-          }
-          const cleanExt = ext.startsWith(".") ? ext.slice(1) : ext;
-          const mimeType = cleanExt === "svg" ? "image/svg+xml" : `image/${cleanExt}`;
-
-          const uploadResult = await uploadImageBuffer(zipMatch, {
-            folder: "couponchy/stores",
-            public_id: `${slug}.${cleanExt}`,
-            contentType: mimeType,
-            overwrite: true,
-            resource_type: "image",
-          });
-
-          logoImage = uploadResult.secure_url;
-          matchedLogos += 1;
-        } else {
-          missingLogos += 1;
-        }
-      }
-
-      preparedStores.push({
+      validatedRows.push({
+        rowNumber,
         name,
         slug,
-        category: matchedCategory.name,
-        categorySlug: matchedCategory.slug,
+        matchedCategory,
         description,
-        trustStatus: ALLOWED_TRUST_STATUSES.has(trustStatusRaw) ? trustStatusRaw : "Active",
-        countryCode,
+        trustStatusRaw,
+        logoText,
         affiliateLink,
-        logoText: logoText || name,
-        logoImage,
-        contentIntroTitle: normalizeValue(row.contentIntroTitle),
-        contentIntroParagraph1: normalizeValue(row.contentIntroParagraph1),
-        contentIntroParagraph2: normalizeValue(row.contentIntroParagraph2),
-        contentWhyItemsText: normalizeValue(row.contentWhyItemsText).replace(/\\n/g, "\n"),
-        contentOutro: normalizeValue(row.contentOutro),
-        faq1Question: normalizeValue(row.faq1Question),
-        faq1Answer: normalizeValue(row.faq1Answer),
-        faq2Question: normalizeValue(row.faq2Question),
-        faq2Answer: normalizeValue(row.faq2Answer),
-        faq3Question: normalizeValue(row.faq3Question),
-        faq3Answer: normalizeValue(row.faq3Answer),
-        offersCount: 0,
-        isFeatured: false,
+        logoFile,
+        countryCode,
+        row,
       });
     }
 
+    const preparationResults = await Promise.all(
+      validatedRows.map(async ({
+        name,
+        slug,
+        matchedCategory,
+        description,
+        trustStatusRaw,
+        logoText,
+        affiliateLink,
+        logoFile,
+        countryCode,
+        row,
+      }) => {
+        const existingStore = existingStoresMap.get(slug);
+        let logoImage = existingStore ? existingStore.logoImage || "" : "";
+        let logoMatched = false;
+        let logoMissing = false;
+
+        if (zipAssets.size) {
+          const normalizedLogoPath = logoFile ? normalizeZipPath(logoFile) : "";
+          const directMatch = normalizedLogoPath ? (zipAssets.get(normalizedLogoPath) || zipAssets.get(normalizedLogoPath.split("/").at(-1))) : null;
+          const fallbackBySlug = [...zipAssets.entries()].find(([filePath]) => {
+            const fileName = filePath.split("/").at(-1) || "";
+            const baseName = fileName.replace(/\.[^.]+$/, "");
+            return baseName === slug && ALLOWED_LOGO_EXTENSIONS.has(getExtension(fileName));
+          })?.[1];
+          const zipMatch = directMatch || fallbackBySlug;
+
+          if (zipMatch) {
+            let ext = ".png";
+            if (directMatch) {
+              ext = getExtension(logoFile) || ".png";
+            } else {
+              const matchedPath = [...zipAssets.keys()].find((filePath) => {
+                const fileName = filePath.split("/").at(-1) || "";
+                const baseName = fileName.replace(/\.[^.]+$/, "");
+                return baseName === slug && ALLOWED_LOGO_EXTENSIONS.has(getExtension(fileName));
+              });
+              if (matchedPath) {
+                ext = getExtension(matchedPath) || ".png";
+              }
+            }
+            const cleanExt = ext.startsWith(".") ? ext.slice(1) : ext;
+            const mimeType = cleanExt === "svg" ? "image/svg+xml" : `image/${cleanExt}`;
+
+            try {
+              const uploadResult = await uploadImageBuffer(zipMatch, {
+                folder: "couponchy/stores",
+                public_id: `${slug}.${cleanExt}`,
+                contentType: mimeType,
+                overwrite: true,
+                resource_type: "image",
+              });
+              logoImage = uploadResult.secure_url;
+              logoMatched = true;
+            } catch (err) {
+              console.error(`Failed to upload logo for ${name}:`, err);
+              logoMissing = true;
+            }
+          } else if (logoFile) {
+            logoMissing = true;
+          }
+        }
+
+        const store = {
+          name,
+          slug,
+          category: matchedCategory.name,
+          categorySlug: matchedCategory.slug,
+          description,
+          trustStatus: ALLOWED_TRUST_STATUSES.has(trustStatusRaw) ? trustStatusRaw : "Active",
+          countryCode,
+          affiliateLink,
+          logoText: logoText || name,
+          logoImage,
+          contentIntroTitle: normalizeValue(row.contentIntroTitle),
+          contentIntroParagraph1: normalizeValue(row.contentIntroParagraph1),
+          contentIntroParagraph2: normalizeValue(row.contentIntroParagraph2),
+          contentWhyItemsText: normalizeValue(row.contentWhyItemsText).replace(/\\n/g, "\n"),
+          contentOutro: normalizeValue(row.contentOutro),
+          faq1Question: normalizeValue(row.faq1Question),
+          faq1Answer: normalizeValue(row.faq1Answer),
+          faq2Question: normalizeValue(row.faq2Question),
+          faq2Answer: normalizeValue(row.faq2Answer),
+          faq3Question: normalizeValue(row.faq3Question),
+          faq3Answer: normalizeValue(row.faq3Answer),
+          offersCount: existingStore ? existingStore.offersCount || 0 : 0,
+          isFeatured: existingStore ? Boolean(existingStore.isFeatured) : false,
+        };
+
+        return { store, logoMatched, logoMissing };
+      })
+    );
+
+    const preparedStores = preparationResults.map((r) => r.store);
+    matchedLogos = preparationResults.filter((r) => r.logoMatched).length;
+    missingLogos = preparationResults.filter((r) => r.logoMissing).length;
+
     if (preparedStores.length) {
-      await createStoresBulk(preparedStores);
+      await upsertStoresBulk(preparedStores);
       revalidatePath("/", "layout");
     }
 

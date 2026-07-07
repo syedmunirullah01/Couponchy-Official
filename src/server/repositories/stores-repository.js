@@ -154,6 +154,20 @@ export async function createStoresBulk(payloads) {
   return (data || []).map(mapDbStoreToJs);
 }
 
+export async function upsertStoresBulk(payloads) {
+  const stores = payloads.map((p) => serializeStoreForDb(p));
+
+  const { data, error } = await supabase
+    .from("stores")
+    .upsert(stores, { onConflict: "slug" })
+    .select();
+
+  if (error) {
+    throw error;
+  }
+  return (data || []).map(mapDbStoreToJs);
+}
+
 export async function updateStore(slug, payload) {
   const { data: currentStore, error: fetchError } = await supabase
     .from("stores")
