@@ -86,6 +86,16 @@ export default function BulkStoreImportDialog({ open, onOpenChange, stores, cate
     () => new Set((countries || []).map((country) => normalizeCountryCode(country.code))),
     [countries]
   );
+  const countriesMap = useMemo(() => {
+    const map = new Map();
+    (countries || []).forEach((c) => {
+      const code = String(c.code || "").trim().toUpperCase();
+      const name = String(c.name || "").trim().toLowerCase();
+      map.set(code, code);
+      map.set(name, code);
+    });
+    return map;
+  }, [countries]);
 
   function resetState() {
     setSelectedFile(null);
@@ -206,7 +216,9 @@ export default function BulkStoreImportDialog({ open, onOpenChange, stores, cate
       const matchedCategory = categoryNameMap.get(category.toLowerCase());
       const trustStatus = normalizeValue(row["Trust Status"]);
       const affiliateLink = normalizeValue(row["Affiliate Tracking Link"]);
-      const countryCode = normalizeCountryCode(row["Country"]);
+      
+      const rawCountry = normalizeValue(row["Country"]);
+      const countryCode = countriesMap.get(rawCountry.toUpperCase()) || countriesMap.get(rawCountry.toLowerCase()) || normalizeCountryCode(rawCountry);
 
       if (!name) {
         nextErrors.push({ rowNumber, reason: "Store Name is required." });
