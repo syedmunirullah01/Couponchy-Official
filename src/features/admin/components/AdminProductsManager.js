@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { ConfirmModal } from "@/components/ui/AppModal";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -66,6 +67,20 @@ export default function AdminProductsManager() {
 
     return products.filter((product) => product.storeSlug === selectedStoreFilter);
   }, [products, selectedStoreFilter]);
+
+  const searchParams = useSearchParams();
+  const searchQuery = searchParams.get("search") || "";
+
+  const filteredProducts = useMemo(() => {
+    if (!searchQuery) return visibleProducts;
+    const lowerQuery = searchQuery.toLowerCase();
+    return visibleProducts.filter((product) => {
+      const title = (product.title || "").toLowerCase();
+      const desc = (product.description || "").toLowerCase();
+      const storeName = (product.storeName || "").toLowerCase();
+      return title.includes(lowerQuery) || desc.includes(lowerQuery) || storeName.includes(lowerQuery);
+    });
+  }, [visibleProducts, searchQuery]);
 
   async function loadData() {
     const [productsResponse, storesResponse] = await Promise.all([
@@ -291,7 +306,7 @@ export default function AdminProductsManager() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {visibleProducts.map((product) => (
+                {filteredProducts.map((product) => (
                   <TableRow key={product.id} className="border-b border-[var(--border)]/60 last:border-0 hover:bg-[var(--surface-soft)]/30 transition-colors duration-150">
                     <TableCell className="px-4 py-3 text-xs">
                       <div className="flex items-center gap-3">
@@ -371,9 +386,9 @@ export default function AdminProductsManager() {
             </Table>
           </div>
 
-          {!visibleProducts.length ? (
+          {!filteredProducts.length ? (
             <div className="mt-6 rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface-soft)] px-5 py-6 text-sm text-[var(--muted)]">
-              No products found. Add products and assign them to stores from the admin panel.
+              {searchQuery ? "No products match your search query." : "No products found. Add products and assign them to stores from the admin panel."}
             </div>
           ) : null}
         </CardContent>

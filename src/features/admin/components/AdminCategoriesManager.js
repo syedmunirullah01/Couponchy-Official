@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -57,7 +58,22 @@ function slugify(value) {
 }
 
 export default function AdminCategoriesManager() {
+  const searchParams = useSearchParams();
+  const searchQuery = searchParams.get("search") || "";
+
   const [categories, setCategories] = useState([]);
+
+  const filteredCategories = useMemo(() => {
+    if (!searchQuery) return categories;
+    const lowerQuery = searchQuery.toLowerCase();
+    return categories.filter((category) => {
+      const name = (category.name || "").toLowerCase();
+      const slug = (category.slug || "").toLowerCase();
+      const desc = (category.description || "").toLowerCase();
+      return name.includes(lowerQuery) || slug.includes(lowerQuery) || desc.includes(lowerQuery);
+    });
+  }, [categories, searchQuery]);
+
   const [stores, setStores] = useState([]);
   const [isHydrating, setIsHydrating] = useState(false);
   const [open, setOpen] = useState(false);
@@ -222,7 +238,7 @@ export default function AdminCategoriesManager() {
           </div>
         </CardHeader>
         <CardContent className="p-6">
-          {categories.length ? (
+          {filteredCategories.length ? (
             <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
               <Table>
                 <TableHeader className="bg-[var(--surface-soft)]/50">
@@ -235,7 +251,7 @@ export default function AdminCategoriesManager() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {categories.map((category) => (
+                  {filteredCategories.map((category) => (
                     <TableRow key={category.slug} className="border-b border-[var(--border)]/60 last:border-0 hover:bg-[var(--surface-soft)]/30 transition-colors duration-150">
                       {/* Category Name */}
                       <TableCell className="px-3 py-3">
@@ -300,10 +316,14 @@ export default function AdminCategoriesManager() {
             </div>
           ) : null}
 
-          {!categories.length && !isHydrating ? (
+          {!filteredCategories.length && !isHydrating ? (
             <div className="rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface-soft)] px-6 py-10 text-center">
-              <h3 className="text-sm font-bold text-[var(--text)]">No categories yet</h3>
-              <p className="mt-2 text-xs text-[var(--muted)]">Create the first category to structure store taxonomy.</p>
+              <h3 className="text-sm font-bold text-[var(--text)]">
+                {searchQuery ? "No matching categories" : "No categories yet"}
+              </h3>
+              <p className="mt-2 text-xs text-[var(--muted)]">
+                {searchQuery ? "Try a different search query." : "Create the first category to structure store taxonomy."}
+              </p>
             </div>
           ) : null}
         </CardContent>

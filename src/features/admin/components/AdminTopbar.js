@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/Input";
 
 function ChevronRightIcon() {
@@ -56,6 +57,43 @@ function GlobeIcon() {
   );
 }
 
+function SearchBar() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [searchValue, setSearchValue] = useState("");
+
+  useEffect(() => {
+    setSearchValue(searchParams.get("search") || "");
+  }, [searchParams]);
+
+  const handleSearchChange = (e) => {
+    const val = e.target.value;
+    setSearchValue(val);
+    const params = new URLSearchParams(searchParams);
+    if (val) {
+      params.set("search", val);
+    } else {
+      params.delete("search");
+    }
+    router.replace(`${pathname}?${params.toString()}`);
+  };
+
+  return (
+    <div className="relative min-w-[240px] flex-1 sm:flex-none">
+      <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[var(--muted)]">
+        <SearchIcon />
+      </span>
+      <Input
+        value={searchValue}
+        onChange={handleSearchChange}
+        className="pl-11 h-10 text-xs rounded-xl bg-[var(--surface-soft)] border-[var(--border)] focus:bg-[var(--surface)]"
+        placeholder="Search components, stores, deals..."
+      />
+    </div>
+  );
+}
+
 export default function AdminTopbar({ title, breadcrumbTrail = [] }) {
   const [mounted, setMounted] = useState(false);
   const [theme, setTheme] = useState("dark");
@@ -100,12 +138,16 @@ export default function AdminTopbar({ title, breadcrumbTrail = [] }) {
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5 sm:flex-nowrap">
-          <div className="relative min-w-[240px] flex-1 sm:flex-none">
-            <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[var(--muted)]">
-              <SearchIcon />
-            </span>
-            <Input className="pl-11 h-10 text-xs rounded-xl bg-[var(--surface-soft)] border-[var(--border)] focus:bg-[var(--surface)]" placeholder="Search components, stores, deals..." />
-          </div>
+          <Suspense fallback={
+            <div className="relative min-w-[240px] flex-1 sm:flex-none">
+              <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[var(--muted)]">
+                <SearchIcon />
+              </span>
+              <Input className="pl-11 h-10 text-xs rounded-xl bg-[var(--surface-soft)] border-[var(--border)] focus:bg-[var(--surface)]" placeholder="Search components, stores, deals..." disabled />
+            </div>
+          }>
+            <SearchBar />
+          </Suspense>
 
           <div className="flex items-center gap-1.5 ml-auto sm:ml-0">
             {/* Globe Button */}

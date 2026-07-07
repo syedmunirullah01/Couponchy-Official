@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -203,10 +204,30 @@ function CategoryCombobox({ categories, value, onChange, error, onBlur }) {
 }
 
 export default function AdminStoresManager() {
+  const searchParams = useSearchParams();
+  const searchQuery = searchParams.get("search") || "";
+
   const [stores, setStores] = useState([]);
   const [categories, setCategories] = useState([]);
   const [countries, setCountries] = useState(SUPPORTED_COUNTRIES);
   const [open, setOpen] = useState(false);
+
+  const filteredStores = useMemo(() => {
+    if (!searchQuery) return stores;
+    const lowerQuery = searchQuery.toLowerCase();
+    return stores.filter((store) => {
+      const name = (store.name || "").toLowerCase();
+      const slug = (store.slug || "").toLowerCase();
+      const category = (store.category || "").toLowerCase();
+      const countryCode = (store.countryCode || "").toLowerCase();
+      return (
+        name.includes(lowerQuery) ||
+        slug.includes(lowerQuery) ||
+        category.includes(lowerQuery) ||
+        countryCode.includes(lowerQuery)
+      );
+    });
+  }, [stores, searchQuery]);
   const [bulkImportOpen, setBulkImportOpen] = useState(false);
   const [editingStore, setEditingStore] = useState(null);
   const [isHydrating, setIsHydrating] = useState(false);
@@ -494,7 +515,7 @@ export default function AdminStoresManager() {
   }
 
   function toggleSelectAllStores() {
-    setSelectedStoreSlugs((current) => (current.length === stores.length ? [] : stores.map((store) => store.slug)));
+    setSelectedStoreSlugs((current) => (current.length === filteredStores.length ? [] : filteredStores.map((store) => store.slug)));
   }
 
   async function handleDeleteConfirmed() {
@@ -566,7 +587,7 @@ export default function AdminStoresManager() {
                       <input
                         type="checkbox"
                         className="h-4 w-4 appearance-none rounded-full border-2 border-[var(--muted)]/60 bg-[var(--surface-soft)] checked:bg-[var(--color-primary)] checked:border-[var(--color-primary)] focus:outline-none transition-all cursor-pointer relative after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:w-1.5 after:h-1.5 after:rounded-full after:bg-transparent checked:after:bg-white"
-                        checked={stores.length > 0 && selectedStoreSlugs.length === stores.length}
+                        checked={filteredStores.length > 0 && selectedStoreSlugs.length === filteredStores.length}
                         onChange={toggleSelectAllStores}
                         aria-label="Select all stores"
                       />
@@ -582,7 +603,7 @@ export default function AdminStoresManager() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {stores.map((store) => (
+                {filteredStores.map((store) => (
                   <TableRow key={store.slug} className="border-b border-[var(--border)]/50 last:border-0 hover:bg-[var(--surface-soft)]/60 transition-colors duration-150">
                     <TableCell className="py-3 px-4">
                       <label className="flex items-center justify-center cursor-pointer">
@@ -670,9 +691,9 @@ export default function AdminStoresManager() {
             </Table>
           </div>
 
-          {!stores.length && !isHydrating ? (
+          {!filteredStores.length && !isHydrating ? (
             <div className="mt-6 rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface-soft)] px-5 py-6 text-sm text-[var(--muted)]">
-              No stores added yet. Use the modal above to create the first store.
+              {searchQuery ? "No stores match your search query." : "No stores added yet. Use the modal above to create the first store."}
             </div>
           ) : null}
         </CardContent>

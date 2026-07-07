@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import { ConfirmModal } from "@/components/ui/AppModal";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -35,8 +36,31 @@ function RefreshIcon() {
 }
 
 export default function AdminOffersManager() {
+  const searchParams = useSearchParams();
+  const searchQuery = searchParams.get("search") || "";
+
   const [offers, setOffers] = useState([]);
   const [stores, setStores] = useState([]);
+
+  const filteredOffers = useMemo(() => {
+    if (!searchQuery) return offers;
+    const lowerQuery = searchQuery.toLowerCase();
+    return offers.filter((offer) => {
+      const title = (offer.title || "").toLowerCase();
+      const desc = (offer.description || "").toLowerCase();
+      const storeName = (offer.storeName || "").toLowerCase();
+      const code = (offer.code || "").toLowerCase();
+      const type = (offer.type || "").toLowerCase();
+      return (
+        title.includes(lowerQuery) ||
+        desc.includes(lowerQuery) ||
+        storeName.includes(lowerQuery) ||
+        code.includes(lowerQuery) ||
+        type.includes(lowerQuery)
+      );
+    });
+  }, [offers, searchQuery]);
+
   const [open, setOpen] = useState(false);
   const [bulkImportOpen, setBulkImportOpen] = useState(false);
   const [editingOffer, setEditingOffer] = useState(null);
@@ -173,7 +197,7 @@ export default function AdminOffersManager() {
   }
 
   function toggleSelectAll() {
-    setSelectedOfferIds((current) => (current.length === offers.length ? [] : offers.map((offer) => offer.id)));
+    setSelectedOfferIds((current) => (current.length === filteredOffers.length ? [] : filteredOffers.map((offer) => offer.id)));
   }
 
   async function handleDeleteConfirmed() {
@@ -245,7 +269,7 @@ export default function AdminOffersManager() {
                       <input
                         type="checkbox"
                         className="h-4 w-4 appearance-none rounded-full border-2 border-[var(--muted)]/60 bg-[var(--surface-soft)] checked:bg-[var(--color-primary)] checked:border-[var(--color-primary)] focus:outline-none transition-all cursor-pointer relative after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:w-1.5 after:h-1.5 after:rounded-full after:bg-transparent checked:after:bg-white"
-                        checked={offers.length > 0 && selectedOfferIds.length === offers.length}
+                        checked={filteredOffers.length > 0 && selectedOfferIds.length === filteredOffers.length}
                         onChange={toggleSelectAll}
                         aria-label="Select all offers"
                       />
@@ -261,7 +285,7 @@ export default function AdminOffersManager() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {offers.map((offer) => (
+                {filteredOffers.map((offer) => (
                   <TableRow key={offer.id} className="border-b border-[var(--border)]/60 last:border-0 hover:bg-[var(--surface-soft)]/30 transition-colors duration-150">
                     <TableCell className="w-14 h-10 px-4 text-center">
                       <label className="flex items-center justify-center cursor-pointer">
