@@ -116,6 +116,133 @@ function parseCsvFile(input) {
   });
 }
 
+async function validateCsv(file, fileContent, storesBySlug, existingDuplicateKeys) {
+  const csvSource = fileContent || file;
+  const results = await parseCsvFile(csvSource);
+  const headers = Array.isArray(results.meta?.fields) ? results.meta.fields.map((field) => field.trim()) : [];
+  const missingHeaders = REQUIRED_FIELDS.filter((header) => !headers.includes(header));
+
+  if (missingHeaders.length) {
+    const headerErrors = missingHeaders.map((header) => ({
+      rowNumber: 1,
+      reason: `Missing required CSV header: "${header}"`,
+    }));
+
+    return {
+      validRows: [],
+      errors: headerErrors,
+      summary: {
+        totalRecords: 0,
+        validRows: 0,
+        duplicates: 0,
+        validationErrors: headerErrors.length,
+      },
+    };
+  }
+
+  const parsedRows = Array.isArray(results.data) ? results.data : [];
+  const clientErrors = [];
+  const nextValidRows = [];
+  const csvDuplicateKeys = new Set();
+  let duplicates = 0;
+
+  let fallbackStoreSlug = "";
+
+  parsedRows.forEach((row, index) => {
+    const rowNumber = index + 2;
+    const storeVal = normalizeCsvValue(row["Store"]);
+    const storeSlug = storeVal.toLowerCase() || fallbackStoreSlug;
+    const title = normalizeCsvValue(row["Title"]);
+    const description = normalizeCsvValue(row["Description"]);
+    const type = normalizeType(row["Type"]);
+    const code = normalizeCsvValue(row["Coupon Code"]);
+    const expiryDate = normalizeExpiryDate(row["Expiry Date"]);
+    const status = normalizeStatus(row["Status"]);
+    const source = "Manual";
+    const affiliateLink = normalizeCsvValue(row["Affiliate Link"]);
+
+    if (storeSlug) {
+      fallbackStoreSlug = storeSlug;
+    }
+
+    if (!storeVal && !fallbackStoreSlug) {
+      clientErrors.push({ rowNumber, reason: "Store slug is required." });
+      return;
+    }
+
+    if (!title) {
+      clientErrors.push({ rowNumber, reason: "Title is required." });
+      return;
+    }
+
+    if (!type) {
+      clientErrors.push({ rowNumber, reason: "Type must be either 'Coupon' or 'Deal'." });
+      return;
+    }
+
+    if (type === "Coupon" && !code) {
+      clientErrors.push({ rowNumber, reason: "Coupon rows require a Coupon Code." });
+      return;
+    }
+
+    if (!isValidDateString(expiryDate)) {
+      clientErrors.push({ rowNumber, reason: "Expiry date must use YYYY-MM-DD or MM/DD/YYYY format." });
+      return;
+    }
+
+    const store = storesBySlug.get(storeSlug);
+    if (!store) {
+      clientErrors.push({ rowNumber, reason: `Store "${storeSlug}" does not exist.` });
+      return;
+    }
+
+    const duplicateKey = buildDuplicateKey({
+      storeSlug,
+      title,
+      type,
+      description,
+      expiryDate,
+      status,
+      affiliateLink: affiliateLink || store.affiliateLink || "",
+    });
+    if (existingDuplicateKeys.has(duplicateKey)) {
+      duplicates += 1;
+      clientErrors.push({ rowNumber, reason: "This offer already exists in the catalog." });
+      return;
+    }
+
+    if (csvDuplicateKeys.has(duplicateKey)) {
+      duplicates += 1;
+      clientErrors.push({ rowNumber, reason: "Duplicate offer content found within the same CSV file." });
+      return;
+    }
+
+    csvDuplicateKeys.add(duplicateKey);
+    nextValidRows.push({
+      storeSlug,
+      title,
+      description,
+      type,
+      code,
+      expiryDate,
+      status,
+      source,
+      affiliateLink: affiliateLink || store.affiliateLink || "",
+    });
+  });
+
+  return {
+    validRows: nextValidRows,
+    errors: clientErrors,
+    summary: {
+      totalRecords: parsedRows.length,
+      validRows: nextValidRows.length,
+      duplicates,
+      validationErrors: clientErrors.length,
+    },
+  };
+}
+
 export default function BulkCouponImportDialog({ open, onOpenChange, stores, offers = [], onImported }) {
   const [selectedFile, setSelectedFile] = useState(null);
   const [selectedFileContent, setSelectedFileContent] = useState("");
@@ -217,127 +344,16 @@ export default function BulkCouponImportDialog({ open, onOpenChange, stores, off
     setSummaryState();
 
     try {
-      const results = await parseCsvFile(selectedFileContent || selectedFile);
-      const headers = Array.isArray(results.meta?.fields) ? results.meta.fields.map((field) => field.trim()) : [];
-      const missingHeaders = REQUIRED_FIELDS.filter((header) => !headers.includes(header));
-
-      if (missingHeaders.length) {
-        const headerErrors = missingHeaders.map((header) => ({
-          rowNumber: 1,
-          reason: `Missing required CSV header: "${header}"`,
-        }));
-
-        setErrors(headerErrors);
-        setDryRunSummary({
-          totalRecords: 0,
-          validRows: 0,
-          duplicates: 0,
-          validationErrors: headerErrors.length,
-        });
-        toast.error("CSV template headers are invalid.");
-        return;
-      }
-
-      const parsedRows = Array.isArray(results.data) ? results.data : [];
-      const clientErrors = [];
-      const nextValidRows = [];
-      const csvDuplicateKeys = new Set();
-      let duplicates = 0;
-
-      let fallbackStoreSlug = "";
-
-      parsedRows.forEach((row, index) => {
-        const rowNumber = index + 2;
-        const storeVal = normalizeCsvValue(row["Store"]);
-        const storeSlug = storeVal.toLowerCase() || fallbackStoreSlug;
-        const title = normalizeCsvValue(row["Title"]);
-        const description = normalizeCsvValue(row["Description"]);
-        const type = normalizeType(row["Type"]);
-        const code = normalizeCsvValue(row["Coupon Code"]);
-        const expiryDate = normalizeExpiryDate(row["Expiry Date"]);
-        const status = normalizeStatus(row["Status"]);
-        const source = "Manual";
-        const affiliateLink = normalizeCsvValue(row["Affiliate Link"]);
-
-        if (storeSlug) {
-          fallbackStoreSlug = storeSlug;
-        }
-
-        if (!storeVal && !fallbackStoreSlug) {
-          clientErrors.push({ rowNumber, reason: "Store slug is required." });
-          return;
-        }
-
-        if (!title) {
-          clientErrors.push({ rowNumber, reason: "Title is required." });
-          return;
-        }
-
-        if (!type) {
-          clientErrors.push({ rowNumber, reason: "Type must be either 'Coupon' or 'Deal'." });
-          return;
-        }
-
-        if (type === "Coupon" && !code) {
-          clientErrors.push({ rowNumber, reason: "Coupon rows require a Coupon Code." });
-          return;
-        }
-
-        if (!isValidDateString(expiryDate)) {
-          clientErrors.push({ rowNumber, reason: "Expiry date must use YYYY-MM-DD or MM/DD/YYYY format." });
-          return;
-        }
-
-        const store = storesBySlug.get(storeSlug);
-        if (!store) {
-          clientErrors.push({ rowNumber, reason: `Store "${storeSlug}" does not exist.` });
-          return;
-        }
-
-        const duplicateKey = buildDuplicateKey({
-          storeSlug,
-          title,
-          type,
-          description,
-          expiryDate,
-          status,
-          affiliateLink: affiliateLink || store.affiliateLink || "",
-        });
-        if (existingDuplicateKeys.has(duplicateKey)) {
-          duplicates += 1;
-          clientErrors.push({ rowNumber, reason: "This offer already exists in the catalog." });
-          return;
-        }
-
-        if (csvDuplicateKeys.has(duplicateKey)) {
-          duplicates += 1;
-          clientErrors.push({ rowNumber, reason: "Duplicate offer content found within the same CSV file." });
-          return;
-        }
-
-        csvDuplicateKeys.add(duplicateKey);
-        nextValidRows.push({
-          storeSlug,
-          title,
-          description,
-          type,
-          code,
-          expiryDate,
-          status,
-          source,
-          affiliateLink: affiliateLink || store.affiliateLink || "",
-        });
-      });
-
+      const { validRows: nextValidRows, errors: nextErrors, summary } = await validateCsv(
+        selectedFile,
+        selectedFileContent,
+        storesBySlug,
+        existingDuplicateKeys
+      );
 
       setValidRows(nextValidRows);
-      setErrors(clientErrors);
-      setDryRunSummary({
-        totalRecords: parsedRows.length,
-        validRows: nextValidRows.length,
-        duplicates,
-        validationErrors: clientErrors.length,
-      });
+      setErrors(nextErrors);
+      setDryRunSummary(summary);
 
       if (nextValidRows.length) {
         toast.success("Dry-run validation complete.");
@@ -352,18 +368,40 @@ export default function BulkCouponImportDialog({ open, onOpenChange, stores, off
   }
 
   async function handleImport() {
-    if (!validRows.length) {
-      toast.error("Run validation first.");
+    if (!selectedFile) {
+      toast.error("Choose a CSV file first.");
       return;
     }
 
     setIsUploading(true);
+    let rowsToImport = validRows;
 
     try {
+      if (!rowsToImport.length) {
+        setIsValidating(true);
+        const { validRows: nextValidRows, errors: nextErrors, summary } = await validateCsv(
+          selectedFile,
+          selectedFileContent,
+          storesBySlug,
+          existingDuplicateKeys
+        );
+        setValidRows(nextValidRows);
+        setErrors(nextErrors);
+        setDryRunSummary(summary);
+        setIsValidating(false);
+
+        if (!nextValidRows.length) {
+          toast.error("No valid coupon rows found to import. Check validation errors below.");
+          setIsUploading(false);
+          return;
+        }
+        rowsToImport = nextValidRows;
+      }
+
       const response = await fetch("/api/offers/bulk", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rows: validRows }),
+        body: JSON.stringify({ rows: rowsToImport }),
       });
       const payload = await response.json();
 
@@ -384,6 +422,7 @@ export default function BulkCouponImportDialog({ open, onOpenChange, stores, off
       toast.error(error.message || "Unable to import coupons.");
     } finally {
       setIsUploading(false);
+      setIsValidating(false);
     }
   }
 
@@ -490,7 +529,7 @@ export default function BulkCouponImportDialog({ open, onOpenChange, stores, off
             <Button 
               type="button" 
               className="w-full rounded-xl text-xs font-bold h-9.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white shadow-sm cursor-pointer disabled:opacity-50" 
-              disabled={!dryRunSummary?.validRows || isUploading || isValidating} 
+              disabled={!selectedFile || isUploading || isValidating} 
               onClick={handleImport}
             >
               {isUploading ? "Importing..." : "Import Coupons"}
