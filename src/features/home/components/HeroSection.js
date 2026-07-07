@@ -191,8 +191,13 @@ export default function HeroSection({ hero, countryCode = DEFAULT_COUNTRY_CODE, 
         if (!cancelled) setStores([]);
       }
     }
-    loadStores();
-    return () => { cancelled = true; };
+    const delayTimer = setTimeout(() => {
+      loadStores();
+    }, 1000);
+    return () => {
+      cancelled = true;
+      clearTimeout(delayTimer);
+    };
   }, [countryCode]);
 
   const query = searchValue.trim().toLowerCase();

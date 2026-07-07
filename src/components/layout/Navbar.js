@@ -287,10 +287,13 @@ export default function Navbar() {
       }
     }
 
-    loadNavigationData();
+    const delayTimer = setTimeout(() => {
+      loadNavigationData();
+    }, 1200);
 
     return () => {
       cancelled = true;
+      clearTimeout(delayTimer);
     };
   }, [pathname, selectedCountryCode]);
 
@@ -841,6 +844,7 @@ export default function Navbar() {
                 className="flex items-center gap-1.5 h-8 rounded-full border border-white/12 bg-black px-2.5 text-white outline-none transition hover:border-white/25 focus:border-[var(--color-primary)] select-none"
                 aria-expanded={countryDropdownOpen}
                 aria-haspopup="listbox"
+                aria-label={`Select country, current: ${selectedCountry.name}`}
                 title={selectedCountry.name}
               >
                 <img
@@ -938,10 +942,10 @@ export default function Navbar() {
             <div className="flex items-center justify-between gap-4">
               <BrandMark countryCode={selectedCountryCode} onClick={() => setMobileOpen(false)} />
               <div className="flex items-center gap-3 text-white">
-                <button type="button" onClick={() => setDesktopSearchOpen((current) => !current)} className="inline-flex h-10 w-10 items-center justify-center">
+                <button type="button" onClick={() => setDesktopSearchOpen((current) => !current)} className="inline-flex h-10 w-10 items-center justify-center" aria-label="Toggle Search">
                   <SearchIcon className="h-5 w-5" />
                 </button>
-                <button type="button" onClick={() => setMobileOpen(false)} className="inline-flex h-10 w-10 items-center justify-center">
+                <button type="button" onClick={() => setMobileOpen(false)} className="inline-flex h-10 w-10 items-center justify-center" aria-label="Close Menu">
                   <CloseIcon className="h-6 w-6" />
                 </button>
               </div>
@@ -955,6 +959,7 @@ export default function Navbar() {
                     type="button"
                     onClick={() => setMobileCountryDropdownOpen((open) => !open)}
                     className="flex items-center gap-1.5 h-9 rounded-full border border-white/10 bg-black px-3 text-white outline-none"
+                    aria-label={`Select country, current: ${selectedCountry.name}`}
                     title={selectedCountry.name}
                   >
                     <img
