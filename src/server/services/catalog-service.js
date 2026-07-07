@@ -6,6 +6,7 @@ import { getSettings } from "@/server/repositories/settings-repository";
 import { getAllStores, getStoreBySlug } from "@/server/repositories/stores-repository";
 import { getAllCategories } from "@/server/repositories/categories-repository";
 import { normalizeCountryCode } from "@/lib/countries";
+import { generateStoreContent } from "@/lib/store-seo-templates";
 
 function buildStoreDirectoryRecord(store) {
   const label = `${store.offersCount} ${store.offersCount === 1 ? "Active Offer" : "Active Offers"}`;
@@ -24,34 +25,36 @@ function orderItemsBySelection(items, selectedIds, getId) {
 function buildStoreDetail(store, offers, allStores) {
   const activeCoupons = offers.filter((offer) => offer.type === "Coupon").length;
   const activeDeals = offers.filter((offer) => offer.type === "Deal").length;
-  const fallbackWhyItems = [
-    `Track verified ${store.name} promotions in one place`,
-    `Separate coupon codes from direct deal links`,
-    `Surface fresh savings as new offers are added from admin`,
-  ];
+
+  // ── Generate SEO content via 4-template engine ──────────────────────────
+  // Admin-entered content always takes priority; generated content is fallback.
+  const generated = generateStoreContent(store, offers);
+
+  // Admin why-items (from textarea, one per line)
   const customWhyItems = String(store.contentWhyItemsText || "")
     .split(/\r?\n/)
     .map((item) => item.trim())
     .filter(Boolean);
-  const fallbackFaqs = [
-    {
-      question: `How often are ${store.name} offers updated?`,
-      answer: "Offers update whenever admins create, edit, or remove records from the shared Couponchy catalog.",
-    },
-    {
-      question: `Are ${store.name} coupons verified?`,
-      answer: "Couponchy shows trust status for the store and keeps manual plus network offers in one moderation flow.",
-    },
-    {
-      question: `Can I find both coupons and deals here?`,
-      answer: "Yes. This page mixes code-based coupons and direct deal links from the same backend source.",
-    },
-  ];
+
+  // Admin FAQs
   const customFaqs = [
     { question: store.faq1Question, answer: store.faq1Answer },
     { question: store.faq2Question, answer: store.faq2Answer },
     { question: store.faq3Question, answer: store.faq3Answer },
   ].filter((item) => item.question?.trim() && item.answer?.trim());
+
+  // Resolve intro paragraphs:
+  // If admin filled paragraph 1 or 2, respect those; otherwise use generated.
+  const adminPara1 = store.contentIntroParagraph1?.trim();
+  const adminPara2 = store.contentIntroParagraph2?.trim();
+  const hasAdminIntro = !!(adminPara1 || adminPara2);
+
+  const introParagraphs = hasAdminIntro
+    ? [
+        adminPara1 || generated.introParagraphs[0],
+        adminPara2 || store.description || generated.introParagraphs[1],
+      ]
+    : generated.introParagraphs;
 
   return {
     singleStore: {
@@ -61,13 +64,14 @@ function buildStoreDetail(store, offers, allStores) {
       validatedText: `${offers.length} active offer${offers.length === 1 ? "" : "s"} currently available`,
       activeCoupons,
       activeDeals,
-      introTitle: store.contentIntroTitle?.trim() || `More Information On ${store.name} Deals`,
-      introParagraphs: [
-        store.contentIntroParagraph1?.trim() || `${store.name} is listed on Couponchy with curated savings and regularly reviewed offer coverage.`,
-        store.contentIntroParagraph2?.trim() || store.description,
-      ],
-      whyItems: customWhyItems.length ? customWhyItems : fallbackWhyItems,
-      outro: store.contentOutro?.trim() || `Couponchy keeps ${store.name} inventory synced from the same source used by the admin dashboard.`,
+      // introTitle: admin wins, else generated
+      introTitle: store.contentIntroTitle?.trim() || generated.introTitle,
+      // introParagraphs: admin wins per-field, else full generated set
+      introParagraphs,
+      // whyItems: admin textarea wins, else generated
+      whyItems: customWhyItems.length ? customWhyItems : generated.whyItems,
+      // outro: admin wins, else generated
+      outro: store.contentOutro?.trim() || generated.outro,
     },
     storeTabs: ["Coupons", "Store Info", "FAQs"],
     offerTabs: [
@@ -80,7 +84,8 @@ function buildStoreDetail(store, offers, allStores) {
       views: `${Math.max(0, 10 + activeCoupons + activeDeals)} views`,
       date: new Date(offer.createdAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
     })),
-    faqs: customFaqs.length ? customFaqs : fallbackFaqs,
+    // FAQs: admin custom FAQs win, else generated template FAQs
+    faqs: customFaqs.length ? customFaqs : generated.faqs,
     relatedStores: allStores
       .filter((item) => item.slug !== store.slug)
       .slice(0, 6)

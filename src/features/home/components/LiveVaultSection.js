@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { copyToClipboard } from "@/lib/copyToClipboard";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
@@ -75,7 +76,7 @@ export default function LiveVaultSection() {
   }, []);
 
   const handleCopy = (code, index) => {
-    navigator.clipboard.writeText(code);
+    copyToClipboard(code);
     setCopiedIndex(index);
     setTimeout(() => setCopiedIndex(null), 2000);
   };

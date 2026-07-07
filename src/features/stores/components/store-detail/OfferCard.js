@@ -4,6 +4,7 @@ import Link from "next/link";
 import { buildCountryPath } from "@/lib/countries";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { copyToClipboard } from "@/lib/copyToClipboard";
 
 function getOfferValue(offer) {
   const title = offer.title || "";
@@ -159,9 +160,11 @@ export default function OfferCard({ offer, store, isFirst }) {
     // 2. Perform copy & state changes
     if (isCoupon && offer.code) {
       setRevealed(true);
-      navigator.clipboard?.writeText(offer.code).then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+      copyToClipboard(offer.code).then((success) => {
+        if (success) {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        }
       });
     }
 
@@ -304,9 +307,11 @@ export default function OfferCard({ offer, store, isFirst }) {
                 {revealed ? (
                   <button
                     onClick={() => {
-                      navigator.clipboard?.writeText(offer.code).then(() => {
-                        setCopied(true);
-                        setTimeout(() => setCopied(false), 2000);
+                      copyToClipboard(offer.code).then((success) => {
+                        if (success) {
+                          setCopied(true);
+                          setTimeout(() => setCopied(false), 2000);
+                        }
                       });
                     }}
                     className="flex w-full items-center justify-between rounded-xl border border-[var(--color-primary)]/30 bg-[var(--color-primary)]/10 px-4 py-3 cursor-pointer hover:bg-[var(--color-primary)]/15 transition-all duration-200"
@@ -541,9 +546,11 @@ export default function OfferCard({ offer, store, isFirst }) {
                   </span>
                   <button
                     onClick={() => {
-                      navigator.clipboard?.writeText(offer.code).then(() => {
-                        setCopied(true);
-                        setTimeout(() => setCopied(false), 2000);
+                      copyToClipboard(offer.code).then((success) => {
+                        if (success) {
+                          setCopied(true);
+                          setTimeout(() => setCopied(false), 2000);
+                        }
                       });
                     }}
                     className="flex items-center gap-1.5 rounded-lg bg-[var(--color-primary)] px-5 py-2.5 text-xs font-black uppercase tracking-wider text-black transition-all hover:bg-opacity-90 active:scale-[0.97]"
@@ -655,8 +662,8 @@ export default function OfferCard({ offer, store, isFirst }) {
               </a>
               <button
                 onClick={() => {
-                  navigator.clipboard?.writeText(actionHref).then(() => {
-                    alert("Link copied to clipboard!");
+                  copyToClipboard(actionHref).then((success) => {
+                    if (success) alert("Link copied to clipboard!");
                   });
                 }}
                 className="h-8 w-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 text-white/60 hover:text-white transition-colors cursor-pointer"

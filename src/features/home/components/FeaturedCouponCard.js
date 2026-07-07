@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { copyToClipboard } from "@/lib/copyToClipboard";
 
 export default function FeaturedCouponCard({ coupon, index = 0 }) {
   const [copied, setCopied] = useState(false);
@@ -25,7 +26,7 @@ export default function FeaturedCouponCard({ coupon, index = 0 }) {
 
   const handleCopy = () => {
     if (!isDeal) {
-      navigator.clipboard.writeText(coupon.value);
+      copyToClipboard(coupon.value);
     }
     openAffiliateLink();
     setCopied(true);
