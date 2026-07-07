@@ -71,13 +71,44 @@ export function sanitizeCountryList(countries) {
   return normalized;
 }
 
-export function normalizeCountryCode(value) {
-  const normalized = String(value || "")
-    .trim()
-    .toUpperCase();
+const COUNTRY_NAME_TO_CODE = {
+  "united states": "US",
+  "usa": "US",
+  "united kingdom": "GB",
+  "uk": "GB",
+  "canada": "CA",
+  "australia": "AU",
+  "india": "IN",
+  "united arab emirates": "AE",
+  "uae": "AE",
+  "saudi arabia": "SA",
+  "germany": "DE",
+  "italy": "IT",
+  "france": "FR",
+  "poland": "PL",
+  "spain": "ES",
+  "netherlands": "NL",
+  "belgium": "BE",
+  "pakistan": "PK",
+};
 
-  const isSupported = /^[A-Z]{2}$/.test(normalized);
-  return isSupported ? normalized : DEFAULT_COUNTRY_CODE;
+export function normalizeCountryCode(value) {
+  const raw = String(value || "").trim();
+
+  // 1. Try extracting leading 2-letter code (e.g. "GB - United Kingdom" or "PL")
+  const codeMatch = raw.match(/^([A-Za-z]{2})\b/);
+  if (codeMatch) {
+    return codeMatch[1].toUpperCase();
+  }
+
+  // 2. Try looking up full country name in dictionary (e.g. "Poland" or "United Kingdom")
+  const clean = raw.toLowerCase();
+  if (COUNTRY_NAME_TO_CODE[clean]) {
+    return COUNTRY_NAME_TO_CODE[clean];
+  }
+
+  // 3. Fallback to DEFAULT_COUNTRY_CODE (US)
+  return DEFAULT_COUNTRY_CODE;
 }
 
 export function getCountryByCode(value, countries = SUPPORTED_COUNTRIES) {
