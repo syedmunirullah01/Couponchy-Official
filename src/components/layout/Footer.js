@@ -152,7 +152,10 @@ export default async function Footer() {
     console.error("Failed to fetch stores for footer:", err);
   }
 
-  const validStores = allStores.filter((s) => s && s.name && s.slug);
+  const activeCountry = (countryCode || "US").toUpperCase();
+  const validStores = allStores.filter(
+    (s) => s && s.name && s.slug && (s.countryCode || "US").toUpperCase() === activeCountry
+  );
 
   const storesList =
     validStores.length > 0
