@@ -106,20 +106,22 @@ export default function AdminTopbar({ title, breadcrumbTrail = [] }) {
 
   const toggleTheme = () => {
     const nextTheme = theme === "dark" ? "light" : "dark";
+    const adminRoot = document.querySelector(".admin-root");
     
-    document.documentElement.classList.add("theme-transition");
-    setTheme(nextTheme);
-    localStorage.setItem("admin-theme", nextTheme);
-    
-    if (nextTheme === "light") {
-      document.documentElement.classList.add("light");
-    } else {
-      document.documentElement.classList.remove("light");
+    if (adminRoot) {
+      adminRoot.classList.add("theme-transition");
+      if (nextTheme === "light") {
+        adminRoot.classList.add("light");
+      } else {
+        adminRoot.classList.remove("light");
+      }
+      setTimeout(() => {
+        adminRoot.classList.remove("theme-transition");
+      }, 300);
     }
     
-    setTimeout(() => {
-      document.documentElement.classList.remove("theme-transition");
-    }, 300);
+    setTheme(nextTheme);
+    localStorage.setItem("admin-theme", nextTheme);
   };
 
   return (
