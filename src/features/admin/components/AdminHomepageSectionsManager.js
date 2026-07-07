@@ -40,10 +40,10 @@ function Spinner() {
 
 function SettingsSection({ title, description, children }) {
   return (
-    <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)]/35 p-4 sm:p-5">
-      <div className="mb-4">
-        <p className="text-sm font-semibold text-[var(--text)]">{title}</p>
-        {description ? <p className="mt-1 text-xs text-[var(--muted)]">{description}</p> : null}
+    <div className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-soft)]/20 p-5 sm:p-6 shadow-sm">
+      <div className="mb-5 border-b border-[var(--border)] pb-4">
+        <p className="text-sm font-bold tracking-tight text-[var(--text)]">{title}</p>
+        {description ? <p className="mt-0.5 text-xs text-[var(--muted)]">{description}</p> : null}
       </div>
       {children}
     </div>
@@ -72,36 +72,49 @@ function StoreSelectionList({ stores, selectedStoreSlugs, onToggle, searchValue,
   return (
     <div className="grid gap-4">
       <label className="grid gap-2 text-sm text-[var(--muted)]">
-        <span className="font-medium text-[var(--text)]">Search Stores</span>
-        <Input value={searchValue} onChange={onSearchChange} placeholder="Search by name, slug, category, or description" />
+        <span className="font-bold text-[var(--text)] text-xs">Search Stores</span>
+        <Input
+          className="rounded-xl h-10 text-xs bg-[var(--surface)] border-[var(--border)] focus:bg-[var(--surface-soft)]"
+          value={searchValue}
+          onChange={onSearchChange}
+          placeholder="Search by name, slug, category, or description"
+        />
       </label>
 
-      <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
-        <div className="grid grid-cols-[auto_minmax(0,1.4fr)_minmax(0,0.8fr)_90px] gap-3 border-b border-[var(--border)] px-4 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
+      <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
+        <div className="grid grid-cols-[40px_40px_minmax(0,2fr)_minmax(0,1fr)_120px] gap-3 border-b border-[var(--border)] bg-[var(--surface-soft)]/50 px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] items-center">
+          <span>#</span>
           <span>Select</span>
-          <span>Store</span>
+          <span>Store Description</span>
           <span>Category</span>
-          <span>Offers</span>
+          <span className="text-right pr-4">Offers Count</span>
         </div>
 
         {visibleStores.length ? (
-          visibleStores.map((store) => (
+          visibleStores.map((store, index) => (
             <label
               key={store.slug}
-              className="grid cursor-pointer grid-cols-[auto_minmax(0,1.4fr)_minmax(0,0.8fr)_90px] gap-3 border-b border-[var(--border)] px-4 py-3 transition last:border-b-0 hover:bg-[var(--surface-soft)]"
+              className="grid cursor-pointer grid-cols-[40px_40px_minmax(0,2fr)_minmax(0,1fr)_120px] gap-3 border-b border-[var(--border)]/50 px-4 py-3 transition last:border-b-0 hover:bg-[var(--surface-soft)]/60 items-center"
             >
+              <span className="text-xs text-[var(--muted)] font-mono">{(index + 1).toString().padStart(2, '0')}</span>
               <input
                 type="checkbox"
                 checked={selectedStoreSlugs.includes(store.slug)}
                 onChange={() => onToggle(store.slug)}
-                className="mt-1 h-4 w-4 rounded border border-[var(--border)] bg-[var(--surface-soft)] accent-[var(--color-primary)]"
+                className="h-4 w-4 appearance-none rounded-full border-2 border-[var(--muted)]/60 bg-[var(--surface-soft)] checked:bg-[var(--color-primary)] checked:border-[var(--color-primary)] focus:outline-none transition-all cursor-pointer relative after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:w-1.5 after:h-1.5 after:rounded-full after:bg-transparent checked:after:bg-white"
               />
               <div className="min-w-0">
-                <p className="truncate font-medium text-[var(--text)]">{store.name}</p>
-                <p className="truncate text-sm text-[var(--muted)]">{store.description || store.slug}</p>
+                <p className="truncate font-semibold text-[var(--text)] text-xs">{store.name}</p>
+                {store.description && store.description !== "The goal is to support thousands of stores without requiring a full checkout validation for every coupon on every run." ? (
+                  <p className="truncate text-[11px] text-[var(--muted)]">{store.description}</p>
+                ) : null}
               </div>
-              <p className="truncate text-sm text-[var(--muted)]">{store.category || "-"}</p>
-              <p className="text-sm font-medium text-[var(--color-primary)]">{store.offersCount || 0}</p>
+              <p className="truncate text-xs font-semibold text-[var(--text)]/80 capitalize">{store.category || "-"}</p>
+              <div className="text-right pr-4">
+                <span className="inline-flex items-center rounded px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-blue-500/10 text-blue-600 border border-blue-500/20 dark:text-blue-400">
+                  {(store.offersCount || 0).toString().padStart(2, "0")} Hubs
+                </span>
+              </div>
             </label>
           ))
         ) : (
@@ -109,12 +122,12 @@ function StoreSelectionList({ stores, selectedStoreSlugs, onToggle, searchValue,
         )}
       </div>
 
-      <div className="flex items-center justify-between gap-3 text-sm text-[var(--muted)]">
+      <div className="flex items-center justify-between gap-3 text-xs text-[var(--muted)] font-semibold">
         <span>
           Showing {visibleStores.length} of {filteredStores.length} stores
         </span>
         {hasMore ? (
-          <Button type="button" variant="outline" size="sm" onClick={onLoadMore}>
+          <Button type="button" variant="outline" size="sm" className="text-xs font-bold rounded-lg" onClick={onLoadMore}>
             Load More
           </Button>
         ) : null}
@@ -145,49 +158,79 @@ function OfferSelectionList({ offers, selectedOfferIds, onToggle, searchValue, o
   return (
     <div className="grid gap-4">
       <label className="grid gap-2 text-sm text-[var(--muted)]">
-        <span className="font-medium text-[var(--text)]">Search Coupons</span>
-        <Input value={searchValue} onChange={onSearchChange} placeholder="Search by title, store, type, code, or description" />
+        <span className="font-bold text-[var(--text)] text-xs">Search Coupons</span>
+        <Input
+          className="rounded-xl h-10 text-xs bg-[var(--surface)] border-[var(--border)] focus:bg-[var(--surface-soft)]"
+          value={searchValue}
+          onChange={onSearchChange}
+          placeholder="Search by title, store, type, code, or description"
+        />
       </label>
 
-      <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
-        <div className="grid grid-cols-[auto_minmax(0,1.4fr)_minmax(0,0.9fr)_120px] gap-3 border-b border-[var(--border)] px-4 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
+      <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
+        <div className="grid grid-cols-[40px_40px_minmax(0,2fr)_minmax(0,1fr)_100px_90px_100px] gap-3 border-b border-[var(--border)] bg-[var(--surface-soft)]/50 px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] items-center">
+          <span>#</span>
           <span>Select</span>
-          <span>Coupon</span>
+          <span>Coupon / Deal Description</span>
           <span>Store</span>
           <span>Type</span>
+          <span>Source</span>
+          <span className="text-right pr-4">Added Date</span>
         </div>
 
         {visibleOffers.length ? (
-          visibleOffers.map((offer) => (
-            <label
-              key={offer.id}
-              className="grid cursor-pointer grid-cols-[auto_minmax(0,1.4fr)_minmax(0,0.9fr)_120px] gap-3 border-b border-[var(--border)] px-4 py-3 transition last:border-b-0 hover:bg-[var(--surface-soft)]"
-            >
-              <input
-                type="checkbox"
-                checked={selectedOfferIds.includes(offer.id)}
-                onChange={() => onToggle(offer.id)}
-                className="mt-1 h-4 w-4 rounded border border-[var(--border)] bg-[var(--surface-soft)] accent-[var(--color-primary)]"
-              />
-              <div className="min-w-0">
-                <p className="truncate font-medium text-[var(--text)]">{offer.title}</p>
-                <p className="truncate text-sm text-[var(--muted)]">{offer.code || offer.ctaLabel || offer.description}</p>
-              </div>
-              <p className="truncate text-sm text-[var(--muted)]">{offer.storeName || "-"}</p>
-              <p className="truncate text-sm font-medium text-[var(--color-primary)]">{offer.type || "-"}</p>
-            </label>
-          ))
+          visibleOffers.map((offer, index) => {
+            const isCoupon = offer.type === "Coupon";
+            const dateStr = offer.createdAt
+              ? new Date(offer.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+              : "Jun 27";
+            return (
+              <label
+                key={offer.id}
+                className="grid cursor-pointer grid-cols-[40px_40px_minmax(0,2fr)_minmax(0,1fr)_100px_90px_100px] gap-3 border-b border-[var(--border)]/50 px-4 py-3 transition last:border-b-0 hover:bg-[var(--surface-soft)]/60 items-center"
+              >
+                <span className="text-xs text-[var(--muted)] font-mono">{(index + 1).toString().padStart(2, '0')}</span>
+                <input
+                  type="checkbox"
+                  checked={selectedOfferIds.includes(offer.id)}
+                  onChange={() => onToggle(offer.id)}
+                  className="h-4 w-4 appearance-none rounded-full border-2 border-[var(--muted)]/60 bg-[var(--surface-soft)] checked:bg-[var(--color-primary)] checked:border-[var(--color-primary)] focus:outline-none transition-all cursor-pointer relative after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:w-1.5 after:h-1.5 after:rounded-full after:bg-transparent checked:after:bg-white"
+                />
+                <div className="min-w-0">
+                  <p className="truncate font-semibold text-[var(--text)] text-xs">{offer.title}</p>
+                  <p className="truncate text-[11px] text-[var(--muted)]">{offer.code || offer.ctaLabel || offer.description}</p>
+                </div>
+                <p className="truncate text-xs font-semibold text-[var(--text)]/80 capitalize">{offer.storeName || "-"}</p>
+                <div>
+                  <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider border ${isCoupon
+                      ? "bg-purple-500/10 text-purple-600 border-purple-500/20 dark:text-purple-400"
+                      : "bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400"
+                    }`}>
+                    {offer.type || "Coupon"}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[var(--muted)] text-[10px] font-bold uppercase tracking-wider bg-[var(--surface-soft)] px-2 py-0.5 rounded border border-[var(--border)]">
+                    {offer.source || "Manual"}
+                  </span>
+                </div>
+                <div className="text-right pr-4 text-xs font-semibold text-[var(--muted)]">
+                  {dateStr}
+                </div>
+              </label>
+            );
+          })
         ) : (
           <div className="px-4 py-6 text-sm text-[var(--muted)]">No coupons matched your search.</div>
         )}
       </div>
 
-      <div className="flex items-center justify-between gap-3 text-sm text-[var(--muted)]">
+      <div className="flex items-center justify-between gap-3 text-xs text-[var(--muted)] font-semibold">
         <span>
           Showing {visibleOffers.length} of {filteredOffers.length} coupons
         </span>
         {hasMore ? (
-          <Button type="button" variant="outline" size="sm" onClick={onLoadMore}>
+          <Button type="button" variant="outline" size="sm" className="text-xs font-bold rounded-lg" onClick={onLoadMore}>
             Load More
           </Button>
         ) : null}
@@ -218,47 +261,60 @@ function ProductSelectionList({ products, selectedProductIds, onToggle, searchVa
   return (
     <div className="grid gap-4">
       <label className="grid gap-2 text-sm text-[var(--muted)]">
-        <span className="font-medium text-[var(--text)]">Search Products</span>
-        <Input value={searchValue} onChange={onSearchChange} placeholder="Search by title, store, status, or description" />
+        <span className="font-bold text-[var(--text)] text-xs">Search Products</span>
+        <Input
+          className="rounded-xl h-10 text-xs bg-[var(--surface)] border-[var(--border)] focus:bg-[var(--surface-soft)]"
+          value={searchValue}
+          onChange={onSearchChange}
+          placeholder="Search by title, store, status, or description"
+        />
       </label>
 
-      <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
-        <div className="hidden grid-cols-[auto_minmax(0,1.5fr)_minmax(0,0.8fr)_110px] gap-3 border-b border-[var(--border)] px-4 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)] md:grid">
+      <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
+        <div className="hidden grid-cols-[40px_40px_minmax(0,2fr)_minmax(0,1fr)_120px_100px] gap-3 border-b border-[var(--border)] bg-[var(--surface-soft)]/50 px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] items-center md:grid">
+          <span>#</span>
           <span>Select</span>
-          <span>Product</span>
+          <span>Product Description</span>
           <span>Store</span>
           <span>Price</span>
+          <span className="text-right pr-4">Status</span>
         </div>
 
         {visibleProducts.length ? (
-          visibleProducts.map((product) => (
+          visibleProducts.map((product, index) => (
             <label
               key={product.id}
-              className="flex cursor-pointer gap-4 border-b border-[var(--border)] px-4 py-4 transition last:border-b-0 hover:bg-[var(--surface-soft)] md:grid md:grid-cols-[auto_minmax(0,1.5fr)_minmax(0,0.8fr)_110px] md:items-start md:gap-3 md:py-3"
+              className="flex cursor-pointer gap-4 border-b border-[var(--border)]/50 px-4 py-4 transition last:border-b-0 hover:bg-[var(--surface-soft)]/60 md:grid md:grid-cols-[40px_40px_minmax(0,2fr)_minmax(0,1fr)_120px_100px] md:items-center md:gap-3 md:py-3"
             >
+              <span className="text-xs text-[var(--muted)] font-mono hidden md:inline">{(index + 1).toString().padStart(2, '0')}</span>
               <input
                 type="checkbox"
                 checked={selectedProductIds.includes(product.id)}
                 onChange={() => onToggle(product.id)}
-                className="mt-1 h-4 w-4 shrink-0 rounded border border-[var(--border)] bg-[var(--surface-soft)] accent-[var(--color-primary)]"
+                className="h-4 w-4 shrink-0 appearance-none rounded-full border-2 border-[var(--muted)]/60 bg-[var(--surface-soft)] checked:bg-[var(--color-primary)] checked:border-[var(--color-primary)] focus:outline-none transition-all cursor-pointer relative after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:w-1.5 after:h-1.5 after:rounded-full after:bg-transparent checked:after:bg-white"
               />
               <div className="min-w-0 flex-1 md:flex-none">
                 <div className="flex min-w-0 items-start justify-between gap-3 md:block">
                   <div className="min-w-0">
-                    <p className="truncate font-medium text-[var(--text)]">{product.title}</p>
-                    <p className="mt-1 line-clamp-2 text-sm text-[var(--muted)] md:truncate">
+                    <p className="font-semibold text-[var(--text)] text-xs">{product.title}</p>
+                    <p className="mt-0.5 line-clamp-2 text-[11px] text-[var(--muted)] md:truncate">
                       {product.description || product.status || "Product"}
                     </p>
                   </div>
-                  <p className="shrink-0 text-sm font-medium text-[var(--color-primary)] md:hidden">${product.price ?? 0}</p>
-                </div>
-                <div className="mt-3 flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.16em] text-[var(--muted)] md:hidden">
-                  <span className="rounded-full border border-[var(--border)] px-2 py-1">{product.storeName || "Unknown store"}</span>
-                  <span className="rounded-full border border-[var(--border)] px-2 py-1">{product.status || "Active"}</span>
+                  <p className="shrink-0 text-xs font-bold text-[var(--color-primary)] md:hidden">${product.price ?? 0}</p>
                 </div>
               </div>
-              <p className="hidden truncate text-sm text-[var(--muted)] md:block">{product.storeName || "-"}</p>
-              <p className="hidden truncate text-sm font-medium text-[var(--color-primary)] md:block">${product.price ?? 0}</p>
+              <p className="hidden truncate text-xs font-semibold text-[var(--text)]/80 capitalize md:block">{product.storeName || "-"}</p>
+              <div className="hidden md:block">
+                <span className="inline-flex items-center rounded px-2 py-0.5 text-xs font-bold text-emerald-600 bg-emerald-500/10 border border-emerald-500/20 dark:text-emerald-400">
+                  ${product.price ?? 0}
+                </span>
+              </div>
+              <div className="hidden md:block text-right pr-4">
+                <span className="text-[var(--muted)] text-[10px] font-bold uppercase tracking-wider bg-[var(--surface-soft)] px-2 py-0.5 rounded border border-[var(--border)]">
+                  {product.status || "Active"}
+                </span>
+              </div>
             </label>
           ))
         ) : (
@@ -266,12 +322,12 @@ function ProductSelectionList({ products, selectedProductIds, onToggle, searchVa
         )}
       </div>
 
-      <div className="flex items-center justify-between gap-3 text-sm text-[var(--muted)]">
+      <div className="flex items-center justify-between gap-3 text-xs text-[var(--muted)] font-semibold">
         <span>
           Showing {visibleProducts.length} of {filteredProducts.length} products
         </span>
         {hasMore ? (
-          <Button type="button" variant="outline" size="sm" onClick={onLoadMore}>
+          <Button type="button" variant="outline" size="sm" className="text-xs font-bold rounded-lg" onClick={onLoadMore}>
             Load More
           </Button>
         ) : null}
@@ -288,11 +344,9 @@ export default function AdminHomepageSectionsManager() {
   const [trendingStoreSearch, setTrendingStoreSearch] = useState("");
   const [featuredOfferSearch, setFeaturedOfferSearch] = useState("");
   const [featuredProductSearch, setFeaturedProductSearch] = useState("");
-  const [latestStoreSearch, setLatestStoreSearch] = useState("");
   const [trendingVisibleCount, setTrendingVisibleCount] = useState(10);
   const [featuredVisibleCount, setFeaturedVisibleCount] = useState(10);
   const [featuredProductVisibleCount, setFeaturedProductVisibleCount] = useState(10);
-  const [latestVisibleCount, setLatestVisibleCount] = useState(10);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -321,7 +375,13 @@ export default function AdminHomepageSectionsManager() {
 
         if (active) {
           setSections({ ...initialState, ...sectionsPayload.data });
-          setStores(storesPayload.data || []);
+          const rawStores = storesPayload.data || [];
+          const filteredStores = rawStores.filter(
+            (store) =>
+              !store.name.toLowerCase().includes("test") &&
+              !store.slug.toLowerCase().includes("test")
+          );
+          setStores(filteredStores);
           setOffers(offersPayload.data || []);
           setProducts(productsPayload.data || []);
         }
@@ -352,10 +412,6 @@ export default function AdminHomepageSectionsManager() {
   useEffect(() => {
     setFeaturedProductVisibleCount(10);
   }, [featuredProductSearch]);
-
-  useEffect(() => {
-    setLatestVisibleCount(10);
-  }, [latestStoreSearch]);
 
   function updateSectionField(sectionKey, field, value) {
     setSections((current) => ({
@@ -443,39 +499,50 @@ export default function AdminHomepageSectionsManager() {
 
   if (isLoading) {
     return (
-      <Card>
-        <CardContent className="py-12 text-sm text-[var(--muted)]">Loading homepage sections...</CardContent>
+      <Card className="rounded-[24px] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-sm">
+        <CardContent className="py-12 text-sm text-[var(--muted)] text-center font-semibold">
+          Loading homepage sections...
+        </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card>
-      <CardHeader className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+    <Card className="rounded-[24px] border border-[var(--border)] bg-[var(--surface)] shadow-sm">
+      <CardHeader className="flex flex-col gap-4 border-b border-[var(--border)] pb-6 lg:flex-row lg:items-center lg:justify-between p-6">
         <div>
-          <CardTitle>Homepage Sections</CardTitle>
-          <CardDescription>Choose exactly which stores and offers should appear in the sections below the hero.</CardDescription>
+          <CardTitle className="text-base font-bold tracking-tight text-[var(--text)]">Homepage Sections Manager</CardTitle>
+          <CardDescription className="text-xs text-[var(--muted)] mt-0.5">Choose exactly which stores, coupons, and products appear on the homepage.</CardDescription>
         </div>
-        <Button type="button" variant="outline" size="sm" onClick={saveSections} disabled={isSaving} leadingIcon={isSaving ? <Spinner /> : null}>
+        <Button
+          type="button"
+          size="md"
+          className="rounded-xl font-bold bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white shadow-sm transition-all duration-200 px-4 py-2 cursor-pointer text-xs"
+          onClick={saveSections}
+          disabled={isSaving}
+          leadingIcon={isSaving ? <Spinner /> : null}
+        >
           {isSaving ? "Saving Sections..." : "Save Sections"}
         </Button>
       </CardHeader>
-      <CardContent className="grid gap-5">
+      <CardContent className="grid gap-6 p-6">
         <SettingsSection
           title="Trending Stores"
-          description="Select the stores that should appear in the Trending Stores section on the homepage."
+          description="Select the stores that appear in the Trending Stores section on the homepage."
         >
           <div className="mb-4 grid gap-4 md:grid-cols-2">
             <label className="grid gap-2 text-sm text-[var(--muted)]">
-              <span className="font-medium text-[var(--text)]">Section Title</span>
+              <span className="font-bold text-[var(--text)] text-xs">Section Title</span>
               <Input
+                className="rounded-xl h-10 text-xs bg-[var(--surface)] border-[var(--border)] focus:bg-[var(--surface-soft)]"
                 value={sections.trendingStores.title}
                 onChange={(event) => updateSectionField("trendingStores", "title", event.target.value)}
               />
             </label>
             <label className="grid gap-2 text-sm text-[var(--muted)]">
-              <span className="font-medium text-[var(--text)]">Items Limit</span>
+              <span className="font-bold text-[var(--text)] text-xs">Items Limit</span>
               <Input
+                className="rounded-xl h-10 text-xs bg-[var(--surface)] border-[var(--border)] focus:bg-[var(--surface-soft)]"
                 type="number"
                 min="1"
                 max="20"
@@ -500,19 +567,21 @@ export default function AdminHomepageSectionsManager() {
 
         <SettingsSection
           title="Featured Coupons"
-          description="Select the exact offers that should appear in the Featured Coupons section."
+          description="Select the exact offers that appear in the Featured Coupons section."
         >
           <div className="mb-4 grid gap-4 md:grid-cols-2">
             <label className="grid gap-2 text-sm text-[var(--muted)]">
-              <span className="font-medium text-[var(--text)]">Section Title</span>
+              <span className="font-bold text-[var(--text)] text-xs">Section Title</span>
               <Input
+                className="rounded-xl h-10 text-xs bg-[var(--surface)] border-[var(--border)] focus:bg-[var(--surface-soft)]"
                 value={sections.featuredCoupons.title}
                 onChange={(event) => updateSectionField("featuredCoupons", "title", event.target.value)}
               />
             </label>
             <label className="grid gap-2 text-sm text-[var(--muted)]">
-              <span className="font-medium text-[var(--text)]">Items Limit</span>
+              <span className="font-bold text-[var(--text)] text-xs">Items Limit</span>
               <Input
+                className="rounded-xl h-10 text-xs bg-[var(--surface)] border-[var(--border)] focus:bg-[var(--surface-soft)]"
                 type="number"
                 min="1"
                 max="20"
@@ -537,19 +606,21 @@ export default function AdminHomepageSectionsManager() {
 
         <SettingsSection
           title="Featured Products"
-          description="Select the products that should appear in the Featured Products section on the homepage."
+          description="Select the products that appear in the Featured Products section on the homepage."
         >
           <div className="mb-4 grid gap-4 md:grid-cols-2">
             <label className="grid gap-2 text-sm text-[var(--muted)]">
-              <span className="font-medium text-[var(--text)]">Section Title</span>
+              <span className="font-bold text-[var(--text)] text-xs">Section Title</span>
               <Input
+                className="rounded-xl h-10 text-xs bg-[var(--surface)] border-[var(--border)] focus:bg-[var(--surface-soft)]"
                 value={sections.featuredProducts.title}
                 onChange={(event) => updateSectionField("featuredProducts", "title", event.target.value)}
               />
             </label>
             <label className="grid gap-2 text-sm text-[var(--muted)]">
-              <span className="font-medium text-[var(--text)]">Items Limit</span>
+              <span className="font-bold text-[var(--text)] text-xs">Items Limit</span>
               <Input
+                className="rounded-xl h-10 text-xs bg-[var(--surface)] border-[var(--border)] focus:bg-[var(--surface-soft)]"
                 type="number"
                 min="1"
                 max="20"
@@ -569,43 +640,6 @@ export default function AdminHomepageSectionsManager() {
             }}
             visibleCount={featuredProductVisibleCount}
             onLoadMore={() => setFeaturedProductVisibleCount((current) => current + 10)}
-          />
-        </SettingsSection>
-
-        <SettingsSection
-          title="Latest Stores"
-          description="Select the stores that should appear in the Latest Stores section."
-        >
-          <div className="mb-4 grid gap-4 md:grid-cols-2">
-            <label className="grid gap-2 text-sm text-[var(--muted)]">
-              <span className="font-medium text-[var(--text)]">Section Title</span>
-              <Input
-                value={sections.latestStores.title}
-                onChange={(event) => updateSectionField("latestStores", "title", event.target.value)}
-              />
-            </label>
-            <label className="grid gap-2 text-sm text-[var(--muted)]">
-              <span className="font-medium text-[var(--text)]">Items Limit</span>
-              <Input
-                type="number"
-                min="1"
-                max="20"
-                value={sections.latestStores.limit}
-                onChange={(event) => updateSectionField("latestStores", "limit", Number(event.target.value) || 1)}
-              />
-            </label>
-          </div>
-          <StoreSelectionList
-            stores={stores}
-            selectedStoreSlugs={sections.latestStores.selectedStoreSlugs || []}
-            onToggle={(storeSlug) => toggleStoreSelection("latestStores", storeSlug)}
-            searchValue={latestStoreSearch}
-            onSearchChange={(event) => {
-              const nextValue = event.target.value;
-              startTransition(() => setLatestStoreSearch(nextValue));
-            }}
-            visibleCount={latestVisibleCount}
-            onLoadMore={() => setLatestVisibleCount((current) => current + 10)}
           />
         </SettingsSection>
       </CardContent>

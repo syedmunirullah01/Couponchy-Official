@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, useDialogA11yIds } from "@/components/ui/Dialog";
 import { Input } from "@/components/ui/Input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/Table";
+import { cn } from "@/lib/utils";
 
 const categorySchema = z.object({
   name: z.string().trim().min(1, "Category name is required."),
@@ -194,74 +195,115 @@ export default function AdminCategoriesManager() {
   return (
     <>
       <Card>
-        <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <CardHeader className="flex flex-col gap-4 border-b border-[var(--border)] pb-6 sm:flex-row sm:items-center sm:justify-between p-6">
           <div>
-            <CardTitle>Categories Management</CardTitle>
-            <CardDescription>Manage the taxonomy used by stores and public catalog routes.</CardDescription>
+            <CardTitle className="text-base font-bold tracking-tight text-[var(--text)]">Categories Management</CardTitle>
+            <CardDescription className="text-xs text-[var(--muted)] mt-0.5">Manage the taxonomy used by stores and public catalog routes.</CardDescription>
           </div>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="flex flex-shrink-0 items-center gap-2">
             <Button
               type="button"
               variant="ghost"
               size="sm"
-              className="h-10 w-10 rounded-lg border border-[var(--border)] px-0"
+              className="h-10 w-10 rounded-xl border border-[var(--border)] px-0 text-[var(--muted)] hover:text-[var(--text)] cursor-pointer"
               onClick={() => loadData(true)}
               aria-label="Refresh categories"
               disabled={isRefreshing}
             >
               <RefreshIcon />
             </Button>
-            <Button type="button" onClick={openCreateModal}>
+            <Button
+              type="button"
+              className="rounded-xl font-bold bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white shadow-sm transition-all duration-200 px-5 h-10 text-xs cursor-pointer"
+              onClick={openCreateModal}
+            >
               Add Category
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="pt-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Category</TableHead>
-                <TableHead>Slug</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead>Linked Stores</TableHead>
-                <TableHead>Edit/Delete</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {categories.map((category) => (
-                <TableRow key={category.slug}>
-                  <TableCell>
-                    <p className="font-medium text-[var(--text)]">{category.name}</p>
-                  </TableCell>
-                  <TableCell className="text-[var(--muted)]">/{category.slug}</TableCell>
-                  <TableCell className="max-w-[320px] text-sm text-[var(--muted)]">
-                    {category.description || "No description added yet."}
-                  </TableCell>
-                  <TableCell>{categoryStoreCounts[category.slug] || 0}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button type="button" variant="outline" size="sm" onClick={() => openEditModal(category)}>
-                        Edit
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="border border-[var(--border)]"
-                        onClick={() => setDeleteTarget(category)}
-                      >
-                        Delete
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+        <CardContent className="p-6">
+          {categories.length ? (
+            <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
+              <Table>
+                <TableHeader className="bg-[var(--surface-soft)]/50">
+                  <TableRow className="border-b border-[var(--border)] hover:bg-transparent">
+                    <TableHead className="h-10 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] px-3">Category</TableHead>
+                    <TableHead className="h-10 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] px-3">Slug</TableHead>
+                    <TableHead className="h-10 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] px-3">Description</TableHead>
+                    <TableHead className="h-10 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] px-3">Linked Stores</TableHead>
+                    <TableHead className="h-10 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] px-3">Edit/Delete</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {categories.map((category) => (
+                    <TableRow key={category.slug} className="border-b border-[var(--border)]/60 last:border-0 hover:bg-[var(--surface-soft)]/30 transition-colors duration-150">
+                      {/* Category Name */}
+                      <TableCell className="px-3 py-3">
+                        <span className="text-xs font-bold text-[var(--color-primary)]">{category.name}</span>
+                      </TableCell>
+                      {/* Slug */}
+                      <TableCell className="px-3 py-3">
+                        <span className="font-mono text-[11px] text-[var(--color-primary)]/70">/{category.slug}</span>
+                      </TableCell>
+                      {/* Description */}
+                      <TableCell className="px-3 py-3 max-w-[280px]">
+                        <span className={cn(
+                          "text-xs",
+                          category.description ? "text-[var(--muted)]" : "italic text-[var(--muted)]/50"
+                        )}>
+                          {category.description || "No description added yet."}
+                        </span>
+                      </TableCell>
+                      {/* Linked Stores count */}
+                      <TableCell className="px-3 py-3">
+                        <span className="inline-flex items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface-soft)] px-2.5 py-0.5 text-[11px] font-bold text-[var(--muted)] min-w-[28px]">
+                          {categoryStoreCounts[category.slug] || 0}
+                        </span>
+                      </TableCell>
+                      {/* Actions */}
+                      <TableCell className="px-3 py-3">
+                        <div className="flex items-center gap-2">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 rounded-lg border border-[var(--border)] p-0 text-[var(--muted)] hover:text-[var(--color-primary)] hover:bg-[var(--surface-soft)] cursor-pointer"
+                            onClick={() => openEditModal(category)}
+                            aria-label={`Edit ${category.name}`}
+                          >
+                            <svg viewBox="0 0 24 24" className="h-4 w-4 stroke-current" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M12 20h9" />
+                              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                            </svg>
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 rounded-lg border border-[var(--border)] p-0 text-[var(--muted)] hover:text-red-600 hover:bg-red-500/5 cursor-pointer"
+                            onClick={() => setDeleteTarget(category)}
+                            aria-label={`Delete ${category.name}`}
+                          >
+                            <svg viewBox="0 0 24 24" className="h-4 w-4 stroke-current" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="3 6 5 6 21 6" />
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                              <line x1="10" y1="11" x2="10" y2="17" />
+                              <line x1="14" y1="11" x2="14" y2="17" />
+                            </svg>
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ) : null}
 
           {!categories.length && !isHydrating ? (
-            <div className="mt-6 rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface-soft)] px-5 py-6 text-sm text-[var(--muted)]">
-              No categories added yet. Create the first category to structure store taxonomy.
+            <div className="rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface-soft)] px-6 py-10 text-center">
+              <h3 className="text-sm font-bold text-[var(--text)]">No categories yet</h3>
+              <p className="mt-2 text-xs text-[var(--muted)]">Create the first category to structure store taxonomy.</p>
             </div>
           ) : null}
         </CardContent>
@@ -271,91 +313,142 @@ export default function AdminCategoriesManager() {
         <DialogContent
           titleId={titleId}
           descriptionId={descriptionId}
-          className="max-w-2xl rounded-[30px] border border-[var(--border)] bg-[var(--surface)] p-0"
+          className="max-h-[calc(100vh-2rem)] max-w-4xl overflow-hidden rounded-[30px] border border-[var(--border)] bg-[var(--surface)] p-0 shadow-2xl sm:max-h-[calc(100vh-3rem)]"
         >
-          <div className="grid gap-0 lg:grid-cols-[0.9fr_1.1fr]">
-            <div className="border-b border-[var(--border)] bg-[linear-gradient(180deg,var(--surface-soft),var(--surface))] p-6 lg:border-r lg:border-b-0 lg:p-8">
-              <DialogHeader className="mb-6">
-                <Badge className="w-fit border border-[var(--color-primary)]/20 bg-[var(--surface)] px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-[var(--color-primary)]">
-                  Taxonomy editor
-                </Badge>
-                <DialogTitle id={titleId}>{editingCategory ? "Update Category" : "Add New Category"}</DialogTitle>
-                <DialogDescription id={descriptionId}>
-                  Keep store grouping consistent across the dashboard and public catalog.
-                </DialogDescription>
-              </DialogHeader>
+          <div className="grid gap-0 lg:grid-cols-[380px_1fr] h-[calc(100vh-2rem)] sm:h-[calc(100vh-3rem)] max-h-[700px] overflow-hidden">
+            {/* Left Column - Live Preview & Checklist */}
+            <div className="border-b border-[var(--border)] bg-gradient-to-br from-[var(--surface-soft)] via-[var(--surface)] to-[var(--surface-soft)]/30 p-6 lg:border-r lg:border-b-0 lg:p-8 flex flex-col justify-between overflow-y-auto">
+              <div>
+                <DialogHeader className="mb-6">
+                  <span className="w-fit inline-flex items-center rounded-full bg-[var(--color-primary)]/10 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[var(--color-primary)] border border-[var(--color-primary)]/20">
+                    Taxonomy Editor
+                  </span>
+                  <DialogTitle id={titleId} className="text-lg font-bold tracking-tight text-[var(--text)] mt-3">
+                    {editingCategory ? "Update Category" : "Add New Category"}
+                  </DialogTitle>
+                  <DialogDescription id={descriptionId} className="text-xs text-[var(--muted)] mt-1">
+                    Keep store grouping consistent across the dashboard and public catalog.
+                  </DialogDescription>
+                </DialogHeader>
 
-              <div className="space-y-4">
-                <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-primary)]">Preview</p>
-                  <p className="mt-4 text-lg font-semibold text-[var(--text)]">{watchedName || "Category name preview"}</p>
-                  <p className="mt-1 text-sm text-[var(--muted)]">/{watchedSlug || "category-slug"}</p>
-                  <p className="mt-4 text-sm text-[var(--muted)]">
-                    {watchedDescription || "Optional description helps admins understand the taxonomy intent."}
-                  </p>
+                {/* Live Preview Card */}
+                <div className="space-y-2.5">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--muted)]">Live Preview</span>
+                  <div className="relative rounded-2xl border border-[var(--border)]/70 bg-[var(--surface)] p-5 shadow-md overflow-hidden">
+                    {/* Category icon placeholder */}
+                    <div className="h-10 w-10 rounded-xl bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 flex items-center justify-center mb-3">
+                      <svg viewBox="0 0 24 24" className="h-5 w-5 text-[var(--color-primary)] stroke-current" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M4 7h16M4 12h16M4 17h16" />
+                      </svg>
+                    </div>
+                    <h4 className="text-sm font-bold text-[var(--text)] truncate">
+                      {watchedName || <span className="italic text-[var(--muted)]/60 font-normal">Category name preview</span>}
+                    </h4>
+                    <p className="mt-1 font-mono text-[11px] text-[var(--color-primary)]/70">
+                      /{watchedSlug || "category-slug"}
+                    </p>
+                    <p className="mt-3 text-xs text-[var(--muted)] leading-relaxed line-clamp-3 min-h-[48px]">
+                      {watchedDescription || "Optional description helps admins understand the taxonomy intent."}
+                    </p>
+                    <div className="mt-3 pt-3 border-t border-[var(--border)]/50">
+                      <span className="inline-flex items-center rounded-full border border-[var(--border)] bg-[var(--surface-soft)] px-2.5 py-0.5 text-[10px] font-bold text-[var(--muted)]">
+                        0 stores linked
+                      </span>
+                    </div>
+                  </div>
                 </div>
+              </div>
 
-                <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5">
-                  <p className="text-sm font-semibold text-[var(--text)]">Safety note</p>
-                  <p className="mt-3 text-sm text-[var(--muted)]">
-                    Category slug updates automatically sync linked stores so existing route patterns stay aligned.
-                  </p>
-                </div>
+              {/* Checklist */}
+              <div className="mt-6 border-t border-[var(--border)] pt-5">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--muted)]">Requirements Checklist</span>
+                <ul className="mt-3.5 space-y-2.5 text-xs text-[var(--muted)] font-medium">
+                  <li className="flex items-center gap-2">
+                    <span className={cn("h-1.5 w-1.5 rounded-full flex-shrink-0", watchedName ? "bg-purple-500" : "bg-[var(--border)]")} />
+                    <span>Category name provided</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className={cn("h-1.5 w-1.5 rounded-full flex-shrink-0", watchedSlug ? "bg-blue-500" : "bg-[var(--border)]")} />
+                    <span>URL-safe slug generated</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className={cn("h-1.5 w-1.5 rounded-full flex-shrink-0", watchedDescription ? "bg-emerald-500" : "bg-[var(--border)]")} />
+                    <span>Description added (optional)</span>
+                  </li>
+                </ul>
               </div>
             </div>
 
-            <form className="grid gap-5 bg-[var(--surface)] p-6 lg:p-8" onSubmit={handleSubmit(submitCategory)}>
-              <label className="grid gap-2 text-sm text-[var(--muted)]">
-                <span className="font-medium text-[var(--text)]">Category Name</span>
-                <Input placeholder="Fashion" className="rounded-lg bg-[var(--surface)]" {...register("name")} />
-                {errors.name ? <span className="text-sm text-[var(--color-primary)]">{errors.name.message}</span> : null}
-              </label>
+            {/* Right Column - Form */}
+            <div className="flex flex-col h-full bg-[var(--surface)] overflow-hidden">
+              <form className="flex flex-col h-full overflow-hidden" onSubmit={handleSubmit(submitCategory)}>
+                <div className="flex-1 overflow-y-auto p-6 lg:p-8 space-y-5">
+                  <label className="grid gap-2 text-sm text-[var(--muted)]">
+                    <span className="text-xs font-bold uppercase tracking-wider text-[var(--text)]">Category Name</span>
+                    <Input
+                      placeholder="Fashion"
+                      className="h-11 rounded-xl border-[var(--border)] bg-[var(--surface-soft)] px-4 text-sm text-[var(--text)] placeholder:text-[var(--muted)] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/10"
+                      {...register("name")}
+                    />
+                    {errors.name ? <span className="text-xs text-red-500">{errors.name.message}</span> : null}
+                  </label>
 
-              <label className="grid gap-2 text-sm text-[var(--muted)]">
-                <span className="font-medium text-[var(--text)]">Slug</span>
-                <Input
-                  placeholder="fashion"
-                  className="rounded-lg bg-[var(--surface)]"
-                  {...register("slug", {
-                    onChange: () => {
-                      slugEditedRef.current = true;
-                    },
-                  })}
-                />
-                <span className="text-xs text-[var(--muted)]">Used in admin taxonomy and store route grouping.</span>
-                {errors.slug ? <span className="text-sm text-[var(--color-primary)]">{errors.slug.message}</span> : null}
-              </label>
+                  <label className="grid gap-2 text-sm text-[var(--muted)]">
+                    <span className="text-xs font-bold uppercase tracking-wider text-[var(--text)]">Slug</span>
+                    <Input
+                      placeholder="fashion"
+                      className="h-11 rounded-xl border-[var(--border)] bg-[var(--surface-soft)] px-4 font-mono text-sm text-[var(--text)] placeholder:text-[var(--muted)] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/10"
+                      {...register("slug", {
+                        onChange: () => {
+                          slugEditedRef.current = true;
+                        },
+                      })}
+                    />
+                    <span className="text-[11px] text-[var(--muted)]">Used in admin taxonomy and public store route grouping.</span>
+                    {errors.slug ? <span className="text-xs text-red-500">{errors.slug.message}</span> : null}
+                  </label>
 
-              <label className="grid gap-2 text-sm text-[var(--muted)]">
-                <span className="font-medium text-[var(--text)]">Description</span>
-                <textarea
-                  rows={5}
-                  maxLength={180}
-                  className="min-h-[132px] w-full resize-none rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--text)] outline-none transition placeholder:text-[var(--muted)] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[color:rgba(139, 92, 246,0.16)]"
-                  placeholder="Optional notes about the stores that belong to this category."
-                  {...register("description")}
-                />
-                <div className="flex items-center justify-between text-xs text-[var(--muted)]">
-                  <span>Optional internal guidance for admins.</span>
-                  <span>{watchedDescription.length}/180</span>
+                  <label className="grid gap-2 text-sm text-[var(--muted)]">
+                    <span className="text-xs font-bold uppercase tracking-wider text-[var(--text)]">Description</span>
+                    <textarea
+                      rows={5}
+                      maxLength={180}
+                      className="min-h-[120px] w-full resize-none rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3 text-sm text-[var(--text)] outline-none transition placeholder:text-[var(--muted)] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/10"
+                      placeholder="Optional notes about the stores that belong to this category."
+                      {...register("description")}
+                    />
+                    <div className="flex items-center justify-between text-[11px] text-[var(--muted)]">
+                      <span>Optional internal guidance for admins.</span>
+                      <span className={cn(watchedDescription.length > 150 ? "text-amber-500" : "")}>{watchedDescription.length}/180</span>
+                    </div>
+                    {errors.description ? <span className="text-xs text-red-500">{errors.description.message}</span> : null}
+                  </label>
                 </div>
-                {errors.description ? <span className="text-sm text-[var(--color-primary)]">{errors.description.message}</span> : null}
-              </label>
 
-              <div className="flex flex-col gap-3 border-t border-[var(--border)] pt-5 sm:flex-row sm:justify-end">
-                <Button type="button" variant="outline" className="rounded-lg" onClick={() => setOpen(false)} disabled={isSubmitting}>
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  className="rounded-lg"
-                  disabled={isSubmitting}
-                  leadingIcon={isSubmitting ? <Spinner /> : null}
-                >
-                  {isSubmitting ? (editingCategory ? "Updating Category..." : "Saving Category...") : editingCategory ? "Update Category" : "Save Category"}
-                </Button>
-              </div>
-            </form>
+                {/* Footer actions */}
+                <div className="flex items-center justify-end gap-3 border-t border-[var(--border)] bg-[var(--surface-soft)]/50 px-6 py-4 lg:px-8">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="rounded-xl border-[var(--border)] px-5 h-10 text-xs font-bold text-[var(--muted)] hover:text-[var(--text)] cursor-pointer"
+                    onClick={() => setOpen(false)}
+                    disabled={isSubmitting}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    className="rounded-xl font-bold bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white shadow-sm transition-all duration-200 px-5 h-10 text-xs cursor-pointer"
+                    disabled={isSubmitting}
+                    leadingIcon={isSubmitting ? <Spinner /> : null}
+                  >
+                    {isSubmitting
+                      ? editingCategory ? "Updating..." : "Saving..."
+                      : editingCategory ? "Update Category" : "Save Category"}
+                  </Button>
+                </div>
+              </form>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

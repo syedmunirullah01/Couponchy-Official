@@ -271,8 +271,8 @@ export default function HeroSection({ hero, countryCode = DEFAULT_COUNTRY_CODE, 
 
   const dynamicPopularStores = stores.length > 0
     ? [...stores]
-        .sort((a, b) => (b.offersCount || 0) - (a.offersCount || 0))
-        .slice(0, 6)
+      .sort((a, b) => (b.offersCount || 0) - (a.offersCount || 0))
+      .slice(0, 6)
     : [];
 
 

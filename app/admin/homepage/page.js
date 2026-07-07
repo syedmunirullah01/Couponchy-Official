@@ -8,20 +8,9 @@ export const metadata = {
 
 export default function AdminHomepagePage() {
   return (
-    <div>
-      <AdminTopbar title="Homepage" breadcrumbTrail={["Admin", "Homepage"]} />
+    <div className="relative min-h-screen pb-12 bg-[var(--page-bg)]">
+      <AdminTopbar title="Homepage Content" breadcrumbTrail={["Admin", "Homepage"]} />
       <main className="space-y-6 p-4 sm:p-6 lg:p-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Homepage Sections</CardTitle>
-            <CardDescription>Manage homepage content blocks outside the hero area.</CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-wrap gap-3">
-            <p className="text-sm text-[var(--muted)]">
-              Choose which trending stores, featured coupons, and latest stores appear on the homepage.
-            </p>
-          </CardContent>
-        </Card>
         <AdminHomepageSectionsManager />
       </main>
     </div>

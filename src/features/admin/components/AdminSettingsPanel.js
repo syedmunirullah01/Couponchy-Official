@@ -60,10 +60,10 @@ const tabs = [
 
 function SectionField({ label, children, hint }) {
   return (
-    <label className="grid gap-2 text-sm text-[var(--muted)]">
-      <span className="font-medium text-[var(--text)]">{label}</span>
+    <label className="grid gap-2">
+      <span className="text-xs font-bold uppercase tracking-wider text-[var(--text)]">{label}</span>
       {children}
-      {hint ? <span className="text-xs text-[var(--muted)]">{hint}</span> : null}
+      {hint ? <span className="text-[11px] text-[var(--muted)] leading-relaxed">{hint}</span> : null}
     </label>
   );
 }
@@ -71,24 +71,22 @@ function SectionField({ label, children, hint }) {
 function SettingsCard({ title, description, children, onSaveLabel = "Save" }) {
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-col gap-4 border-b border-[var(--border)] pb-6 sm:flex-row sm:items-center sm:justify-between p-6">
         <div>
-          <CardTitle>{title}</CardTitle>
-          <CardDescription>{description}</CardDescription>
+          <CardTitle className="text-base font-bold tracking-tight text-[var(--text)]">{title}</CardTitle>
+          <CardDescription className="text-xs text-[var(--muted)] mt-0.5">{description}</CardDescription>
         </div>
+        <button
+          type="button"
+          className="inline-flex h-10 items-center justify-center rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] px-5 text-xs font-bold text-white shadow-sm transition-all duration-200 cursor-pointer disabled:opacity-60 disabled:pointer-events-none flex-shrink-0"
+          onClick={onSaveLabel.onClick}
+          disabled={onSaveLabel.disabled}
+        >
+          {onSaveLabel.label}
+        </button>
       </CardHeader>
-      <CardContent className="grid gap-4 md:grid-cols-2">
+      <CardContent className="grid gap-4 md:grid-cols-2 p-6">
         {children}
-        <div className="md:col-span-2">
-          <button
-            type="button"
-            className="inline-flex h-10 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 text-sm font-medium text-[var(--text)] transition hover:bg-[var(--surface-soft)] disabled:pointer-events-none disabled:opacity-50"
-            onClick={onSaveLabel.onClick}
-            disabled={onSaveLabel.disabled}
-          >
-            {onSaveLabel.label}
-          </button>
-        </div>
       </CardContent>
     </Card>
   );
@@ -96,12 +94,12 @@ function SettingsCard({ title, description, children, onSaveLabel = "Save" }) {
 
 function SettingsSection({ title, description, children, className = "" }) {
   return (
-    <div className={`rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)]/35 p-4 sm:p-5 ${className}`}>
-      <div className="mb-4">
-        <p className="text-sm font-semibold text-[var(--text)]">{title}</p>
-        {description ? <p className="mt-1 text-xs text-[var(--muted)]">{description}</p> : null}
+    <div className={`rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)]/30 overflow-hidden ${className}`}>
+      <div className="border-b border-[var(--border)]/60 bg-[var(--surface-soft)]/50 px-5 py-3.5">
+        <p className="text-xs font-bold uppercase tracking-wider text-[var(--text)]">{title}</p>
+        {description ? <p className="mt-0.5 text-[11px] text-[var(--muted)]">{description}</p> : null}
       </div>
-      {children}
+      <div className="p-5">{children}</div>
     </div>
   );
 }
@@ -110,7 +108,7 @@ function ScriptTextarea({ value, onChange, placeholder }) {
   return (
     <textarea
       rows={6}
-      className="w-full rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3 font-mono text-sm text-[var(--text)] outline-none"
+      className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3 font-mono text-xs text-[var(--text)] outline-none transition placeholder:text-[var(--muted)] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/10"
       value={value}
       onChange={onChange}
       placeholder={placeholder}
@@ -292,21 +290,23 @@ export default function AdminSettingsPanel() {
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader>
-          <CardTitle>Settings</CardTitle>
-          <CardDescription>Organize platform settings by area and save each section independently.</CardDescription>
+        <CardHeader className="flex flex-col gap-4 border-b border-[var(--border)] pb-6 sm:flex-row sm:items-center sm:justify-between p-6">
+          <div>
+            <CardTitle className="text-base font-bold tracking-tight text-[var(--text)]">Settings</CardTitle>
+            <CardDescription className="text-xs text-[var(--muted)] mt-0.5">Organize platform settings by area and save each section independently.</CardDescription>
+          </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-6">
           <div className="flex flex-wrap gap-2">
             {tabs.map((tab) => (
               <button
                 key={tab.key}
                 type="button"
                 className={cn(
-                  "rounded-full border px-4 py-2 text-sm font-medium transition",
+                  "rounded-full px-4 py-1.5 text-xs font-bold transition-all duration-150",
                   activeTab === tab.key
-                    ? "border-[var(--color-primary)] bg-[var(--surface-soft)] text-[var(--text)]"
-                    : "border-[var(--border)] bg-[var(--surface)] text-[var(--muted)] hover:text-[var(--text)]"
+                    ? "bg-[var(--color-primary)] text-white shadow-sm"
+                    : "border border-[var(--border)] bg-[var(--surface)] text-[var(--muted)] hover:text-[var(--text)] hover:border-[var(--color-primary)]/40"
                 )}
                 onClick={() => setActiveTab(tab.key)}
               >
@@ -432,11 +432,11 @@ export default function AdminSettingsPanel() {
                   </button>
                 </div>
 
-                <div className="grid gap-3">
+                <div className="grid gap-2.5">
                   {countries.map((country) => (
                     <div
                       key={country.code}
-                      className="flex items-center justify-between rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3"
+                      className="flex items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 hover:bg-[var(--surface-soft)]/30 transition-colors"
                     >
                       <div className="flex items-center gap-3">
                         <img
@@ -445,15 +445,15 @@ export default function AdminSettingsPanel() {
                           className="h-3.5 w-5 object-cover rounded-[1px] border border-white/10 shrink-0"
                         />
                         <div>
-                          <p className="text-sm font-semibold text-[var(--text)]">{country.name}</p>
-                          <p className="text-xs text-[var(--muted)]">
-                            {country.code} {country.code === DEFAULT_COUNTRY_CODE ? "• default country" : ""}
+                          <p className="text-xs font-bold text-[var(--text)]">{country.name}</p>
+                          <p className="text-[10px] text-[var(--muted)] font-mono">
+                            {country.code}{country.code === DEFAULT_COUNTRY_CODE ? " · default" : ""}
                           </p>
                         </div>
                       </div>
                       <button
                         type="button"
-                        className="inline-flex h-9 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] px-3 text-sm text-[var(--text)] transition hover:bg-[var(--surface)] disabled:opacity-50"
+                        className="inline-flex h-8 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--surface-soft)] px-3 text-xs font-bold text-[var(--muted)] transition hover:text-red-600 hover:bg-red-500/5 hover:border-red-500/20 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                         onClick={() => setCountryDeleteTarget(country)}
                         disabled={country.code === DEFAULT_COUNTRY_CODE}
                       >
@@ -513,17 +513,18 @@ export default function AdminSettingsPanel() {
           </SectionField>
           <div className="grid gap-3 md:col-span-2 sm:grid-cols-3">
             {[
-              ["cjEnabled", "CJ"],
+              ["cjEnabled", "CJ Affiliate"],
               ["rakutenEnabled", "Rakuten"],
               ["impactEnabled", "Impact"],
             ].map(([key, label]) => (
               <label
                 key={key}
-                className="flex items-center justify-between rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3 text-sm text-[var(--text)]"
+                className="flex items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--surface-soft)]/60 px-4 py-3 text-xs text-[var(--text)] cursor-pointer hover:bg-[var(--surface-soft)] transition-colors"
               >
-                <span>{label}</span>
+                <span className="font-bold">{label}</span>
                 <input
                   type="checkbox"
+                  className="accent-[var(--color-primary)] h-4 w-4 cursor-pointer"
                   checked={settings.affiliate[key]}
                   onChange={(event) => updateSection("affiliate", key, event.target.checked)}
                 />
@@ -581,7 +582,7 @@ export default function AdminSettingsPanel() {
           <SectionField label="Default Share Copy" hint="Used in promotional and social sharing flows.">
             <textarea
               rows={4}
-              className="w-full rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3 text-sm text-[var(--text)] outline-none"
+              className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3 text-sm text-[var(--text)] outline-none transition placeholder:text-[var(--muted)] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/10"
               value={settings.social.defaultShareText}
               onChange={(event) => updateSection("social", "defaultShareText", event.target.value)}
             />
@@ -614,7 +615,7 @@ export default function AdminSettingsPanel() {
           <SectionField label="Meta Description" hint="Used as a fallback when a page does not define its own description.">
             <textarea
               rows={4}
-              className="w-full rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3 text-sm text-[var(--text)] outline-none"
+              className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3 text-sm text-[var(--text)] outline-none transition placeholder:text-[var(--muted)] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/10"
               value={settings.seo.metaDescription}
               onChange={(event) => updateSection("seo", "metaDescription", event.target.value)}
             />
@@ -623,10 +624,11 @@ export default function AdminSettingsPanel() {
             label="Auto-Generate Store Metadata"
             hint="When enabled, each store page automatically uses the highest percentage found in its live deals or coupons for the meta title."
           >
-            <label className="flex h-11 items-center justify-between rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 text-sm text-[var(--text)]">
-              <span>Enable automatic store meta titles</span>
+            <label className="flex h-11 items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--surface-soft)]/60 px-4 text-xs text-[var(--text)] cursor-pointer hover:bg-[var(--surface-soft)] transition-colors">
+              <span className="font-semibold">Enable automatic store meta titles</span>
               <input
                 type="checkbox"
+                className="accent-[var(--color-primary)] h-4 w-4 cursor-pointer"
                 checked={Boolean(settings.seo.autoGenerateStoreMetadata)}
                 onChange={(event) => updateSection("seo", "autoGenerateStoreMetadata", event.target.checked)}
               />
@@ -647,7 +649,7 @@ export default function AdminSettingsPanel() {
           >
             <textarea
               rows={4}
-              className="w-full rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3 text-sm text-[var(--text)] outline-none"
+              className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3 text-sm text-[var(--text)] outline-none transition placeholder:text-[var(--muted)] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/10"
               value={settings.seo.storeMetaDescriptionTemplate}
               onChange={(event) => updateSection("seo", "storeMetaDescriptionTemplate", event.target.value)}
             />
@@ -661,7 +663,7 @@ export default function AdminSettingsPanel() {
           <SectionField label="Open Graph Description" hint="Fallback social description.">
             <textarea
               rows={4}
-              className="w-full rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3 text-sm text-[var(--text)] outline-none"
+              className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3 text-sm text-[var(--text)] outline-none transition placeholder:text-[var(--muted)] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/10"
               value={settings.seo.ogDescription}
               onChange={(event) => updateSection("seo", "ogDescription", event.target.value)}
             />

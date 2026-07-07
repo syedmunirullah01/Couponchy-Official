@@ -106,17 +106,19 @@ function useInView(ref) {
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
-export default function AboutPage({ totalStores = 0, totalOffers = 0 }) {
+export default function AboutPage({ totalStores = 0, totalOffers = 0, company = null }) {
   const statsRef = useRef(null);
   const statsInView = useInView(statsRef);
   const [hoveredVal, setHoveredVal] = useState(null);
   const [hoveredStep, setHoveredStep] = useState(null);
 
+  const aboutData = company?.aboutUs || {};
+
   // Build dynamic stats that match the homepage numbers
   const STATS = [
     { value: formatCount(totalStores), label: "Verified Stores" },
-    { value: "4.6M+",                 label: "Monthly Users" },
-    { value: "98%",                    label: "Code Accuracy" },
+    { value: aboutData.statMonthlyUsers || "4.6M+", label: "Monthly Users" },
+    { value: aboutData.statCodeAccuracy || "98%", label: "Code Accuracy" },
     { value: formatCount(totalOffers), label: "Active Deals" },
   ];
 
@@ -133,16 +135,18 @@ export default function AboutPage({ totalStores = 0, totalOffers = 0 }) {
         <div style={{ position: "relative", zIndex: 1, maxWidth: "800px", margin: "0 auto", padding: "0 24px" }}>
           <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: "rgba(139,92,246,0.08)", border: "1px solid rgba(139,92,246,0.2)", borderRadius: "999px", padding: "6px 18px", marginBottom: "32px" }}>
             <span style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--color-primary)", boxShadow: "0 0 10px var(--color-primary)", display: "inline-block", animation: "aboutPulse 2s infinite" }} />
-            <span style={{ fontSize: "11px", fontWeight: 800, letterSpacing: "0.2em", textTransform: "uppercase", color: "var(--color-primary)" }}>Our Story</span>
+            <span style={{ fontSize: "11px", fontWeight: 800, letterSpacing: "0.2em", textTransform: "uppercase", color: "var(--color-primary)" }}>
+              {aboutData.heroBadge || "Our Story"}
+            </span>
           </div>
 
           <h1 style={{ fontSize: "clamp(44px, 6vw, 80px)", fontWeight: 900, lineHeight: 0.95, letterSpacing: "-0.04em", margin: 0, marginBottom: "28px" }}>
-            We killed the<br />
-            <span style={{ color: "var(--color-primary)" }}>expired code.</span>
+            {aboutData.heroTitleLine1 || "We killed the"}<br />
+            <span style={{ color: "var(--color-primary)" }}>{aboutData.heroTitleAccent || "expired code."}</span>
           </h1>
 
           <p style={{ fontSize: "clamp(15px, 2vw, 18px)", lineHeight: 1.75, color: "rgba(255,255,255,0.55)", maxWidth: "580px", margin: "0 auto 48px", fontWeight: 500 }}>
-            Couponchy was built out of frustration. Every other coupon site was full of dead links and fake discounts. We built the infrastructure to verify every code — automatically, in real time, at scale.
+            {aboutData.heroDescription || "Couponchy was built out of frustration. Every other coupon site was full of dead links and fake discounts. We built the infrastructure to verify every code — automatically, in real time, at scale."}
           </p>
 
           <div style={{ display: "flex", gap: "16px", justifyContent: "center", flexWrap: "wrap" }}>
@@ -185,14 +189,13 @@ export default function AboutPage({ totalStores = 0, totalOffers = 0 }) {
               <span style={{ height: "2px", width: "24px", background: "var(--color-primary)", display: "inline-block" }} /> Our Mission
             </div>
             <blockquote style={{ fontSize: "clamp(26px, 4vw, 40px)", fontWeight: 900, lineHeight: 1.2, letterSpacing: "-0.03em", margin: 0, marginBottom: "28px" }}>
-              "Nobody should waste money on a<br />
-              <span style={{ color: "var(--color-primary)" }}>coupon that doesn't work.</span>"
+              "{aboutData.missionQuote || "Nobody should waste money on a coupon that doesn't work."}"
             </blockquote>
             <p style={{ fontSize: "16px", lineHeight: 1.8, color: "rgba(255,255,255,0.5)", fontWeight: 500 }}>
-              We started Couponchy because we kept getting burned — coupon code after coupon code failing at checkout. The problem wasn't a lack of deals. The problem was a lack of honesty.
+              {aboutData.missionParagraph1 || "We started Couponchy because we kept getting burned — coupon code after coupon code failing at checkout. The problem wasn't a lack of deals. The problem was a lack of honesty."}
             </p>
             <p style={{ fontSize: "16px", lineHeight: 1.8, color: "rgba(255,255,255,0.5)", fontWeight: 500, marginTop: "16px" }}>
-              So we built a real-time verification engine. Not just a database of codes — an automated system that actually tests them, removes the dead ones, and surfaces the ones that genuinely save you money.
+              {aboutData.missionParagraph2 || "So we built a real-time verification engine. Not just a database of codes — an automated system that actually tests them, removes the dead ones, and surfaces the ones that genuinely save you money."}
             </p>
           </div>
 
@@ -200,12 +203,18 @@ export default function AboutPage({ totalStores = 0, totalOffers = 0 }) {
             <div style={{ background: "linear-gradient(135deg, rgba(139,92,246,0.12) 0%, rgba(217,70,239,0.05) 50%, rgba(15,15,20,0.8) 100%)", border: "1px solid rgba(139,92,246,0.2)", borderRadius: "32px", padding: "48px 40px", backdropFilter: "blur(12px)" }}>
               <div style={{ position: "absolute", top: -30, right: -30, width: "200px", height: "200px", background: "radial-gradient(circle, rgba(139,92,246,0.2) 0%, transparent 70%)", pointerEvents: "none" }} />
               <div style={{ fontSize: "56px", marginBottom: "16px" }}>🎯</div>
-              <h3 style={{ fontSize: "22px", fontWeight: 900, margin: "0 0 12px" }}>The Promise</h3>
+              <h3 style={{ fontSize: "22px", fontWeight: 900, margin: "0 0 12px" }}>
+                {aboutData.promiseTitle || "The Promise"}
+              </h3>
               <p style={{ fontSize: "15px", color: "rgba(255,255,255,0.55)", lineHeight: 1.7, fontWeight: 500, margin: 0 }}>
-                Every coupon you see on Couponchy has been verified by our automated system. If it stopped working — it's already gone.
+                {aboutData.promiseDescription || "Every coupon you see on Couponchy has been verified by our automated system. If it stopped working — it's already gone."}
               </p>
               <div style={{ marginTop: "32px", display: "flex", flexDirection: "column", gap: "14px" }}>
-                {["Real-time code verification", "Auto-removal of expired deals", "Zero fake or misleading discounts"].map((item) => (
+                {[
+                  aboutData.promiseBullet1 || "Real-time code verification",
+                  aboutData.promiseBullet2 || "Auto-removal of expired deals",
+                  aboutData.promiseBullet3 || "Zero fake or misleading discounts"
+                ].map((item) => (
                   <div key={item} style={{ display: "flex", alignItems: "center", gap: "12px", fontSize: "14px", fontWeight: 600, color: "rgba(255,255,255,0.7)" }}>
                     <span style={{ width: "20px", height: "20px", borderRadius: "50%", background: "rgba(139,92,246,0.15)", border: "1px solid rgba(139,92,246,0.3)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: "var(--color-primary)", fontSize: "11px", fontWeight: 900 }}>✓</span>
                     {item}
@@ -281,12 +290,14 @@ export default function AboutPage({ totalStores = 0, totalOffers = 0 }) {
         <div style={{ position: "relative", background: "linear-gradient(135deg, rgba(139,92,246,0.15) 0%, rgba(217,70,239,0.06) 50%, rgba(15,15,20,0.9) 100%)", border: "1px solid rgba(139,92,246,0.25)", borderRadius: "40px", padding: "80px 48px", textAlign: "center", overflow: "hidden", backdropFilter: "blur(16px)" }}>
           <div style={{ position: "absolute", top: "-60px", left: "50%", transform: "translateX(-50%)", width: "600px", height: "300px", background: "radial-gradient(ellipse, rgba(139,92,246,0.12) 0%, transparent 70%)", pointerEvents: "none" }} />
           <div style={{ position: "relative", zIndex: 1 }}>
-            <div style={{ fontSize: "11px", fontWeight: 800, letterSpacing: "0.2em", textTransform: "uppercase", color: "var(--color-primary)", marginBottom: "20px" }}>Start Saving Today</div>
+            <div style={{ fontSize: "11px", fontWeight: 800, letterSpacing: "0.2em", textTransform: "uppercase", color: "var(--color-primary)", marginBottom: "20px" }}>
+              {aboutData.ctaEyebrow || "Start Saving Today"}
+            </div>
             <h2 style={{ fontSize: "clamp(32px, 5vw, 60px)", fontWeight: 900, letterSpacing: "-0.03em", margin: "0 0 20px" }}>
-              Every code. Verified.<br /><span style={{ color: "var(--color-primary)" }}>Every time.</span>
+              {aboutData.ctaTitleLine1 || "Every code. Verified."}<br /><span style={{ color: "var(--color-primary)" }}>{aboutData.ctaTitleAccent || "Every time."}</span>
             </h2>
             <p style={{ fontSize: "17px", color: "rgba(255,255,255,0.5)", maxWidth: "500px", margin: "0 auto 40px", lineHeight: 1.7, fontWeight: 500 }}>
-              Browse {formatCount(totalStores)} verified stores and start saving on every order — with codes that actually work.
+              {aboutData.ctaDescription || `Browse ${formatCount(totalStores)} verified stores and start saving on every order — with codes that actually work.`}
             </p>
             <Link href="/stores"
               style={{ display: "inline-flex", alignItems: "center", gap: "10px", background: "var(--color-primary)", color: "#000", fontWeight: 900, fontSize: "15px", padding: "16px 36px", borderRadius: "16px", textDecoration: "none", transition: "all 0.2s", boxShadow: "0 0 32px rgba(139,92,246,0.4)" }}

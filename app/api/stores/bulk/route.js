@@ -120,10 +120,7 @@ export async function POST(request) {
         continue;
       }
 
-      if (description.length < 20) {
-        errors.push({ rowNumber, reason: "Description should be at least 20 characters." });
-        continue;
-      }
+
 
       if (!allowedCountryCodes.has(countryCode)) {
         errors.push({ rowNumber, reason: "Country code is not available in settings." });

@@ -36,7 +36,7 @@ export default function ProductsSection({ products }) {
                 ) : null}
               </div>
               <Button asChild variant="outline" className="w-full rounded-lg">
-                <Link href={product.productUrl} target="_blank" rel="noreferrer">
+                <Link href={product.productUrl} target="_blank" rel="noopener noreferrer">
                   {product.ctaLabel || "View Product"}
                 </Link>
               </Button>

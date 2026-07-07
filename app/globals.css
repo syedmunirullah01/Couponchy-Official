@@ -15,6 +15,25 @@
   --text: var(--color-text);
   --muted: var(--color-muted);
   --accent: var(--color-primary);
+  --body-bg: radial-gradient(circle at top, rgba(139, 92, 246, 0.08), transparent 20%), linear-gradient(180deg, #020202 0%, #000000 100%);
+}
+
+.light {
+  --color-primary: #3b82f6;
+  --color-primary-hover: #2563eb;
+  --color-secondary: #ffffff;
+  --color-secondary-muted: #f8fafc;
+  --color-muted: #64748b;
+  --color-text: #1e293b;
+  --color-border: #e2e8f0;
+  --page-bg: #f4f6fa;
+  --surface: #ffffff;
+  --surface-soft: #f8fafc;
+  --border: #e2e8f0;
+  --text: #1e293b;
+  --muted: #64748b;
+  --accent: var(--color-primary);
+  --body-bg: #f4f6fa;
 }
 
 @theme inline {
@@ -33,13 +52,16 @@ html {
 
 body {
   margin: 0;
-  background:
-    radial-gradient(circle at top, rgba(139, 92, 246, 0.08), transparent 20%),
-    linear-gradient(180deg, #020202 0%, #000000 100%);
+  background: var(--body-bg);
   color: var(--text);
   font-family: var(--font-plus-jakarta), sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.theme-transition,
+.theme-transition * {
+  transition: background-color 300ms ease, border-color 300ms ease, color 300ms ease, fill 300ms ease, stroke 300ms ease !important;
 }
 
 a {

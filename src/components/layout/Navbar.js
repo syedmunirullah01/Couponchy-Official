@@ -298,7 +298,7 @@ export default function Navbar() {
     const normalizedCountryCode = normalizeCountryCode(nextCountryCode);
     setSelectedCountryCode(normalizedCountryCode);
     document.cookie = `${COUNTRY_COOKIE_KEY}=${encodeURIComponent(normalizedCountryCode)}; path=/; max-age=31536000; samesite=lax`;
-    const nextPath = buildCountryPath(pathname, normalizedCountryCode);
+    const nextPath = buildCountryPath("/", normalizedCountryCode);
     const search = typeof window !== "undefined" ? window.location.search : "";
     router.replace(`${nextPath}${search}`);
     router.refresh();
@@ -518,12 +518,12 @@ export default function Navbar() {
                     <button
                       type="button"
                       onClick={() => setEventsOpen((current) => !current)}
-                      className="flex items-center gap-1.5 text-[0.88rem] font-semibold text-white/80 transition hover:text-white"
+                      className="flex items-center gap-1.5 font-sans text-sm font-bold text-white transition hover:text-white/80"
                       aria-expanded={eventsOpen}
                       aria-haspopup="true"
                     >
-                      <span>{item.label}</span>
-                      <ChevronDownIcon className={cn("h-4 w-4 transition-transform", eventsOpen ? "rotate-180" : "rotate-0")} />
+                      {item.label}
+                      <ChevronDownIcon className={cn("h-3.5 w-3.5 transition-transform", eventsOpen ? "rotate-180" : "rotate-0")} />
                     </button>
 
                     {eventsOpen && events.length > 0 && (
@@ -565,12 +565,12 @@ export default function Navbar() {
                     <button
                       type="button"
                       onClick={() => setMegaOpen((current) => !current)}
-                      className="flex items-center gap-1.5 text-[0.88rem] font-semibold text-white/80 transition hover:text-white"
+                      className="flex items-center gap-1.5 font-sans text-sm font-bold text-white transition hover:text-white/80"
                       aria-expanded={megaOpen}
                       aria-haspopup="true"
                     >
-                      <span>{item.label}</span>
-                      <ChevronDownIcon className={cn("h-4 w-4 transition-transform", megaOpen ? "rotate-180" : "rotate-0")} />
+                      {item.label}
+                      <ChevronDownIcon className={cn("h-3.5 w-3.5 transition-transform", megaOpen ? "rotate-180" : "rotate-0")} />
                     </button>
 
                     {showMegaMenu ? (
@@ -822,7 +822,7 @@ export default function Navbar() {
                 <Link
                   key={item.label}
                   href={buildCountryPath(item.href, selectedCountryCode)}
-                  className="text-[0.88rem] font-semibold text-white/80 transition hover:text-white"
+                  className="flex items-center gap-1.5 font-sans text-sm font-bold text-white transition hover:text-white/80"
                 >
                   {item.label}
                 </Link>
@@ -1017,7 +1017,7 @@ export default function Navbar() {
             <button
               type="button"
               onClick={() => setMobileDealsOpen((current) => !current)}
-              className="flex w-full items-center justify-between text-left text-[1.05rem] font-semibold text-white"
+              className="flex w-full items-center justify-between text-left font-sans text-[1.05rem] font-bold text-white"
             >
               <span>Find Merchants</span>
               <ChevronDownIcon className={cn("h-4 w-4 transition-transform", mobileDealsOpen ? "rotate-180" : "rotate-0")} />
@@ -1090,7 +1090,7 @@ export default function Navbar() {
             <button
               type="button"
               onClick={() => setMobileEventsOpen((current) => !current)}
-              className="flex w-full items-center justify-between text-left text-[1.05rem] font-semibold text-white"
+              className="flex w-full items-center justify-between text-left font-sans text-[1.05rem] font-bold text-white"
             >
               <span>Events</span>
               <ChevronDownIcon className={cn("h-4 w-4 transition-transform", mobileEventsOpen ? "rotate-180" : "rotate-0")} />
@@ -1117,13 +1117,13 @@ export default function Navbar() {
           </div>
 
           <div className="border-b border-white/8 py-5">
-            <Link href={buildCountryPath("/exclusive", selectedCountryCode)} onClick={() => setMobileOpen(false)} className="block text-[1.05rem] font-semibold text-white">
+            <Link href={buildCountryPath("/exclusive", selectedCountryCode)} onClick={() => setMobileOpen(false)} className="block font-sans text-[1.05rem] font-bold text-white">
               Exclusive
             </Link>
           </div>
 
           <div className="border-b border-white/8 py-5">
-            <Link href={buildCountryPath("/blog", selectedCountryCode)} onClick={() => setMobileOpen(false)} className="block text-[1.05rem] font-semibold text-white">
+            <Link href={buildCountryPath("/blog", selectedCountryCode)} onClick={() => setMobileOpen(false)} className="block font-sans text-[1.05rem] font-bold text-white">
               Blog
             </Link>
           </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -213,8 +213,8 @@ export default function AdminUsersManager() {
                 </TableHeader>
                 <TableBody>
                   {users.map((user) => (
-                    <>
-                      <TableRow key={user.id}>
+                    <Fragment key={user.id}>
+                      <TableRow>
                         <TableCell>
                           <div className="space-y-1">
                             <p className="font-semibold text-[var(--text)]">{user.name || "Unnamed User"}</p>
@@ -253,7 +253,7 @@ export default function AdminUsersManager() {
                         </TableCell>
                       </TableRow>
                       {expandedUserId === user.id ? (
-                        <TableRow key={`${user.id}-expanded`}>
+                        <TableRow>
                           <TableCell colSpan={5} className="bg-[var(--surface-soft)]">
                             <div className="flex flex-wrap gap-1.5 py-1">
                               {user.permissions.map((permission) => {
@@ -268,7 +268,7 @@ export default function AdminUsersManager() {
                           </TableCell>
                         </TableRow>
                       ) : null}
-                    </>
+                    </Fragment>
                   ))}
                 </TableBody>
               </Table>

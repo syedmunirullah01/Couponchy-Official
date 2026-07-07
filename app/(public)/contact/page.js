@@ -1,15 +1,28 @@
 import ContactPage from "@/features/contact/components/ContactPage";
 import { getPublicSiteSettings } from "@/server/services/settings-service";
+import { getCompanyContent } from "@/server/repositories/company-repository";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = {
-  title: "Contact Us | Couponchy",
-  description:
-    "Have questions, suggestions, or want to submit a new coupon code? Reach out to the Couponchy team directly.",
-};
+export async function generateMetadata() {
+  try {
+    const company = await getCompanyContent();
+    return {
+      title: `${company.contactUs.title || "Contact Us"} | Couponchy`,
+      description: company.contactUs.subtitle || "Have questions or suggestions? Reach out to the Couponchy team.",
+    };
+  } catch {
+    return {
+      title: "Contact Us | Couponchy",
+      description: "Have questions, suggestions, or want to submit a new coupon code? Reach out to the Couponchy team directly.",
+    };
+  }
+}
 
 export default async function Page() {
-  const settings = await getPublicSiteSettings();
-  return <ContactPage settings={settings} />;
+  const [settings, company] = await Promise.all([
+    getPublicSiteSettings().catch(() => ({})),
+    getCompanyContent().catch(() => null),
+  ]);
+  return <ContactPage settings={settings} company={company} />;
 }

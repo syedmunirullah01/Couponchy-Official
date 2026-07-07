@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from "@/components/ui/Input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/Table";
+import { cn } from "@/lib/utils";
 
 const initialForm = {
   title: "",
@@ -17,6 +18,7 @@ const initialForm = {
   price: "",
   originalPrice: "",
   ctaLabel: "View Product",
+  productUrl: "",
   status: "Active",
   storeSlug: "",
   storeName: "",
@@ -55,6 +57,7 @@ export default function AdminProductsManager() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [error, setError] = useState("");
+  const [activeTab, setActiveTab] = useState("details");
 
   const visibleProducts = useMemo(() => {
     if (selectedStoreFilter === "all") {
@@ -102,6 +105,7 @@ export default function AdminProductsManager() {
   function handleOpenCreate() {
     setEditingProduct(null);
     setForm(initialForm);
+    setActiveTab("details");
     setError("");
     setOpen(true);
   }
@@ -115,10 +119,12 @@ export default function AdminProductsManager() {
       price: String(product.price ?? ""),
       originalPrice: product.originalPrice == null ? "" : String(product.originalPrice),
       ctaLabel: product.ctaLabel || "View Product",
+      productUrl: product.productUrl || "",
       status: product.status || "Active",
       storeSlug: product.storeSlug,
       storeName: product.storeName,
     });
+    setActiveTab("details");
     setError("");
     setOpen(true);
   }
@@ -130,6 +136,7 @@ export default function AdminProductsManager() {
     if (name === "storeSlug") {
       const matchedStore = stores.find((store) => store.slug === value);
       nextState.storeName = matchedStore?.name || "";
+      nextState.productUrl = matchedStore?.affiliateLink || "";
     }
 
     setForm(nextState);
@@ -245,16 +252,16 @@ export default function AdminProductsManager() {
   return (
     <>
       <Card>
-        <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <CardHeader className="flex flex-col gap-4 border-b border-[var(--border)] pb-6 lg:flex-row lg:items-center lg:justify-between p-6">
           <div>
-            <CardTitle>Products</CardTitle>
-            <CardDescription>Manage store-linked products that appear after coupons and deals on store pages.</CardDescription>
+            <CardTitle className="text-base font-bold tracking-tight text-[var(--text)]">Products</CardTitle>
+            <CardDescription className="text-xs text-[var(--muted)] mt-0.5">Manage store-linked products that appear after coupons and deals on store pages.</CardDescription>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <select
               value={selectedStoreFilter}
               onChange={(event) => setSelectedStoreFilter(event.target.value)}
-              className="h-10 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-4 text-sm text-[var(--text)] outline-none"
+              className="h-10 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 text-xs font-bold text-[var(--text)] outline-none cursor-pointer"
             >
               <option value="all">All stores</option>
               {stores.map((store) => (
@@ -263,62 +270,106 @@ export default function AdminProductsManager() {
                 </option>
               ))}
             </select>
-            <Button type="button" variant="ghost" size="sm" className="h-10 w-10 rounded-lg border border-[var(--border)] px-0" onClick={loadData} aria-label="Refresh products">
+            <Button type="button" variant="ghost" size="sm" className="h-10 w-10 rounded-xl border border-[var(--border)] px-0 bg-[var(--surface)] hover:bg-[var(--surface-soft)] transition" onClick={loadData} aria-label="Refresh products">
               <RefreshIcon />
             </Button>
-            <Button type="button" onClick={handleOpenCreate}>
+            <Button type="button" className="rounded-xl font-bold bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white shadow-sm transition-all duration-200 px-4 py-2 cursor-pointer text-xs h-10" onClick={handleOpenCreate}>
               Add Product
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="pt-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Product</TableHead>
-                <TableHead>Store</TableHead>
-                <TableHead>Price</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Edit/Delete</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {visibleProducts.map((product) => (
-                <TableRow key={product.id}>
-                  <TableCell>
-                    <div className="space-y-1">
-                      <p className="font-medium text-[var(--text)]">{product.title}</p>
-                      <p className="text-sm text-[var(--muted)]">{product.description}</p>
-                    </div>
-                  </TableCell>
-                  <TableCell>{product.storeName}</TableCell>
-                  <TableCell>
-                    {product.originalPrice ? (
-                      <div className="flex flex-col">
-                        <span className="font-medium text-[var(--text)]">${product.price}</span>
-                        <span className="text-sm text-[var(--muted)] line-through">${product.originalPrice}</span>
-                      </div>
-                    ) : (
-                      `$${product.price}`
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{product.status}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button type="button" variant="outline" size="sm" onClick={() => handleOpenEdit(product)}>
-                        Edit
-                      </Button>
-                      <Button type="button" variant="ghost" size="sm" className="border border-[var(--border)]" onClick={() => setDeleteTarget(product)}>
-                        Delete
-                      </Button>
-                    </div>
-                  </TableCell>
+        <CardContent className="p-6">
+          <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
+            <Table>
+              <TableHeader className="bg-[var(--surface-soft)]/50">
+                <TableRow className="border-b border-[var(--border)] hover:bg-transparent">
+                  <TableHead className="h-10 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] px-4">Product</TableHead>
+                  <TableHead className="h-10 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] px-4">Store</TableHead>
+                  <TableHead className="h-10 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] px-4">Price</TableHead>
+                  <TableHead className="h-10 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] px-4">Status</TableHead>
+                  <TableHead className="h-10 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] px-4">Edit/Delete</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {visibleProducts.map((product) => (
+                  <TableRow key={product.id} className="border-b border-[var(--border)]/60 last:border-0 hover:bg-[var(--surface-soft)]/30 transition-colors duration-150">
+                    <TableCell className="px-4 py-3 text-xs">
+                      <div className="flex items-center gap-3">
+                        {product.image ? (
+                          <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--surface-soft)] p-0.5">
+                            <Image src={product.image} alt={product.title} fill className="object-cover rounded-md" unoptimized />
+                          </div>
+                        ) : (
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--surface-soft)] text-[10px] font-bold text-[var(--muted)]">
+                            N/A
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="font-semibold text-[var(--text)] truncate">{product.title}</p>
+                          <p className="text-[10px] text-[var(--muted)] truncate max-w-[250px] mt-0.5">{product.description}</p>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-xs font-semibold text-[var(--text)]">{product.storeName}</TableCell>
+                    <TableCell className="px-4 py-3 text-xs font-mono">
+                      {product.originalPrice ? (
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-[var(--text)]">${Number(product.price).toFixed(2)}</span>
+                          <span className="text-[10px] text-[var(--muted)] line-through">${Number(product.originalPrice).toFixed(2)}</span>
+                        </div>
+                      ) : (
+                        <span className="font-semibold text-[var(--text)]">${Number(product.price).toFixed(2)}</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-xs">
+                      <span className={cn(
+                        "inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold border",
+                        product.status === "Active"
+                          ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-400"
+                          : product.status === "Draft"
+                          ? "bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400"
+                          : "bg-red-500/10 text-red-600 border-red-500/20 dark:text-red-400"
+                      )}>
+                        {product.status}
+                      </span>
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-xs">
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 rounded-lg border border-[var(--border)] p-0 text-[var(--muted)] hover:text-[var(--color-primary)] hover:bg-[var(--surface-soft)] cursor-pointer"
+                          onClick={() => handleOpenEdit(product)}
+                          aria-label={`Edit ${product.title}`}
+                        >
+                          <svg viewBox="0 0 24 24" className="h-4 w-4 stroke-current" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M12 20h9" />
+                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                          </svg>
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 rounded-lg border border-[var(--border)] p-0 text-[var(--muted)] hover:text-red-600 hover:bg-red-500/5 cursor-pointer"
+                          onClick={() => setDeleteTarget(product)}
+                          aria-label={`Delete ${product.title}`}
+                        >
+                          <svg viewBox="0 0 24 24" className="h-4 w-4 stroke-current" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="3 6 5 6 21 6" />
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                            <line x1="10" y1="11" x2="10" y2="17" />
+                            <line x1="14" y1="11" x2="14" y2="17" />
+                          </svg>
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
 
           {!visibleProducts.length ? (
             <div className="mt-6 rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface-soft)] px-5 py-6 text-sm text-[var(--muted)]">
@@ -329,119 +380,361 @@ export default function AdminProductsManager() {
       </Card>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>{editingProduct ? "Edit Product" : "Add Product"}</DialogTitle>
-            <DialogDescription>Create store-linked products that appear after offers on public store pages.</DialogDescription>
-          </DialogHeader>
+        <DialogContent
+          className="max-h-[calc(100vh-2rem)] max-w-5xl overflow-hidden rounded-[30px] border border-[var(--border)] bg-[var(--surface)] p-0 shadow-2xl sm:max-h-[calc(100vh-3rem)]"
+        >
+          <div className="grid gap-0 lg:grid-cols-[400px_1fr] h-[calc(100vh-2rem)] sm:h-[calc(100vh-3rem)] max-h-[800px] overflow-hidden">
+            {/* Left Column - Live Preview & Checklist */}
+            <div className="border-b border-[var(--border)] bg-gradient-to-br from-[var(--surface-soft)] via-[var(--surface)] to-[var(--surface-soft)]/30 p-6 lg:border-r lg:border-b-0 lg:p-8 flex flex-col justify-between overflow-y-auto">
+              <div>
+                <DialogHeader className="mb-6">
+                  <span className="w-fit inline-flex items-center rounded-full bg-[var(--color-primary)]/10 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[var(--color-primary)] border border-[var(--color-primary)]/20">
+                    Product Editor
+                  </span>
+                  <DialogTitle className="text-lg font-bold tracking-tight text-[var(--text)] mt-3">
+                    {editingProduct ? "Update Product" : "Add Product"}
+                  </DialogTitle>
+                  <DialogDescription className="text-xs text-[var(--muted)] mt-1">
+                    Create store-linked products that appear after offers on public store pages.
+                  </DialogDescription>
+                </DialogHeader>
 
-          <form className="grid gap-4 md:grid-cols-2" onSubmit={handleSubmit}>
-            <label className="grid gap-2 text-sm text-[var(--muted)] md:col-span-2">
-              Product Title
-              <Input name="title" value={form.title} onChange={handleChange} placeholder="Nike Air Max 2026" />
-            </label>
-            <label className="grid gap-2 text-sm text-[var(--muted)] md:col-span-2">
-              Description
-              <textarea
-                name="description"
-                rows={4}
-                value={form.description}
-                onChange={handleChange}
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3 text-sm text-[var(--text)] outline-none transition placeholder:text-[var(--muted)] focus:border-[var(--color-primary)]"
-                placeholder="Short product description for the store page."
-              />
-            </label>
-            <label className="grid gap-2 text-sm text-[var(--muted)]">
-              Store
-              <select
-                name="storeSlug"
-                value={form.storeSlug}
-                onChange={handleChange}
-                className="h-11 rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 text-sm text-[var(--text)] outline-none focus:border-[var(--color-primary)]"
-              >
-                <option value="">Select store</option>
-                {stores.map((store) => (
-                  <option key={store.slug} value={store.slug}>
-                    {store.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="grid gap-2 text-sm text-[var(--muted)]">
-              Status
-              <select
-                name="status"
-                value={form.status}
-                onChange={handleChange}
-                className="h-11 rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 text-sm text-[var(--text)] outline-none focus:border-[var(--color-primary)]"
-              >
-                <option>Active</option>
-                <option>Draft</option>
-                <option>Out of stock</option>
-              </select>
-            </label>
-            <label className="grid gap-2 text-sm text-[var(--muted)]">
-              Price
-              <Input name="price" type="number" min="0" step="0.01" value={form.price} onChange={handleChange} placeholder="99.99" />
-            </label>
-            <label className="grid gap-2 text-sm text-[var(--muted)]">
-              Original Price
-              <Input name="originalPrice" type="number" min="0" step="0.01" value={form.originalPrice} onChange={handleChange} placeholder="129.99" />
-            </label>
-            <label className="grid gap-2 text-sm text-[var(--muted)] md:col-span-2">
-              Product Image
-              <div className="grid gap-3">
-                {form.image ? (
-                  <div className="relative h-48 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)]">
-                    <Image src={form.image} alt="Product preview" fill className="object-cover" unoptimized />
+                {/* Live Preview Storefront Product Card */}
+                <div className="space-y-2.5">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--muted)]">Card Preview</span>
+                  <div className="relative rounded-2xl border border-[var(--border)]/70 bg-[var(--surface)] p-3 shadow-md overflow-hidden max-w-[280px] mx-auto">
+                    {/* Product Image preview */}
+                    <div className="relative aspect-square w-full rounded-xl bg-[var(--surface-soft)] border border-[var(--border)]/30 overflow-hidden flex items-center justify-center">
+                      {form.image ? (
+                        <Image src={form.image} alt="Product preview" fill className="object-cover" unoptimized />
+                      ) : (
+                        <div className="flex flex-col items-center gap-1.5 text-[var(--muted)]">
+                          <svg viewBox="0 0 24 24" className="h-8 w-8 text-[var(--muted)] stroke-current" fill="none" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                            <circle cx="8.5" cy="8.5" r="1.5" />
+                            <polyline points="21 15 16 10 5 21" />
+                          </svg>
+                          <span className="text-[9px] font-bold tracking-wide">No Cover Image</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Product info details */}
+                    <div className="mt-3">
+                      <span className="inline-flex items-center rounded-full bg-[var(--color-primary)]/10 px-2 py-0.5 text-[9px] font-bold text-[var(--color-primary)]">
+                        {form.storeName || "Unassigned Store"}
+                      </span>
+                      <h4 className="mt-1.5 truncate text-xs font-bold text-[var(--text)]">{form.title || "Product Title"}</h4>
+                      <p className="mt-1 text-[10px] text-[var(--muted)] line-clamp-2 min-h-[30px] leading-relaxed">
+                        {form.description || "Product description will appear here..."}
+                      </p>
+
+                      {/* Pricing & CTA */}
+                      <div className="mt-3 flex items-center justify-between">
+                        <div className="font-mono">
+                          <span className="text-xs font-bold text-[var(--text)]">${form.price ? Number(form.price).toFixed(2) : "0.00"}</span>
+                          {form.originalPrice ? (
+                            <span className="text-[9px] text-[var(--muted)] line-through ml-1.5">${Number(form.originalPrice).toFixed(2)}</span>
+                          ) : null}
+                        </div>
+                        <span className={cn(
+                          "inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-bold border",
+                          form.status === "Active"
+                            ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+                            : form.status === "Draft"
+                            ? "bg-amber-500/10 text-amber-600 border-amber-500/20"
+                            : "bg-red-500/10 text-red-600 border-red-500/20"
+                        )}>
+                          {form.status}
+                        </span>
+                      </div>
+
+                      {/* CTA Link preview button */}
+                      <div className="mt-3 w-full text-center py-2 text-[10px] font-bold rounded-lg bg-[var(--color-primary)] text-white shadow-sm transition">
+                        {form.ctaLabel || "View Product"}
+                      </div>
+                    </div>
                   </div>
-                ) : (
-                  <div className="flex h-48 items-center justify-center rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface-soft)] text-sm text-[var(--muted)]">
-                    No product image uploaded yet.
-                  </div>
-                )}
-                <div className="flex flex-wrap gap-3">
-                  <label className="inline-flex cursor-pointer">
-                    <input
-                      type="file"
-                      accept={ACCEPTED_IMAGE_TYPES.join(",")}
-                      className="hidden"
-                      onChange={(event) => handleImageSelection(event.target.files?.[0])}
-                    />
-                    <span className="inline-flex h-10 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 text-sm font-medium text-[var(--text)] transition hover:bg-[var(--surface-soft)]">
-                      {isUploadingImage ? "Uploading..." : "Upload from Cloudinary"}
-                    </span>
-                  </label>
-                  {form.image ? (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      className="rounded-lg border border-[var(--border)]"
-                      onClick={() => setForm((current) => ({ ...current, image: "" }))}
-                      disabled={isUploadingImage}
-                    >
-                      Remove Image
-                    </Button>
-                  ) : null}
                 </div>
-                <Input name="image" value={form.image} onChange={handleChange} placeholder="Or paste image URL manually" />
               </div>
-            </label>
-            <label className="grid gap-2 text-sm text-[var(--muted)] md:col-span-2">
-              CTA Label
-              <Input name="ctaLabel" value={form.ctaLabel} onChange={handleChange} placeholder="View Product" />
-              <span className="text-xs text-[var(--muted)]">Product page URL automatically generate hogi title aur selected store se.</span>
-            </label>
-            {error ? <p className="text-sm text-[var(--muted)] md:col-span-2">{error}</p> : null}
-            <div className="flex gap-3 md:col-span-2 md:justify-end">
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSubmitting || isUploadingImage} leadingIcon={isSubmitting ? <Spinner /> : null}>
-                {isSubmitting ? "Saving Product..." : editingProduct ? "Update Product" : "Save Product"}
-              </Button>
+
+              {/* Checklist */}
+              <div className="mt-6 border-t border-[var(--border)] pt-5">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--muted)]">Requirements Checklist</span>
+                <ul className="mt-3.5 space-y-2.5 text-xs text-[var(--muted)] font-medium">
+                  <li className="flex items-center gap-2">
+                    <span className={cn("h-1.5 w-1.5 rounded-full", form.title && form.storeSlug ? "bg-purple-500" : "bg-[var(--border)]")} />
+                    <span>Identity: Title & linked store</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className={cn("h-1.5 w-1.5 rounded-full", form.price ? "bg-blue-500" : "bg-[var(--border)]")} />
+                    <span>Pricing: Price & CTA Label attributes</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className={cn("h-1.5 w-1.5 rounded-full", form.image ? "bg-emerald-500" : "bg-[var(--border)]")} />
+                    <span>Media: High quality cover visual</span>
+                  </li>
+                </ul>
+              </div>
             </div>
-          </form>
+
+            {/* Right Column - Forms */}
+            <div className="flex flex-col h-full bg-[var(--surface)] overflow-hidden">
+              <form className="flex flex-col h-full overflow-hidden" onSubmit={handleSubmit}>
+                
+                {/* Tab Switcher */}
+                <div className="border-b border-[var(--border)] bg-[var(--surface-soft)]/20 px-6 pt-4 flex gap-1 overflow-x-auto scrollbar-none shrink-0">
+                  {[
+                    { id: "details", label: "Product Details" },
+                    { id: "pricing", label: "Pricing & CTA" },
+                    { id: "media", label: "Product Media" }
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setActiveTab(tab.id)}
+                      className={cn(
+                        "px-4 py-2.5 text-xs font-bold border-b-2 transition-all duration-150 whitespace-nowrap cursor-pointer -mb-px",
+                        activeTab === tab.id
+                          ? "border-[var(--color-primary)] text-[var(--color-primary)]"
+                          : "border-transparent text-[var(--muted)] hover:text-[var(--text)]"
+                      )}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Tab scroll viewport */}
+                <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                  
+                  {/* Tab 1: details */}
+                  {activeTab === "details" && (
+                    <div className="space-y-4">
+                      <div>
+                        <h3 className="text-xs font-bold text-[var(--text)] uppercase tracking-wider mb-0.5">Product Details</h3>
+                        <p className="text-[10px] text-[var(--muted)]">Specify titles, summaries, and store taxonomies.</p>
+                      </div>
+
+                      <div className="grid gap-4">
+                        <div className="grid gap-1.5">
+                          <label className="text-xs font-bold text-[var(--text)]">Product Title</label>
+                          <Input
+                            name="title"
+                            value={form.title}
+                            onChange={handleChange}
+                            placeholder="e.g. Nike Air Max 2026"
+                            className="rounded-lg bg-[var(--surface)]"
+                            required
+                          />
+                          <span className="text-[9px] text-[var(--muted)]">Displays prominently in catalogs.</span>
+                        </div>
+
+                        <div className="grid gap-1.5">
+                          <label className="text-xs font-bold text-[var(--text)]">Description</label>
+                          <textarea
+                            name="description"
+                            rows={4}
+                            value={form.description}
+                            onChange={handleChange}
+                            className="min-h-[110px] w-full resize-none rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs text-[var(--text)] outline-none transition focus:border-[var(--color-primary)]"
+                            placeholder="Short product description details..."
+                          />
+                          <span className="text-[9px] text-[var(--muted)]">Light editorial details.</span>
+                        </div>
+
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          <div className="grid gap-1.5">
+                            <label className="text-xs font-bold text-[var(--text)]">Linked Store</label>
+                            <select
+                              name="storeSlug"
+                              value={form.storeSlug}
+                              onChange={handleChange}
+                              className="h-10 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 text-xs text-[var(--text)] outline-none focus:border-[var(--color-primary)]"
+                              required
+                            >
+                              <option value="">Select store</option>
+                              {stores.map((store) => (
+                                <option key={store.slug} value={store.slug}>
+                                  {store.name}
+                                </option>
+                              ))}
+                            </select>
+                            <span className="text-[9px] text-[var(--muted)]">Links product to a merchant catalog.</span>
+                          </div>
+
+                          <div className="grid gap-1.5">
+                            <label className="text-xs font-bold text-[var(--text)]">Stock Status</label>
+                            <select
+                              name="status"
+                              value={form.status}
+                              onChange={handleChange}
+                              className="h-10 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 text-xs text-[var(--text)] outline-none focus:border-[var(--color-primary)]"
+                            >
+                              <option value="Active">Active</option>
+                              <option value="Draft">Draft</option>
+                              <option value="Out of stock">Out of stock</option>
+                            </select>
+                            <span className="text-[9px] text-[var(--muted)]">Configures purchasing availability.</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Tab 2: pricing */}
+                  {activeTab === "pricing" && (
+                    <div className="space-y-4">
+                      <div>
+                        <h3 className="text-xs font-bold text-[var(--text)] uppercase tracking-wider mb-0.5">Pricing & CTA Details</h3>
+                        <p className="text-[10px] text-[var(--muted)]">Setup offer prices, original strikes, and labels.</p>
+                      </div>
+
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="grid gap-1.5">
+                          <label className="text-xs font-bold text-[var(--text)]">Deal Price ($)</label>
+                          <Input
+                            name="price"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={form.price}
+                            onChange={handleChange}
+                            placeholder="e.g. 99.99"
+                            className="rounded-lg bg-[var(--surface)] font-mono"
+                            required
+                          />
+                          <span className="text-[9px] text-[var(--muted)]">The active selling price tag.</span>
+                        </div>
+
+                        <div className="grid gap-1.5">
+                          <label className="text-xs font-bold text-[var(--text)]">Original Price ($)</label>
+                          <Input
+                            name="originalPrice"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={form.originalPrice}
+                            onChange={handleChange}
+                            placeholder="e.g. 129.99"
+                            className="rounded-lg bg-[var(--surface)] font-mono"
+                          />
+                          <span className="text-[9px] text-[var(--muted)]">Optional markdown price strikeout (MSRP).</span>
+                        </div>
+
+                        <div className="grid gap-1.5 sm:col-span-2">
+                          <label className="text-xs font-bold text-[var(--text)]">CTA Button Label</label>
+                          <Input
+                            name="ctaLabel"
+                            value={form.ctaLabel}
+                            onChange={handleChange}
+                            placeholder="e.g. View Product"
+                            className="rounded-lg bg-[var(--surface)]"
+                          />
+                          <span className="text-[9px] text-[var(--muted)]">CTA anchor text redirecting to the storefront link.</span>
+                        </div>
+
+                        <div className="grid gap-1.5 sm:col-span-2">
+                          <label className="text-xs font-bold text-[var(--text)]">Product Redirect Link</label>
+                          <Input
+                            name="productUrl"
+                            value={form.productUrl}
+                            onChange={handleChange}
+                            placeholder="e.g. https://www.nike.com/t/air-max-2026-shoes"
+                            className="rounded-lg bg-[var(--surface)]"
+                          />
+                          <span className="text-[9px] text-[var(--muted)]">Optional external affiliate or purchase link. Leaves internal path default if empty.</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Tab 3: media */}
+                  {activeTab === "media" && (
+                    <div className="space-y-4">
+                      <div>
+                        <h3 className="text-xs font-bold text-[var(--text)] uppercase tracking-wider mb-0.5">Product Media</h3>
+                        <p className="text-[10px] text-[var(--muted)]">Add images through Cloudinary uploads or custom links.</p>
+                      </div>
+
+                      <div className="space-y-4">
+                        <div className="grid gap-1.5">
+                          <label className="text-xs font-bold text-[var(--text)]">Product Image Cover</label>
+                          <input
+                            type="file"
+                            accept={ACCEPTED_IMAGE_TYPES.join(",")}
+                            className="hidden"
+                            id="dialog-product-image-uploader"
+                            onChange={(event) => handleImageSelection(event.target.files?.[0])}
+                          />
+
+                          <div className="rounded-xl border border-dashed border-[var(--border)] p-4 bg-[var(--surface-soft)]/10 flex flex-col items-center justify-center text-center">
+                            <svg viewBox="0 0 24 24" className="h-7 w-7 text-[var(--muted)] stroke-current mb-2" fill="none" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                              <circle cx="8.5" cy="8.5" r="1.5" />
+                              <polyline points="21 15 16 10 5 21" />
+                            </svg>
+                            <p className="text-[11px] font-bold text-[var(--text)]">Upload your product cover media</p>
+                            <p className="text-[10px] text-[var(--muted)] mt-0.5">Supports PNG, JPG, WEBP, SVG up to 2MB</p>
+
+                            <div className="flex gap-2 mt-3">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                className="rounded-lg h-7 text-[10px] px-3 bg-[var(--surface)] hover:bg-[var(--surface-soft)] cursor-pointer"
+                                onClick={() => document.getElementById("dialog-product-image-uploader")?.click()}
+                              >
+                                {isUploadingImage ? "Uploading..." : "Browse Cloudinary"}
+                              </Button>
+                              {form.image ? (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  className="rounded-lg h-7 text-[10px] px-3 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white border border-red-500/20 cursor-pointer"
+                                  disabled={isUploadingImage}
+                                  onClick={() => setForm((current) => ({ ...current, image: "" }))}
+                                >
+                                  Remove cover
+                                </Button>
+                              ) : null}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="grid gap-1.5">
+                          <label className="text-xs font-bold text-[var(--text)]">Paste Image Address URL Manually</label>
+                          <Input
+                            name="image"
+                            value={form.image}
+                            onChange={handleChange}
+                            placeholder="Or paste direct image URL address"
+                            className="rounded-lg bg-[var(--surface)]"
+                          />
+                          <span className="text-[9px] text-[var(--muted)]">Custom fallback URL paths.</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                </div>
+
+                {/* Sticky Action Footer */}
+                {error ? <p className="px-6 text-xs text-red-500 font-semibold mb-2">{error}</p> : null}
+                <div className="border-t border-[var(--border)] bg-[var(--surface)] px-6 py-4 flex justify-end gap-3 shrink-0">
+                  <Button type="button" variant="outline" className="rounded-lg h-9 text-xs font-bold px-4 border-[var(--border)] hover:bg-[var(--surface-soft)]" onClick={() => setOpen(false)} disabled={isSubmitting}>
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    className="rounded-lg h-9 text-xs font-bold px-4 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white shadow-sm"
+                    disabled={isSubmitting || isUploadingImage}
+                  >
+                    {isSubmitting ? "Saving..." : editingProduct ? "Update Product" : "Save Product"}
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 

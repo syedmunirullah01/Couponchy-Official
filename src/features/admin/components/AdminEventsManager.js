@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, useDialogA11yIds } from "@/components/ui/Dialog";
 import { Input } from "@/components/ui/Input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/Table";
+import { cn } from "@/lib/utils";
 
 const eventSchema = z.object({
   name: z.string().trim().min(1, "Event name is required."),
@@ -188,68 +189,115 @@ export default function AdminEventsManager() {
   return (
     <>
       <Card>
-        <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <CardHeader className="flex flex-col gap-4 border-b border-[var(--border)] pb-6 sm:flex-row sm:items-center sm:justify-between p-6">
           <div>
-            <CardTitle>Events Management</CardTitle>
-            <CardDescription>Manage seasonal or campaign landing pages that appear next to Exclusive in the public navbar.</CardDescription>
+            <CardTitle className="text-base font-bold tracking-tight text-[var(--text)]">Events Management</CardTitle>
+            <CardDescription className="text-xs text-[var(--muted)] mt-0.5">Manage seasonal or campaign landing pages that appear next to Exclusive in the public navbar.</CardDescription>
           </div>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="flex flex-shrink-0 items-center gap-2">
             <Button
               type="button"
               variant="ghost"
               size="sm"
-              className="h-10 w-10 rounded-lg border border-[var(--border)] px-0"
+              className="h-10 w-10 rounded-xl border border-[var(--border)] px-0 text-[var(--muted)] hover:text-[var(--text)] cursor-pointer"
               onClick={() => loadEvents(true)}
               aria-label="Refresh events"
               disabled={isRefreshing}
             >
               <RefreshIcon />
             </Button>
-            <Button type="button" onClick={openCreateModal}>
+            <Button
+              type="button"
+              className="rounded-xl font-bold bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white shadow-sm transition-all duration-200 px-5 h-10 text-xs cursor-pointer"
+              onClick={openCreateModal}
+            >
               Add Event
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="pt-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Event Name</TableHead>
-                <TableHead>Slug</TableHead>
-                <TableHead>Keyword</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Edit/Delete</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {events.map((eventItem) => (
-                <TableRow key={eventItem.slug}>
-                  <TableCell className="font-medium text-[var(--text)]">{eventItem.name}</TableCell>
-                  <TableCell className="text-[var(--muted)]">/events/{eventItem.slug}</TableCell>
-                  <TableCell>{eventItem.keyword}</TableCell>
-                  <TableCell>
-                    <Badge variant={eventItem.status === "enabled" ? "success" : "outline"}>{eventItem.status}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button type="button" variant="outline" size="sm" onClick={() => openEditModal(eventItem)}>
-                        Edit
-                      </Button>
-                      <Button type="button" variant="ghost" size="sm" className="border border-[var(--border)]" onClick={() => setDeleteTarget(eventItem)}>
-                        Delete
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-
-          {!events.length ? (
-            <div className="mt-6 rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface-soft)] px-5 py-6 text-sm text-[var(--muted)]">
-              No events added yet. Create one to power dynamic campaign landing pages like Christmas, Eid, or Easter Sale.
+        <CardContent className="p-6">
+          {events.length ? (
+            <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
+              <Table>
+                <TableHeader className="bg-[var(--surface-soft)]/50">
+                  <TableRow className="border-b border-[var(--border)] hover:bg-transparent">
+                    <TableHead className="h-10 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] px-3">Event Name</TableHead>
+                    <TableHead className="h-10 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] px-3">Slug</TableHead>
+                    <TableHead className="h-10 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] px-3">Keyword</TableHead>
+                    <TableHead className="h-10 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] px-3">Status</TableHead>
+                    <TableHead className="h-10 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] px-3">Edit/Delete</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {events.map((eventItem) => (
+                    <TableRow key={eventItem.slug} className="border-b border-[var(--border)]/60 last:border-0 hover:bg-[var(--surface-soft)]/30 transition-colors duration-150">
+                      {/* Event Name */}
+                      <TableCell className="px-3 py-3">
+                        <span className="text-xs font-bold text-[var(--color-primary)]">{eventItem.name}</span>
+                      </TableCell>
+                      {/* Slug */}
+                      <TableCell className="px-3 py-3">
+                        <span className="font-mono text-[11px] text-[var(--color-primary)]/70">/events/{eventItem.slug}</span>
+                      </TableCell>
+                      {/* Keyword */}
+                      <TableCell className="px-3 py-3">
+                        <span className="font-mono text-xs text-[var(--muted)]">{eventItem.keyword}</span>
+                      </TableCell>
+                      {/* Status badge */}
+                      <TableCell className="px-3 py-3">
+                        <span className={cn(
+                          "inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-bold tracking-wide",
+                          eventItem.status === "enabled"
+                            ? "border-[var(--color-primary)]/40 bg-[var(--color-primary)]/10 text-[var(--color-primary)]"
+                            : "border-[var(--border)] bg-[var(--surface-soft)] text-[var(--muted)]"
+                        )}>
+                          {eventItem.status?.toUpperCase()}
+                        </span>
+                      </TableCell>
+                      {/* Actions */}
+                      <TableCell className="px-3 py-3">
+                        <div className="flex items-center gap-2">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 rounded-lg border border-[var(--border)] p-0 text-[var(--muted)] hover:text-[var(--color-primary)] hover:bg-[var(--surface-soft)] cursor-pointer"
+                            onClick={() => openEditModal(eventItem)}
+                            aria-label={`Edit ${eventItem.name}`}
+                          >
+                            <svg viewBox="0 0 24 24" className="h-4 w-4 stroke-current" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M12 20h9" />
+                              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                            </svg>
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 rounded-lg border border-[var(--border)] p-0 text-[var(--muted)] hover:text-red-600 hover:bg-red-500/5 cursor-pointer"
+                            onClick={() => setDeleteTarget(eventItem)}
+                            aria-label={`Delete ${eventItem.name}`}
+                          >
+                            <svg viewBox="0 0 24 24" className="h-4 w-4 stroke-current" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="3 6 5 6 21 6" />
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                              <line x1="10" y1="11" x2="10" y2="17" />
+                              <line x1="14" y1="11" x2="14" y2="17" />
+                            </svg>
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
-          ) : null}
+          ) : (
+            <div className="rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface-soft)] px-6 py-10 text-center">
+              <h3 className="text-sm font-bold text-[var(--text)]">No events yet</h3>
+              <p className="mt-2 text-xs text-[var(--muted)]">Create one to power dynamic campaign landing pages like Christmas, Eid, or Easter Sale.</p>
+            </div>
+          )}
         </CardContent>
       </Card>
 

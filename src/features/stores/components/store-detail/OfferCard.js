@@ -211,9 +211,8 @@ export default function OfferCard({ offer, store, isFirst }) {
 
         {/* Desktop Card Layout */}
         <div className="hidden md:flex flex-row md:items-stretch">
-          <div className="flex w-[150px] md:w-[175px] shrink-0 flex-col items-center justify-center border-b border-white/[0.04] px-4 py-5 text-center md:border-b-0 md:border-r bg-[var(--color-primary)]/[0.06]">
-            <p className={`${offerValue.length > 7 ? "text-lg md:text-[22px] font-black tracking-[-0.04em]" : "text-[32px] md:text-[36px] font-black tracking-[-0.04em]"
-              } leading-tight text-[var(--color-primary)] text-center px-1`}>
+          <div className="flex w-[150px] md:w-[195px] shrink-0 flex-col items-center justify-center border-b border-white/[0.04] px-4 py-5 text-center md:border-b-0 md:border-r bg-[var(--color-primary)]/[0.06]">
+            <p className="leading-tight text-[var(--color-primary)] text-center px-1 whitespace-nowrap font-black tracking-[-0.04em] text-lg md:text-[22px]">
               {offerValue}
             </p>
             <p className="mt-1.5 text-[10px] font-black uppercase tracking-[0.22em] text-white/30">
@@ -299,7 +298,7 @@ export default function OfferCard({ offer, store, isFirst }) {
           </div>
 
           {/* Right: CTA */}
-          <div className="flex w-full md:w-[180px] shrink-0 items-center justify-center border-t border-white/[0.04] px-5 py-4 md:border-t-0 md:border-l">
+          <div className="flex w-full md:w-[200px] shrink-0 items-center justify-center border-t border-white/[0.04] px-4 py-4 md:border-t-0 md:border-l">
             {isCoupon && offer.code ? (
               <div className="flex w-full flex-col items-center gap-2">
                 {revealed ? (
@@ -322,7 +321,7 @@ export default function OfferCard({ offer, store, isFirst }) {
                 ) : (
                   <button
                     onClick={handleReveal}
-                    className="group/cta relative flex w-full items-center justify-center overflow-hidden rounded-xl bg-[var(--color-primary)] px-5 py-3 text-[12.5px] font-black uppercase tracking-[0.14em] text-black transition-all duration-300 hover:shadow-[0_0_20px_rgba(139,92,246,0.4)] hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                    className="group/cta relative flex w-full items-center justify-center overflow-hidden rounded-xl bg-[var(--color-primary)] px-4 py-3 text-[12.5px] font-black uppercase tracking-[0.14em] text-black transition-all duration-300 hover:shadow-[0_0_20px_rgba(139,92,246,0.4)] hover:scale-[1.02] active:scale-[0.98] cursor-pointer whitespace-nowrap"
                   >
                     <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover/cta:translate-x-full" />
                     <span className="relative">Reveal Code</span>
@@ -340,7 +339,7 @@ export default function OfferCard({ offer, store, isFirst }) {
             ) : (
               <button
                 onClick={handleGetDeal}
-                className="group/cta relative flex w-full items-center justify-center overflow-hidden rounded-xl bg-[var(--color-primary)] px-5 py-3 text-[12.5px] font-black uppercase tracking-[0.14em] text-black transition-all duration-300 hover:shadow-[0_0_20px_rgba(139,92,246,0.4)] hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                className="group/cta relative flex w-full items-center justify-center overflow-hidden rounded-xl bg-[var(--color-primary)] px-4 py-3 text-[12.5px] font-black uppercase tracking-[0.14em] text-black transition-all duration-300 hover:shadow-[0_0_20px_rgba(139,92,246,0.4)] hover:scale-[1.02] active:scale-[0.98] cursor-pointer whitespace-nowrap"
               >
                 <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-700 group-hover/cta:translate-x-full" />
                 <span className="relative">Get Deal</span>
@@ -378,10 +377,6 @@ export default function OfferCard({ offer, store, isFirst }) {
                 <span className="flex items-center gap-1 text-[9.5px] font-bold text-[var(--color-primary)]">
                   <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-primary)] animate-pulse" />
                   Verified
-                </span>
-                {/* Placement Badge */}
-                <span className="rounded-md border border-white/10 px-2 py-0.5 text-[9.5px] font-semibold text-white/50">
-                  Storewide
                 </span>
               </div>
             </div>

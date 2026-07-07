@@ -14,7 +14,7 @@ const SECTIONS = [
   { id: "policy-updates", title: "8. Changes to this Policy" },
 ];
 
-export default function PrivacyPolicyPage({ settings = {} }) {
+export default function PrivacyPolicyPage({ settings = {}, company = null }) {
   const [activeSection, setActiveSection] = useState("introduction");
 
   const scrollToSection = (id) => {
@@ -27,6 +27,8 @@ export default function PrivacyPolicyPage({ settings = {} }) {
 
   const supportEmail = settings.supportEmail || "contact@couponchy.com";
   const siteName = settings.siteName || "Couponchy";
+
+  const policyData = company?.privacyPolicy || {};
 
   return (
     <div style={{ color: "#fff", fontFamily: "inherit", overflow: "hidden" }}>
@@ -44,10 +46,10 @@ export default function PrivacyPolicyPage({ settings = {} }) {
             <span style={{ fontSize: "11px", fontWeight: 800, letterSpacing: "0.2em", textTransform: "uppercase", color: "var(--color-primary)" }}>Legal Docs</span>
           </div>
           <h1 style={{ fontSize: "clamp(38px, 5vw, 64px)", fontWeight: 900, lineHeight: 0.95, letterSpacing: "-0.04em", margin: "0 0 20px" }}>
-            Privacy Policy
+            {policyData.title || "Privacy Policy"}
           </h1>
           <p style={{ fontSize: "15px", color: "rgba(255,255,255,0.45)", fontWeight: 500 }}>
-            Last updated: March 2026. Learn how we secure and handle your data.
+            Last updated: {policyData.lastUpdated || "March 2026"}. Learn how we secure and handle your data.
           </p>
         </div>
 
@@ -99,7 +101,7 @@ export default function PrivacyPolicyPage({ settings = {} }) {
               <h2 style={{ fontSize: "24px", fontWeight: 900, marginBottom: "20px", color: "var(--color-primary)" }}>1. Introduction</h2>
               <div style={{ background: "rgba(15,15,20,0.4)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "24px", padding: "36px", backdropFilter: "blur(12px)" }}>
                 <p style={{ fontSize: "15px", lineHeight: 1.75, color: "rgba(255,255,255,0.6)", margin: 0, fontWeight: 500 }}>
-                  Welcome to {siteName} ("we", "us", or "our"). We are committed to protecting your privacy. This Privacy Policy explain how we collect, use, and safe-keep the information when you visit our platform. By accessing or using our services, you consent to the practices described in this policy.
+                  {policyData.introText || `Welcome to ${siteName} ("we", "us", or "our"). We are committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safe-keep the information when you visit our platform. By accessing or using our services, you consent to the practices described in this policy.`}
                 </p>
               </div>
             </section>
@@ -109,14 +111,14 @@ export default function PrivacyPolicyPage({ settings = {} }) {
               <h2 style={{ fontSize: "24px", fontWeight: 900, marginBottom: "20px", color: "var(--color-primary)" }}>2. Information We Collect</h2>
               <div style={{ background: "rgba(15,15,20,0.4)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "24px", padding: "36px", backdropFilter: "blur(12px)", display: "flex", flexDirection: "column", gap: "20px" }}>
                 <p style={{ fontSize: "15px", lineHeight: 1.75, color: "rgba(255,255,255,0.6)", margin: 0, fontWeight: 500 }}>
-                  We prioritize your privacy and minimize data collection. The only data we process is:
+                  {policyData.collectText || "We prioritize your privacy and minimize data collection. The only data we process is:"}
                 </p>
                 <ul style={{ paddingLeft: "20px", margin: 0, display: "flex", flexDirection: "column", gap: "12px" }}>
                   <li style={{ fontSize: "14px", lineHeight: 1.6, color: "rgba(255,255,255,0.6)", fontWeight: 500 }}>
-                    <strong style={{ color: "#fff" }}>Voluntary Contact Info:</strong> Email address, name, or comments if you submit a coupon or use our contact form.
+                    <strong style={{ color: "#fff" }}>{policyData.collectBullet1Title || "Voluntary Contact Info:"}</strong> {policyData.collectBullet1Desc || "Email address, name, or comments if you submit a coupon or use our contact form."}
                   </li>
                   <li style={{ fontSize: "14px", lineHeight: 1.6, color: "rgba(255,255,255,0.6)", fontWeight: 500 }}>
-                    <strong style={{ color: "#fff" }}>Usage and Device Data:</strong> IP address, country localization (to show relevant regional coupons), browser type, and anonymous interaction stats.
+                    <strong style={{ color: "#fff" }}>{policyData.collectBullet2Title || "Usage and Device Data:"}</strong> {policyData.collectBullet2Desc || "IP address, country localization (to show relevant regional coupons), browser type, and anonymous interaction stats."}
                   </li>
                 </ul>
               </div>
@@ -127,14 +129,14 @@ export default function PrivacyPolicyPage({ settings = {} }) {
               <h2 style={{ fontSize: "24px", fontWeight: 900, marginBottom: "20px", color: "var(--color-primary)" }}>3. How We Use Information</h2>
               <div style={{ background: "rgba(15,15,20,0.4)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "24px", padding: "36px", backdropFilter: "blur(12px)", display: "flex", flexDirection: "column", gap: "16px" }}>
                 <p style={{ fontSize: "15px", lineHeight: 1.75, color: "rgba(255,255,255,0.6)", margin: 0, fontWeight: 500 }}>
-                  We use collected information solely to:
+                  {policyData.useText || "We use collected information solely to:"}
                 </p>
                 <div style={{ display: "grid", gap: "16px", gridTemplateColumns: "1fr sm:1fr 1fr" }} className="privacy-uses-grid">
                   {[
-                    "Deliver regional storefront configurations and active coupon lists.",
-                    "Verify coupon submissions and validate them using simulated headless browser checkouts.",
-                    "Process and resolve support requests submitted through our contact channels.",
-                    "Prevent fraud, security breaches, and coordinate automated abuse prevention.",
+                    policyData.useGrid1 || "Deliver regional storefront configurations and active coupon lists.",
+                    policyData.useGrid2 || "Verify coupon submissions and validate them using simulated headless browser checkouts.",
+                    policyData.useGrid3 || "Process and resolve support requests submitted through our contact channels.",
+                    policyData.useGrid4 || "Prevent fraud, security breaches, and coordinate automated abuse prevention.",
                   ].map((text, idx) => (
                     <div key={idx} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.03)", borderRadius: "14px", padding: "20px", fontSize: "13px", lineHeight: 1.6, color: "rgba(255,255,255,0.5)", fontWeight: 500 }}>
                       {text}
@@ -149,7 +151,7 @@ export default function PrivacyPolicyPage({ settings = {} }) {
               <h2 style={{ fontSize: "24px", fontWeight: 900, marginBottom: "20px", color: "var(--color-primary)" }}>4. Cookies and Tracking</h2>
               <div style={{ background: "rgba(15,15,20,0.4)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "24px", padding: "36px", backdropFilter: "blur(12px)" }}>
                 <p style={{ fontSize: "15px", lineHeight: 1.75, color: "rgba(255,255,255,0.6)", margin: 0, fontWeight: 500 }}>
-                  We utilize cookies to remember your country preferences (e.g. storing your region preference in cookies) so that you do not need to select it again. These cookies do not track your browsing habits outside our domain. You can disable cookies in your browser settings, though some regional features may fall back to default configurations.
+                  {policyData.cookiesText || "We utilize cookies to remember your country preferences (e.g. storing your region preference in cookies) so that you do not need to select it again. These cookies do not track your browsing habits outside our domain. You can disable cookies in your browser settings, though some regional features may fall back to default configurations."}
                 </p>
               </div>
             </section>
@@ -159,7 +161,7 @@ export default function PrivacyPolicyPage({ settings = {} }) {
               <h2 style={{ fontSize: "24px", fontWeight: 900, marginBottom: "20px", color: "var(--color-primary)" }}>5. Data Protection</h2>
               <div style={{ background: "rgba(15,15,20,0.4)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "24px", padding: "36px", backdropFilter: "blur(12px)" }}>
                 <p style={{ fontSize: "15px", lineHeight: 1.75, color: "rgba(255,255,255,0.6)", margin: 0, fontWeight: 500 }}>
-                  We apply industry-standard security measures, including SSL encryption and secure database controls. We never lease, trade, or sell your personal details to outside marketing agencies or aggregators.
+                  {policyData.dataSecurityText || "We apply industry-standard security measures, including SSL encryption and secure database controls. We never lease, trade, or sell your personal details to outside marketing agencies or aggregators."}
                 </p>
               </div>
             </section>
@@ -169,7 +171,7 @@ export default function PrivacyPolicyPage({ settings = {} }) {
               <h2 style={{ fontSize: "24px", fontWeight: 900, marginBottom: "20px", color: "var(--color-primary)" }}>6. Third-Party Merchants</h2>
               <div style={{ background: "rgba(15,15,20,0.4)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "24px", padding: "36px", backdropFilter: "blur(12px)" }}>
                 <p style={{ fontSize: "15px", lineHeight: 1.75, color: "rgba(255,255,255,0.6)", margin: 0, fontWeight: 500 }}>
-                  Our site lists deals and links to third-party brand websites. Once you click a link and navigate away, we do not have authority over their privacy structures. We strongly advise checking the individual privacy policies of any site you visit.
+                  {policyData.thirdPartyText || "Our site lists deals and links to third-party brand websites. Once you click a link and navigate away, we do not have authority over their privacy structures. We strongly advise checking the individual privacy policies of any site you visit."}
                 </p>
               </div>
             </section>
@@ -179,7 +181,7 @@ export default function PrivacyPolicyPage({ settings = {} }) {
               <h2 style={{ fontSize: "24px", fontWeight: 900, marginBottom: "20px", color: "var(--color-primary)" }}>7. Your Privacy Rights</h2>
               <div style={{ background: "rgba(15,15,20,0.4)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "24px", padding: "36px", backdropFilter: "blur(12px)" }}>
                 <p style={{ fontSize: "15px", lineHeight: 1.75, color: "rgba(255,255,255,0.6)", margin: 0, fontWeight: 500 }}>
-                  Depending on your localization, you possess rights under the GDPR or CCPA to view, modify, or erase any personal information we hold (e.g. deleting contact form requests). Reach out to us via email to request details.
+                  {policyData.userRightsText || "Depending on your localization, you possess rights under the GDPR or CCPA to view, modify, or erase any personal information we hold (e.g. deleting contact form requests). Reach out to us via email to request details."}
                 </p>
               </div>
             </section>
@@ -189,7 +191,7 @@ export default function PrivacyPolicyPage({ settings = {} }) {
               <h2 style={{ fontSize: "24px", fontWeight: 900, marginBottom: "20px", color: "var(--color-primary)" }}>8. Changes to this Policy</h2>
               <div style={{ background: "rgba(15,15,20,0.4)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "24px", padding: "36px", backdropFilter: "blur(12px)" }}>
                 <p style={{ fontSize: "15px", lineHeight: 1.75, color: "rgba(255,255,255,0.6)", margin: 0, fontWeight: 500 }}>
-                  We reserve the right to revise this Privacy Policy at any time. Any changes will be posted directly on this page with an updated modification date. We recommend checking back periodically to stay informed.
+                  {policyData.policyUpdatesText || "We reserve the right to revise this Privacy Policy at any time. Any changes will be posted directly on this page with an updated modification date. We recommend checking back periodically to stay informed."}
                 </p>
               </div>
             </section>

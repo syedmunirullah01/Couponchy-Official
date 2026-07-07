@@ -36,8 +36,9 @@ const storeSchema = z.object({
   description: z
     .string()
     .trim()
-    .min(20, "Description should be at least 20 characters.")
-    .max(280, "Description must stay under 280 characters."),
+    .max(280, "Description must stay under 280 characters.")
+    .optional()
+    .or(z.literal("")),
   trustStatus: z.enum(["Verified", "Trusted", "Pending", "Active"]),
   logoText: z
     .string()
@@ -214,6 +215,7 @@ export default function AdminStoresManager() {
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [selectedStoreSlugs, setSelectedStoreSlugs] = useState([]);
+  const [activeTab, setActiveTab] = useState("general");
   const slugEditedRef = useRef(false);
   const logoTextEditedRef = useRef(false);
   const fileInputRef = useRef(null);
@@ -237,9 +239,12 @@ export default function AdminStoresManager() {
 
   const watchedName = watch("name");
   const watchedSlug = watch("slug");
-  const watchedDescription = watch("description");
+  const watchedDescription = watch("description") || "";
   const watchedLogoImage = watch("logoImage");
   const watchedLogoText = watch("logoText");
+  const watchedCategory = watch("category");
+  const watchedCountryCode = watch("countryCode");
+  const watchedTrustStatus = watch("trustStatus");
 
   const categoryOptions = categories.map((category) => category.name);
   const descriptionField = register("description");
@@ -331,6 +336,7 @@ export default function AdminStoresManager() {
   function openCreateModal() {
     slugEditedRef.current = false;
     logoTextEditedRef.current = false;
+    setActiveTab("general");
     setEditingStore(null);
     reset(defaultValues);
     setOpen(true);
@@ -339,6 +345,7 @@ export default function AdminStoresManager() {
   function openEditModal(store) {
     slugEditedRef.current = true;
     logoTextEditedRef.current = true;
+    setActiveTab("general");
     setEditingStore(store);
     reset({
       name: store.name,
@@ -366,6 +373,7 @@ export default function AdminStoresManager() {
   }
 
   function closeModal() {
+    setActiveTab("general");
     setOpen(false);
   }
 
@@ -520,89 +528,124 @@ export default function AdminStoresManager() {
 
   return (
     <>
-      <Card>
-        <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <Card className="rounded-[24px] border border-[var(--border)] bg-[var(--surface)] shadow-sm">
+        <CardHeader className="flex flex-col gap-4 border-b border-[var(--border)] pb-6 lg:flex-row lg:items-center lg:justify-between p-6">
           <div>
-            <CardTitle>Stores Management</CardTitle>
-            <CardDescription>Manage merchant details, slugs, trust signals, and offer coverage.</CardDescription>
+            <CardTitle className="text-base font-bold tracking-tight text-[var(--text)]">Stores Management</CardTitle>
+            <CardDescription className="text-xs text-[var(--muted)] mt-0.5">Manage merchant details, slugs, trust signals, and offer coverage.</CardDescription>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             {selectedStoreSlugs.length ? (
-              <Button type="button" variant="outline" className="rounded-lg" onClick={() => setDeleteTarget({ slug: "__bulk__", name: `${selectedStoreSlugs.length} selected stores` })}>
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-xl font-semibold border border-red-500/25 bg-red-500/5 text-red-500 hover:bg-red-500 hover:text-white hover:border-red-600 transition-all duration-200 px-4 py-2 text-xs"
+                onClick={() => setDeleteTarget({ slug: "__bulk__", name: `${selectedStoreSlugs.length} selected stores` })}
+              >
                 Delete Selected ({selectedStoreSlugs.length})
               </Button>
             ) : null}
-            <Button type="button" variant="ghost" size="sm" className="h-10 w-10 rounded-lg border border-[var(--border)] px-0" onClick={loadStores} aria-label="Refresh stores">
+            <Button type="button" variant="ghost" size="sm" className="h-10 w-10 rounded-xl border border-[var(--border)] px-0 bg-[var(--surface)] hover:bg-[var(--surface-soft)] transition" onClick={loadStores} aria-label="Refresh stores">
               <RefreshIcon />
             </Button>
-            <Button type="button" variant="outline" className="rounded-lg" onClick={() => setBulkImportOpen(true)}>
+            <Button type="button" variant="outline" className="rounded-xl font-bold bg-[var(--surface-soft)] border border-[var(--border)] text-[var(--text)] hover:bg-[var(--surface)] transition px-4 py-2 text-xs cursor-pointer" onClick={() => setBulkImportOpen(true)}>
               Bulk Import Stores
             </Button>
-            <Button type="button" onClick={openCreateModal}>
+            <Button type="button" className="rounded-xl font-bold bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white shadow-sm transition-all duration-200 px-4 py-2 cursor-pointer text-xs" onClick={openCreateModal}>
               Add New Store
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="pt-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-14">
-                  <label className="flex items-center justify-center">
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 rounded border border-[var(--border)] bg-[var(--surface-soft)] accent-[var(--color-primary)]"
-                      checked={stores.length > 0 && selectedStoreSlugs.length === stores.length}
-                      onChange={toggleSelectAllStores}
-                      aria-label="Select all stores"
-                    />
-                  </label>
-                </TableHead>
-                <TableHead>Store Name</TableHead>
-                <TableHead>Slug</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Country</TableHead>
-                <TableHead>Offers Count</TableHead>
-                <TableHead>Trust</TableHead>
-                <TableHead>Edit/Delete</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {stores.map((store) => (
-                <TableRow key={store.slug}>
-                  <TableCell>
-                    <label className="flex items-center justify-center">
+        <CardContent className="p-6">
+          <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
+            <Table>
+              <TableHeader className="bg-[var(--surface-soft)]/50">
+                <TableRow className="border-b border-[var(--border)] hover:bg-transparent">
+                  <TableHead className="w-14 h-10 text-[10px] font-black uppercase tracking-wider text-[var(--muted)] px-4">
+                    <label className="flex items-center justify-center cursor-pointer">
                       <input
                         type="checkbox"
-                        className="h-4 w-4 rounded border border-[var(--border)] bg-[var(--surface-soft)] accent-[var(--color-primary)]"
-                        checked={selectedStoreSlugs.includes(store.slug)}
-                        onChange={() => toggleStoreSelection(store.slug)}
-                        aria-label={`Select ${store.name}`}
+                        className="h-4 w-4 appearance-none rounded-full border-2 border-[var(--muted)]/60 bg-[var(--surface-soft)] checked:bg-[var(--color-primary)] checked:border-[var(--color-primary)] focus:outline-none transition-all cursor-pointer relative after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:w-1.5 after:h-1.5 after:rounded-full after:bg-transparent checked:after:bg-white"
+                        checked={stores.length > 0 && selectedStoreSlugs.length === stores.length}
+                        onChange={toggleSelectAllStores}
+                        aria-label="Select all stores"
                       />
                     </label>
-                  </TableCell>
-                  <TableCell className="font-medium">{store.name}</TableCell>
-                  <TableCell className="text-[var(--muted)]">/{store.slug}</TableCell>
-                  <TableCell>{store.category}</TableCell>
-                  <TableCell>{store.countryCode || DEFAULT_COUNTRY_CODE}</TableCell>
-                  <TableCell>{store.offersCount}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{store.trustStatus}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button type="button" variant="outline" size="sm" onClick={() => openEditModal(store)}>
-                        Edit
-                      </Button>
-                      <Button type="button" variant="ghost" size="sm" className="border border-[var(--border)]" onClick={() => openDeleteModal(store)}>
-                        Delete
-                      </Button>
-                    </div>
-                  </TableCell>
+                  </TableHead>
+                  <TableHead className="h-10 text-[10px] font-black uppercase tracking-wider text-[var(--muted)] px-4">Store Name</TableHead>
+                  <TableHead className="h-10 text-[10px] font-black uppercase tracking-wider text-[var(--muted)] px-4">Slug</TableHead>
+                  <TableHead className="h-10 text-[10px] font-black uppercase tracking-wider text-[var(--muted)] px-4">Category</TableHead>
+                  <TableHead className="h-10 text-[10px] font-black uppercase tracking-wider text-[var(--muted)] px-4">Country</TableHead>
+                  <TableHead className="h-10 text-[10px] font-black uppercase tracking-wider text-[var(--muted)] px-4">Offers Count</TableHead>
+                  <TableHead className="h-10 text-[10px] font-black uppercase tracking-wider text-[var(--muted)] px-4">Trust</TableHead>
+                  <TableHead className="h-10 text-[10px] font-black uppercase tracking-wider text-[var(--muted)] px-4">Edit/Delete</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {stores.map((store) => (
+                  <TableRow key={store.slug} className="border-b border-[var(--border)]/50 last:border-0 hover:bg-[var(--surface-soft)]/60 transition-colors duration-150">
+                    <TableCell className="py-3 px-4">
+                      <label className="flex items-center justify-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 appearance-none rounded-full border-2 border-[var(--muted)]/60 bg-[var(--surface-soft)] checked:bg-[var(--color-primary)] checked:border-[var(--color-primary)] focus:outline-none transition-all cursor-pointer relative after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:w-1.5 after:h-1.5 after:rounded-full after:bg-transparent checked:after:bg-white"
+                          checked={selectedStoreSlugs.includes(store.slug)}
+                          onChange={() => toggleStoreSelection(store.slug)}
+                          aria-label={`Select ${store.name}`}
+                        />
+                      </label>
+                    </TableCell>
+                    <TableCell className="font-semibold text-[var(--text)] text-xs py-3 px-4">{store.name}</TableCell>
+                    <TableCell className="text-[var(--muted)] text-xs py-3 px-4">/{store.slug}</TableCell>
+                    <TableCell className="text-[var(--text)]/80 text-xs py-3 px-4 capitalize font-semibold">{store.category}</TableCell>
+                    <TableCell className="text-[var(--text)]/80 text-xs py-3 px-4 font-mono font-semibold">{store.countryCode || DEFAULT_COUNTRY_CODE}</TableCell>
+                    <TableCell className="py-3 px-4 font-mono font-semibold text-xs text-[var(--text)]/80">{store.offersCount || 0}</TableCell>
+                    <TableCell className="py-3 px-4">
+                      <span className={`inline-flex items-center rounded px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider border ${store.trustStatus === "Verified" || store.trustStatus === "Active"
+                          ? "bg-purple-500/10 text-purple-600 border-purple-500/20 dark:text-purple-400"
+                          : store.trustStatus === "Trusted"
+                            ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-400"
+                            : "bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400"
+                        }`}>
+                        {store.trustStatus}
+                      </span>
+                    </TableCell>
+                    <TableCell className="py-3 px-4">
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="rounded-lg h-7 w-7 p-0 flex items-center justify-center border-[var(--border)] bg-[var(--surface-soft)] text-[var(--text)] hover:bg-[var(--surface)] hover:text-[var(--color-primary)] cursor-pointer transition-all duration-200"
+                          onClick={() => openEditModal(store)}
+                          aria-label="Edit store"
+                        >
+                          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 stroke-current" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M12 20h9" />
+                            <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                          </svg>
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="rounded-lg h-7 w-7 p-0 flex items-center justify-center border border-red-500/20 bg-red-500/5 text-red-500 hover:bg-red-500 hover:text-white hover:border-red-500 cursor-pointer transition-all duration-200"
+                          onClick={() => openDeleteModal(store)}
+                          aria-label="Delete store"
+                        >
+                          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 stroke-current" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M3 6h18" />
+                            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                          </svg>
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
 
           {!stores.length && !isHydrating ? (
             <div className="mt-6 rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface-soft)] px-5 py-6 text-sm text-[var(--muted)]">
@@ -616,393 +659,447 @@ export default function AdminStoresManager() {
         <DialogContent
           titleId={titleId}
           descriptionId={descriptionId}
-          className="max-h-[calc(100vh-2rem)] max-w-5xl overflow-hidden rounded-[30px] border border-[var(--border)] bg-[var(--surface)] p-0 sm:max-h-[calc(100vh-3rem)]"
+          className="max-h-[calc(100vh-2rem)] max-w-5xl overflow-hidden rounded-[30px] border border-[var(--border)] bg-[var(--surface)] p-0 shadow-2xl sm:max-h-[calc(100vh-3rem)]"
         >
-          <div className="max-h-[calc(100vh-2rem)] overflow-y-auto sm:max-h-[calc(100vh-3rem)] lg:grid lg:grid-cols-[0.9fr_1.1fr]">
-            <div className="border-b border-[var(--border)] bg-[linear-gradient(180deg,var(--surface-soft),var(--surface))] p-6 lg:border-r lg:border-b-0 lg:p-8">
-              <DialogHeader className="mb-8">
-                <Badge className="w-fit border border-[var(--color-primary)]/20 bg-[var(--surface)] px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-[var(--color-primary)]">
-                  Store editor
-                </Badge>
-                <DialogTitle id={titleId}>{editingStore ? "Update Store" : "Add New Store"}</DialogTitle>
-                <DialogDescription id={descriptionId}>
-                  Capture clean catalog metadata, upload a logo, and keep the store page ready for coupons and deals.
-                </DialogDescription>
-              </DialogHeader>
+          <div className="grid gap-0 lg:grid-cols-[410px_1fr] h-[calc(100vh-2rem)] sm:h-[calc(100vh-3rem)] max-h-[850px] overflow-hidden">
+            {/* Left Column - Live Preview & Checklist */}
+            <div className="border-b border-[var(--border)] bg-gradient-to-br from-[var(--surface-soft)] via-[var(--surface)] to-[var(--surface-soft)]/30 p-6 lg:border-r lg:border-b-0 lg:p-8 flex flex-col justify-between overflow-y-auto">
+              <div>
+                <DialogHeader className="mb-6">
+                  <span className="w-fit inline-flex items-center rounded-full bg-[var(--color-primary)]/10 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[var(--color-primary)] border border-[var(--color-primary)]/20">
+                    Store Editor
+                  </span>
+                  <DialogTitle id={titleId} className="text-lg font-bold tracking-tight text-[var(--text)] mt-3">
+                    {editingStore ? "Update Store" : "Add New Store"}
+                  </DialogTitle>
+                  <DialogDescription id={descriptionId} className="text-xs text-[var(--muted)] mt-1">
+                    Configure merchant metadata, brand settings, page copywriting, and trust settings.
+                  </DialogDescription>
+                </DialogHeader>
 
-              <div className="space-y-4">
-                <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-primary)]">Live preview</p>
-                  <div className="mt-5 flex items-center gap-4">
-                    {watchedLogoImage ? (
-                      <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] p-2">
-                        <div className="relative h-full w-full overflow-hidden rounded-xl">
-                          <Image src={watchedLogoImage} alt="Uploaded store logo preview" fill className="object-contain" unoptimized />
+                {/* Live Preview Store Card */}
+                <div className="space-y-2.5">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--muted)]">Card Preview</span>
+                  <div className="relative rounded-2xl border border-[var(--border)]/70 bg-[var(--surface)] p-4 shadow-md overflow-hidden group">
+                    {/* Banner background decor */}
+                    <div className="absolute top-0 left-0 right-0 h-14 bg-gradient-to-r from-purple-500/10 via-violet-500/5 to-blue-500/10 border-b border-[var(--border)]/30" />
+                    
+                    {/* Floating Logo */}
+                    <div className="relative mt-4 flex items-end gap-3.5 z-10">
+                      {watchedLogoImage ? (
+                        <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] p-1.5 shadow-sm">
+                          <div className="relative h-full w-full">
+                            <Image src={watchedLogoImage} alt="Store logo preview" fill className="object-contain" unoptimized />
+                          </div>
                         </div>
+                      ) : (
+                        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] font-black text-sm text-[var(--text)] shadow-sm">
+                          {watchedLogoText?.slice(0, 2).toUpperCase() || watchedName?.slice(0, 2).toUpperCase() || "ST"}
+                        </div>
+                      )}
+                      <div className="min-w-0 pb-0.5">
+                        <h4 className="truncate text-sm font-bold text-[var(--text)]">{watchedName || "Store Name"}</h4>
+                        <p className="text-[10px] text-[var(--muted)] truncate mt-0.5">/{watchedSlug || "store-slug"}</p>
                       </div>
-                    ) : (
-                      <div className="flex h-20 w-20 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] p-2 text-center text-xs font-bold text-[var(--text)]">
-                        {watchedLogoText || watchedName || "LOGO"}
-                      </div>
-                    )}
-                    <div className="min-w-0">
-                      <p className="truncate text-lg font-semibold text-[var(--text)]">{watchedName || "Store name preview"}</p>
-                      <p className="mt-1 text-sm text-[var(--muted)]">/{watchedSlug || "store-slug"}</p>
+                    </div>
+
+                    {/* Metadata Badges */}
+                    <div className="mt-3.5 flex flex-wrap items-center gap-1.5">
+                      <span className="inline-flex items-center rounded-full bg-[var(--color-primary)]/10 px-2 py-0.5 text-[9px] font-bold text-[var(--color-primary)] border border-[var(--color-primary)]/10">
+                        {watchedCategory || "General"}
+                      </span>
+                      <span className="inline-flex items-center rounded-full bg-[var(--surface-soft)] px-2 py-0.5 text-[9px] font-semibold text-[var(--muted)] border border-[var(--border)]">
+                        {watchedCountryCode || "US"}
+                      </span>
+                      <span className={cn(
+                        "inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-bold border",
+                        watchedTrustStatus === "Verified" || watchedTrustStatus === "Active"
+                          ? "bg-purple-500/10 text-purple-600 border-purple-500/20 dark:text-purple-400"
+                          : watchedTrustStatus === "Trusted"
+                          ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-400"
+                          : "bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400"
+                      )}>
+                        {watchedTrustStatus}
+                      </span>
+                    </div>
+
+                    {/* Editorial Summary */}
+                    <p className="mt-3 text-[10px] text-[var(--muted)] leading-relaxed italic line-clamp-2 min-h-[30px]">
+                      {watchedDescription || "Store description summary will appear here..."}
+                    </p>
+
+                    {/* Footer Stats block */}
+                    <div className="mt-3.5 border-t border-[var(--border)]/40 pt-2.5 flex items-center justify-between text-[9px] font-semibold text-[var(--muted)]">
+                      <span className="flex items-center gap-1">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        Active Offers
+                      </span>
+                      <span className="font-mono text-emerald-500 font-bold">0 Coupons</span>
                     </div>
                   </div>
                 </div>
+              </div>
 
-                <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]">
-                  <p className="text-sm font-semibold text-[var(--text)]">Publishing checklist</p>
-                  <div className="mt-4 space-y-3 text-sm text-[var(--muted)]">
-                    <p>Name, slug, and category are required.</p>
-                    <p>Logo uploads accept PNG, JPG, WEBP, or SVG up to 2MB.</p>
-                    <p>Description should stay concise and editorial.</p>
-                  </div>
-                </div>
+              {/* Minimalist Publishing Checklist */}
+              <div className="mt-6 border-t border-[var(--border)] pt-5">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--muted)]">Requirements Checklist</span>
+                <ul className="mt-3.5 space-y-2.5 text-xs text-[var(--muted)] font-medium">
+                  <li className="flex items-center gap-2">
+                    <span className={cn("h-1.5 w-1.5 rounded-full", watchedName && watchedSlug && watchedCategory ? "bg-purple-500" : "bg-[var(--border)]")} />
+                    <span>Identity: Name, slug, & primary category</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className={cn("h-1.5 w-1.5 rounded-full", watchedLogoImage ? "bg-blue-500" : "bg-[var(--border)]")} />
+                    <span>Branding: Merchant logo uploads</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className={cn("h-1.5 w-1.5 rounded-full", watchedDescription ? "bg-emerald-500" : "bg-[var(--border)]")} />
+                    <span>Content: Editorial summary & store copy</span>
+                  </li>
+                </ul>
               </div>
             </div>
 
-            <form className="grid gap-5 bg-[var(--surface)] p-6 lg:p-8" onSubmit={handleSubmit(submitStore)}>
-              <section className="space-y-4 rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)]/35 p-4 sm:p-5">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-semibold text-[var(--text)]">Store basics</p>
-                    <p className="mt-1 text-xs text-[var(--muted)]">Clean naming, taxonomy, and trust settings.</p>
-                  </div>
-                  <Badge className="border border-[var(--border)] bg-[var(--surface)] px-2.5 py-1 text-[10px] uppercase tracking-[0.18em] text-[var(--muted)]">
-                    Required
-                  </Badge>
+            {/* Right Column - Tabbed Forms */}
+            <div className="flex flex-col h-full bg-[var(--surface)] overflow-hidden">
+              <form className="flex flex-col h-full overflow-hidden" onSubmit={handleSubmit(submitStore)}>
+                
+                {/* Tab Controls Row */}
+                <div className="border-b border-[var(--border)] bg-[var(--surface-soft)]/20 px-6 pt-4 flex gap-1 overflow-x-auto scrollbar-none shrink-0">
+                  {[
+                    { id: "general", label: "General Details" },
+                    { id: "branding", label: "Branding & Links" },
+                    { id: "content", label: "Store Page & FAQs" }
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setActiveTab(tab.id)}
+                      className={cn(
+                        "px-4 py-2.5 text-xs font-bold border-b-2 transition-all duration-150 whitespace-nowrap cursor-pointer -mb-px",
+                        activeTab === tab.id
+                          ? "border-[var(--color-primary)] text-[var(--color-primary)]"
+                          : "border-transparent text-[var(--muted)] hover:text-[var(--text)]"
+                      )}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
                 </div>
 
-                <div className="grid gap-5 md:grid-cols-2">
-                  <div className="grid gap-2">
-                    <label className="grid gap-2 text-sm text-[var(--muted)]">
-                      <span className="font-medium text-[var(--text)]">Store Name</span>
-                      <Input
-                        aria-invalid={Boolean(errors.name)}
-                        aria-describedby={errors.name ? "store-name-error" : "store-name-helper"}
-                        placeholder="Nike Store"
-                        className="rounded-lg bg-[var(--surface)]"
-                        {...register("name")}
-                      />
-                    </label>
-                    <div className="min-h-[20px] text-xs">
-                      {errors.name ? (
-                        <span id="store-name-error" className="text-sm text-[var(--color-primary)]">
-                          {errors.name.message}
-                        </span>
-                      ) : (
-                        <span id="store-name-helper" className="text-[var(--muted)]">
-                          Store name appears in the public catalog.
-                        </span>
-                      )}
-                    </div>
-                  </div>
+                {/* Tab content panel wrapper */}
+                <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                  
+                  {/* General Tab */}
+                  {activeTab === "general" && (
+                    <div className="space-y-4">
+                      <div>
+                        <h3 className="text-xs font-bold text-[var(--text)] uppercase tracking-wider mb-0.5">Store Basics</h3>
+                        <p className="text-[10px] text-[var(--muted)]">Specify the core identification and taxonomy mapping.</p>
+                      </div>
 
-                  <div className="grid gap-2">
-                    <label className="grid gap-2 text-sm text-[var(--muted)]">
-                      <span className="font-medium text-[var(--text)]">Slug</span>
-                      <Input
-                        aria-invalid={Boolean(errors.slug)}
-                        aria-describedby={errors.slug ? "store-slug-error" : "store-slug-helper"}
-                        placeholder="nike-store"
-                        className="rounded-lg bg-[var(--surface)]"
-                        {...register("slug", {
-                          onChange: () => {
-                            slugEditedRef.current = true;
-                          },
-                        })}
-                      />
-                    </label>
-                    <div className="min-h-[20px] text-xs">
-                      {errors.slug ? (
-                        <span id="store-slug-error" className="text-sm text-[var(--color-primary)]">
-                          {errors.slug.message}
-                        </span>
-                      ) : (
-                        <span id="store-slug-helper" className="text-[var(--muted)]">
-                          Auto-generated from the store name until you edit it manually.
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="grid gap-2">
-                    <div className="grid gap-2 text-sm text-[var(--muted)]">
-                      <span className="font-medium text-[var(--text)]">Category</span>
-                      <Controller
-                        control={control}
-                        name="category"
-                        render={({ field }) => (
-                          <CategoryCombobox
-                            categories={categoryOptions}
-                            value={field.value}
-                            onChange={field.onChange}
-                            onBlur={field.onBlur}
-                            error={errors.category?.message}
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="grid gap-1.5">
+                          <label className="text-xs font-bold text-[var(--text)]">Store Name</label>
+                          <Input
+                            aria-invalid={Boolean(errors.name)}
+                            placeholder="e.g. Nike Store"
+                            className="rounded-lg bg-[var(--surface)]"
+                            {...register("name")}
                           />
-                        )}
-                      />
+                          {errors.name ? (
+                            <span className="text-[10px] font-semibold text-[var(--color-primary)]">{errors.name.message}</span>
+                          ) : (
+                            <span className="text-[9px] text-[var(--muted)]">The merchant name displayed in listings.</span>
+                          )}
+                        </div>
+
+                        <div className="grid gap-1.5">
+                          <label className="text-xs font-bold text-[var(--text)]">Slug</label>
+                          <Input
+                            aria-invalid={Boolean(errors.slug)}
+                            placeholder="e.g. nike-store"
+                            className="rounded-lg bg-[var(--surface)]"
+                            {...register("slug", {
+                              onChange: () => {
+                                slugEditedRef.current = true;
+                              },
+                            })}
+                          />
+                          {errors.slug ? (
+                            <span className="text-[10px] font-semibold text-[var(--color-primary)]">{errors.slug.message}</span>
+                          ) : (
+                            <span className="text-[9px] text-[var(--muted)]">Unique, URL-friendly key parameter.</span>
+                          )}
+                        </div>
+
+                        <div className="grid gap-1.5">
+                          <label className="text-xs font-bold text-[var(--text)]">Category</label>
+                          <Controller
+                            control={control}
+                            name="category"
+                            render={({ field }) => (
+                              <CategoryCombobox
+                                categories={categoryOptions}
+                                value={field.value}
+                                onChange={field.onChange}
+                                onBlur={field.onBlur}
+                                error={errors.category?.message}
+                              />
+                            )}
+                          />
+                          {!errors.category && (
+                            <span className="text-[9px] text-[var(--muted)]">Primary category placement.</span>
+                          )}
+                        </div>
+
+                        <div className="grid gap-1.5">
+                          <label className="text-xs font-bold text-[var(--text)]">Country</label>
+                          <select
+                            aria-label="Select country"
+                            className="h-10 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 text-xs text-[var(--text)] outline-none transition focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]"
+                            {...register("countryCode")}
+                          >
+                            {countries.map((country) => (
+                              <option key={country.code} value={country.code}>
+                                {country.code} - {country.name}
+                              </option>
+                            ))}
+                          </select>
+                          <span className="text-[9px] text-[var(--muted)]">Used for localized region sorting.</span>
+                        </div>
+
+                        <div className="grid gap-1.5 sm:col-span-2">
+                          <label className="text-xs font-bold text-[var(--text)]">Trust Status</label>
+                          <select
+                            aria-label="Select trust status"
+                            className="h-10 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 text-xs text-[var(--text)] outline-none transition focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]"
+                            {...register("trustStatus")}
+                          >
+                            <option>Active</option>
+                            <option>Verified</option>
+                            <option>Trusted</option>
+                            <option>Pending</option>
+                          </select>
+                          <span className="text-[9px] text-[var(--muted)]">Appends public trust rating credentials.</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="min-h-[20px] text-xs">
-                      {errors.category ? (
-                        <span className="text-sm text-[var(--color-primary)]">{errors.category.message}</span>
-                      ) : (
-                        <span className="text-[var(--muted)]">Select the primary catalog grouping.</span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="grid gap-2">
-                    <label className="grid gap-2 text-sm text-[var(--muted)]">
-                      <span className="font-medium text-[var(--text)]">Country</span>
-                      <select
-                        aria-label="Select country"
-                        className="h-11 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-4 text-sm text-[var(--text)] outline-none transition focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[color:rgba(139, 92, 246,0.16)]"
-                        {...register("countryCode")}
-                      >
-                        {countries.map((country) => (
-                          <option key={country.code} value={country.code}>
-                            {country.code} - {country.name}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <div className="min-h-[20px] text-xs text-[var(--muted)]">Used for country-based storefront filtering.</div>
-                  </div>
-
-                  <div className="grid gap-2">
-                    <label className="grid gap-2 text-sm text-[var(--muted)]">
-                      <span className="font-medium text-[var(--text)]">Trust Status</span>
-                      <select
-                        aria-label="Select trust status"
-                        className="h-11 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-4 text-sm text-[var(--text)] outline-none transition focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[color:rgba(139, 92, 246,0.16)]"
-                        {...register("trustStatus")}
-                      >
-                        <option>Active</option>
-                        <option>Verified</option>
-                        <option>Trusted</option>
-                        <option>Pending</option>
-                      </select>
-                    </label>
-                    <div className="min-h-[20px] text-xs text-[var(--muted)]">Controls public confidence messaging.</div>
-                  </div>
-              </div>
-              </section>
-
-              <section className="space-y-4 rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)]/35 p-4 sm:p-5">
-                <div>
-                  <p className="text-sm font-semibold text-[var(--text)]">Branding</p>
-                  <p className="mt-1 text-xs text-[var(--muted)]">Upload a store logo and keep a fallback text mark for compact slots.</p>
-                </div>
-
-              <div className="grid gap-2 text-sm text-[var(--muted)]">
-                <span className="font-medium text-[var(--text)]">Store Logo</span>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept={ACCEPTED_LOGO_TYPES.join(",")}
-                  className="hidden"
-                  onChange={handleFileInputChange}
-                  aria-label="Upload store logo"
-                />
-                <div
-                  className={cn(
-                    "rounded-2xl border border-dashed p-5 transition",
-                    isDraggingLogo
-                      ? "border-[var(--color-primary)] bg-[var(--surface)]"
-                      : "border-[var(--border)] bg-[var(--surface)]"
                   )}
-                  onDragOver={(event) => {
-                    event.preventDefault();
-                    setIsDraggingLogo(true);
-                  }}
-                  onDragLeave={() => setIsDraggingLogo(false)}
-                  onDrop={handleLogoDrop}
-                >
-                  <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                    <div className="text-sm text-[var(--muted)]">
-                      <p className="font-medium text-[var(--text)]">Drag and drop a logo, or browse files.</p>
-                      <p className="mt-1">Supported: PNG, JPG, WEBP, SVG up to 2MB.</p>
+
+                  {/* Branding Tab */}
+                  {activeTab === "branding" && (
+                    <div className="space-y-4">
+                      <div>
+                        <h3 className="text-xs font-bold text-[var(--text)] uppercase tracking-wider mb-0.5">Branding & Links</h3>
+                        <p className="text-[10px] text-[var(--muted)]">Upload visuals and tracking attributes.</p>
+                      </div>
+
+                      <div className="space-y-4">
+                        <div className="grid gap-1.5">
+                          <label className="text-xs font-bold text-[var(--text)]">Store Logo</label>
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept={ACCEPTED_LOGO_TYPES.join(",")}
+                            className="hidden"
+                            onChange={handleFileInputChange}
+                            aria-label="Upload store logo"
+                          />
+                          
+                          <div
+                            className={cn(
+                              "rounded-xl border border-dashed p-4 transition-all duration-200 flex flex-col items-center justify-center text-center",
+                              isDraggingLogo
+                                ? "border-[var(--color-primary)] bg-[var(--surface-soft)]/30"
+                                : "border-[var(--border)] bg-[var(--surface-soft)]/10 hover:border-[var(--border)]/80"
+                            )}
+                            onDragOver={(event) => {
+                              event.preventDefault();
+                              setIsDraggingLogo(true);
+                            }}
+                            onDragLeave={() => setIsDraggingLogo(false)}
+                            onDrop={handleLogoDrop}
+                          >
+                            <svg viewBox="0 0 24 24" className="h-7 w-7 text-[var(--muted)] stroke-current mb-2" fill="none" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                              <circle cx="8.5" cy="8.5" r="1.5" />
+                              <polyline points="21 15 16 10 5 21" />
+                            </svg>
+                            <p className="text-[11px] font-bold text-[var(--text)]">Drag & drop logo file here</p>
+                            <p className="text-[10px] text-[var(--muted)] mt-0.5">Supports PNG, JPG, WEBP, SVG up to 2MB</p>
+                            
+                            <div className="flex gap-2 mt-3">
+                              <Button type="button" variant="outline" className="rounded-lg h-7 text-[10px] px-3 bg-[var(--surface)] hover:bg-[var(--surface-soft)] cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                                {isUploadingLogo ? "Uploading..." : "Browse Logo"}
+                              </Button>
+                              {watchedLogoImage ? (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  className="rounded-lg h-7 text-[10px] px-3 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white border border-red-500/20 cursor-pointer"
+                                  disabled={isUploadingLogo}
+                                  onClick={() => setValue("logoImage", "", { shouldDirty: true, shouldValidate: true })}
+                                >
+                                  Remove logo
+                                </Button>
+                              ) : null}
+                            </div>
+                          </div>
+                          {errors.logoImage && <span className="text-[10px] font-semibold text-[var(--color-primary)]">{errors.logoImage.message}</span>}
+                        </div>
+
+                        <div className="grid gap-1.5">
+                          <label className="text-xs font-bold text-[var(--text)]">Affiliate Tracking Link</label>
+                          <Input
+                            type="url"
+                            placeholder="https://example.com/track/store"
+                            className="rounded-lg bg-[var(--surface)]"
+                            {...register("affiliateLink")}
+                          />
+                          <span className="text-[9px] text-[var(--muted)]">Merchant tracking redirects (used for merchant CTA clicks).</span>
+                        </div>
+
+                        <div className="grid gap-1.5">
+                          <label className="text-xs font-bold text-[var(--text)]">Logo Text Fallback</label>
+                          <Input
+                            aria-invalid={Boolean(errors.logoText)}
+                            placeholder="Auto-generated from name"
+                            className="rounded-lg bg-[var(--surface)]"
+                            {...register("logoText", {
+                              onChange: () => {
+                                logoTextEditedRef.current = true;
+                              },
+                            })}
+                          />
+                          {errors.logoText ? (
+                            <span className="text-[10px] font-semibold text-[var(--color-primary)]">{errors.logoText.message}</span>
+                          ) : (
+                            <span className="text-[9px] text-[var(--muted)]">Displayed if logo file upload is omitted.</span>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex flex-wrap gap-3">
-                      <Button type="button" variant="outline" className="rounded-lg bg-[var(--surface-soft)]" onClick={() => fileInputRef.current?.click()}>
-                        {isUploadingLogo ? (
-                          <>
-                            <Spinner />
-                            Uploading...
-                          </>
-                        ) : (
-                          "Upload Image"
-                        )}
-                      </Button>
-                      {watchedLogoImage ? (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          className="rounded-lg border border-[var(--border)] bg-[var(--surface-soft)] text-[var(--text)] hover:bg-[var(--surface)]"
-                          disabled={isUploadingLogo}
-                          onClick={() => setValue("logoImage", "", { shouldDirty: true, shouldValidate: true })}
-                        >
-                          Remove Image
-                        </Button>
-                      ) : null}
-                    </div>
-                  </div>
-                </div>
-                {errors.logoImage ? <span className="text-sm text-[var(--color-primary)]">{errors.logoImage.message}</span> : null}
-              </div>
-
-              <label className="grid gap-2 text-sm text-[var(--muted)]">
-                <span className="font-medium text-[var(--text)]">Affiliate Link</span>
-                <Input
-                  type="url"
-                  placeholder="https://example.com/track/store"
-                  className="rounded-lg bg-[var(--surface)]"
-                  {...register("affiliateLink")}
-                />
-                <span className="text-xs text-[var(--muted)]">Used for store CTA links when available.</span>
-              </label>
-
-              <label className="grid gap-2 text-sm text-[var(--muted)]">
-                <span className="font-medium text-[var(--text)]">Logo Text Fallback</span>
-                <Input
-                  aria-invalid={Boolean(errors.logoText)}
-                  placeholder="Auto-generated from store name"
-                  className="rounded-lg bg-[var(--surface)]"
-                  {...register("logoText", {
-                    onChange: () => {
-                      logoTextEditedRef.current = true;
-                    },
-                  })}
-                />
-                <span className="text-xs text-[var(--muted)]">Used when no image is uploaded, and kept as a fallback for compact UI slots.</span>
-                {errors.logoText ? <span className="text-sm text-[var(--color-primary)]">{errors.logoText.message}</span> : null}
-              </label>
-              </section>
-
-              <section className="space-y-4 rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)]/35 p-4 sm:p-5">
-                <div>
-                  <p className="text-sm font-semibold text-[var(--text)]">Editorial copy</p>
-                  <p className="mt-1 text-xs text-[var(--muted)]">Keep the public store page summary concise and scannable.</p>
-                </div>
-
-              <label className="grid gap-2 text-sm text-[var(--muted)]">
-                <span className="font-medium text-[var(--text)]">Description</span>
-                <textarea
-                  ref={(element) => {
-                    descriptionRef.current = element;
-                    descriptionField.ref(element);
-                  }}
-                  rows={4}
-                  maxLength={280}
-                  aria-invalid={Boolean(errors.description)}
-                  aria-describedby={errors.description ? "store-description-error" : undefined}
-                  className="min-h-[124px] w-full resize-none rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--text)] outline-none transition placeholder:text-[var(--muted)] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[color:rgba(139, 92, 246,0.16)]"
-                  placeholder="Write a concise editorial summary for the store page."
-                  name={descriptionField.name}
-                  onBlur={descriptionField.onBlur}
-                  onChange={descriptionField.onChange}
-                />
-                <div className="flex items-center justify-between text-xs text-[var(--muted)]">
-                  <span>Lightweight editorial copy with auto-resize.</span>
-                  <span>{watchedDescription.length}/280</span>
-                </div>
-                {errors.description ? (
-                  <span id="store-description-error" className="text-sm text-[var(--color-primary)]">
-                    {errors.description.message}
-                  </span>
-                ) : null}
-              </label>
-              </section>
-
-              <section className="space-y-4 rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)]/35 p-4 sm:p-5">
-                <div>
-                  <p className="text-sm font-semibold text-[var(--text)]">Store page content</p>
-                  <p className="mt-1 text-xs text-[var(--muted)]">Optional custom content for the info section and FAQs. Leave blank to use default template copy.</p>
-                </div>
-
-                <div className="grid gap-5">
-                  <label className="grid gap-2 text-sm text-[var(--muted)]">
-                    <span className="font-medium text-[var(--text)]">Intro Title</span>
-                    <Input className="rounded-lg bg-[var(--surface)]" placeholder="More Information On Carter's Deals" {...register("contentIntroTitle")} />
-                  </label>
-
-                  <label className="grid gap-2 text-sm text-[var(--muted)]">
-                    <span className="font-medium text-[var(--text)]">Intro Paragraph 1</span>
-                    <textarea className="min-h-[110px] w-full resize-y rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--text)] outline-none transition focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[color:rgba(139, 92, 246,0.16)]" {...register("contentIntroParagraph1")} />
-                  </label>
-
-                  <label className="grid gap-2 text-sm text-[var(--muted)]">
-                    <span className="font-medium text-[var(--text)]">Intro Paragraph 2</span>
-                    <textarea className="min-h-[110px] w-full resize-y rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--text)] outline-none transition focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[color:rgba(139, 92, 246,0.16)]" {...register("contentIntroParagraph2")} />
-                  </label>
-
-                  <label className="grid gap-2 text-sm text-[var(--muted)]">
-                    <span className="font-medium text-[var(--text)]">Why Items</span>
-                    <textarea className="min-h-[120px] w-full resize-y rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--text)] outline-none transition focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[color:rgba(139, 92, 246,0.16)]" placeholder={"One bullet per line"} {...register("contentWhyItemsText")} />
-                  </label>
-
-                  <label className="grid gap-2 text-sm text-[var(--muted)]">
-                    <span className="font-medium text-[var(--text)]">Outro</span>
-                    <textarea className="min-h-[100px] w-full resize-y rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--text)] outline-none transition focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[color:rgba(139, 92, 246,0.16)]" {...register("contentOutro")} />
-                  </label>
-
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <label className="grid gap-2 text-sm text-[var(--muted)]">
-                      <span className="font-medium text-[var(--text)]">FAQ 1 Question</span>
-                      <Input className="rounded-lg bg-[var(--surface)]" {...register("faq1Question")} />
-                    </label>
-                    <label className="grid gap-2 text-sm text-[var(--muted)]">
-                      <span className="font-medium text-[var(--text)]">FAQ 1 Answer</span>
-                      <textarea className="min-h-[100px] w-full resize-y rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--text)] outline-none transition focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[color:rgba(139, 92, 246,0.16)]" {...register("faq1Answer")} />
-                    </label>
-
-                    <label className="grid gap-2 text-sm text-[var(--muted)]">
-                      <span className="font-medium text-[var(--text)]">FAQ 2 Question</span>
-                      <Input className="rounded-lg bg-[var(--surface)]" {...register("faq2Question")} />
-                    </label>
-                    <label className="grid gap-2 text-sm text-[var(--muted)]">
-                      <span className="font-medium text-[var(--text)]">FAQ 2 Answer</span>
-                      <textarea className="min-h-[100px] w-full resize-y rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--text)] outline-none transition focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[color:rgba(139, 92, 246,0.16)]" {...register("faq2Answer")} />
-                    </label>
-
-                    <label className="grid gap-2 text-sm text-[var(--muted)]">
-                      <span className="font-medium text-[var(--text)]">FAQ 3 Question</span>
-                      <Input className="rounded-lg bg-[var(--surface)]" {...register("faq3Question")} />
-                    </label>
-                    <label className="grid gap-2 text-sm text-[var(--muted)]">
-                      <span className="font-medium text-[var(--text)]">FAQ 3 Answer</span>
-                      <textarea className="min-h-[100px] w-full resize-y rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--text)] outline-none transition focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[color:rgba(139, 92, 246,0.16)]" {...register("faq3Answer")} />
-                    </label>
-                  </div>
-                </div>
-              </section>
-
-              <div className="sticky bottom-0 flex flex-col gap-3 border-t border-[var(--border)] bg-[var(--surface)] pt-5 sm:flex-row sm:justify-end">
-                <Button type="button" variant="outline" className="rounded-lg" onClick={closeModal} disabled={isSubmitting}>
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  className="rounded-lg shadow-[0_10px_30px_rgba(139, 92, 246,0.14)]"
-                  disabled={isSubmitting || isUploadingLogo}
-                  aria-label={editingStore ? "Update store" : "Save store"}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Spinner />
-                      Saving Store...
-                    </>
-                  ) : editingStore ? (
-                    "Update Store"
-                  ) : (
-                    "Save Store"
                   )}
-                </Button>
-              </div>
-            </form>
+
+                  {/* Content Tab */}
+                  {activeTab === "content" && (
+                    <div className="space-y-4">
+                      <div>
+                        <h3 className="text-xs font-bold text-[var(--text)] uppercase tracking-wider mb-0.5">Editorial Content</h3>
+                        <p className="text-[10px] text-[var(--muted)]">Write clean copies and descriptive brand answers.</p>
+                      </div>
+
+                      <div className="space-y-4">
+                        <div className="grid gap-1.5">
+                          <div className="flex items-center justify-between">
+                            <label className="text-xs font-bold text-[var(--text)]">Description (Card Summary)</label>
+                            <span className="text-[9px] text-[var(--muted)]">{watchedDescription.length}/280</span>
+                          </div>
+                          <textarea
+                            ref={(element) => {
+                              descriptionRef.current = element;
+                              descriptionField.ref(element);
+                            }}
+                            rows={3}
+                            maxLength={280}
+                            className="min-h-[80px] w-full resize-none rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs text-[var(--text)] outline-none transition focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]"
+                            placeholder="A brief summary about the store brand."
+                            name={descriptionField.name}
+                            onBlur={descriptionField.onBlur}
+                            onChange={descriptionField.onChange}
+                          />
+                          {errors.description && <span className="text-[10px] font-semibold text-[var(--color-primary)]">{errors.description.message}</span>}
+                        </div>
+
+                        <div className="grid gap-1.5">
+                          <label className="text-xs font-bold text-[var(--text)]">Info Intro Title</label>
+                          <Input className="rounded-lg bg-[var(--surface)]" placeholder="e.g. More Information On Carter's Deals" {...register("contentIntroTitle")} />
+                        </div>
+
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          <div className="grid gap-1.5">
+                            <label className="text-xs font-bold text-[var(--text)]">Intro Paragraph 1</label>
+                            <textarea className="min-h-[80px] w-full resize-y rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs text-[var(--text)] outline-none transition focus:border-[var(--color-primary)]" {...register("contentIntroParagraph1")} />
+                          </div>
+
+                          <div className="grid gap-1.5">
+                            <label className="text-xs font-bold text-[var(--text)]">Intro Paragraph 2</label>
+                            <textarea className="min-h-[80px] w-full resize-y rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs text-[var(--text)] outline-none transition focus:border-[var(--color-primary)]" {...register("contentIntroParagraph2")} />
+                          </div>
+                        </div>
+
+                        <div className="grid gap-1.5">
+                          <label className="text-xs font-bold text-[var(--text)]">Why Shop Items (One per line)</label>
+                          <textarea className="min-h-[80px] w-full resize-y rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs text-[var(--text)] outline-none transition focus:border-[var(--color-primary)]" placeholder="e.g. Verified coupon codes&#10;Fast shipping" {...register("contentWhyItemsText")} />
+                        </div>
+
+                        <div className="grid gap-1.5">
+                          <label className="text-xs font-bold text-[var(--text)]">Outro Paragraph</label>
+                          <textarea className="min-h-[80px] w-full resize-y rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs text-[var(--text)] outline-none transition focus:border-[var(--color-primary)]" {...register("contentOutro")} />
+                        </div>
+
+                        {/* FAQs Section */}
+                        <div className="border-t border-[var(--border)] pt-4 space-y-4">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">Frequently Asked Questions</span>
+                          
+                          <div className="grid gap-3">
+                            <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-soft)]/20 p-3 space-y-2">
+                              <label className="grid gap-1 text-[11px] font-bold text-[var(--text)]">
+                                FAQ 1: Question
+                                <Input className="h-8.5 text-xs rounded-md bg-[var(--surface)]" placeholder="e.g. How often are codes verified?" {...register("faq1Question")} />
+                              </label>
+                              <label className="grid gap-1 text-[11px] font-bold text-[var(--text)]">
+                                FAQ 1: Answer
+                                <textarea className="min-h-[60px] text-xs rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-[var(--text)] outline-none" {...register("faq1Answer")} />
+                              </label>
+                            </div>
+
+                            <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-soft)]/20 p-3 space-y-2">
+                              <label className="grid gap-1 text-[11px] font-bold text-[var(--text)]">
+                                FAQ 2: Question
+                                <Input className="h-8.5 text-xs rounded-md bg-[var(--surface)]" {...register("faq2Question")} />
+                              </label>
+                              <label className="grid gap-1 text-[11px] font-bold text-[var(--text)]">
+                                FAQ 2: Answer
+                                <textarea className="min-h-[60px] text-xs rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-[var(--text)] outline-none" {...register("faq2Answer")} />
+                              </label>
+                            </div>
+
+                            <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-soft)]/20 p-3 space-y-2">
+                              <label className="grid gap-1 text-[11px] font-bold text-[var(--text)]">
+                                FAQ 3: Question
+                                <Input className="h-8.5 text-xs rounded-md bg-[var(--surface)]" {...register("faq3Question")} />
+                              </label>
+                              <label className="grid gap-1 text-[11px] font-bold text-[var(--text)]">
+                                FAQ 3: Answer
+                                <textarea className="min-h-[60px] text-xs rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-[var(--text)] outline-none" {...register("faq3Answer")} />
+                              </label>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                </div>
+
+                {/* Sticky Action Footer */}
+                <div className="border-t border-[var(--border)] bg-[var(--surface)] px-6 py-4 flex justify-end gap-3 shrink-0">
+                  <Button type="button" variant="outline" className="rounded-lg h-9 text-xs font-bold px-4 border-[var(--border)] hover:bg-[var(--surface-soft)]" onClick={closeModal} disabled={isSubmitting}>
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    className="rounded-lg h-9 text-xs font-bold px-4 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white shadow-sm"
+                    disabled={isSubmitting || isUploadingLogo}
+                    aria-label={editingStore ? "Update store" : "Save store"}
+                  >
+                    {isSubmitting ? "Saving..." : editingStore ? "Update Store" : "Save Store"}
+                  </Button>
+                </div>
+              </form>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

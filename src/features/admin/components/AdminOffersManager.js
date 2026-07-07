@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/Input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/Table";
 import BulkCouponImportDialog from "@/features/admin/components/BulkCouponImportDialog";
+import { cn } from "@/lib/utils";
 
 const initialForm = {
   title: "",
@@ -198,88 +199,135 @@ export default function AdminOffersManager() {
   return (
     <>
       <Card>
-        <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <CardHeader className="flex flex-col gap-4 border-b border-[var(--border)] pb-6 lg:flex-row lg:items-center lg:justify-between p-6">
           <div>
-            <CardTitle>Coupons & Deals</CardTitle>
-            <CardDescription>Manage coupon codes and direct deals from one place.</CardDescription>
+            <CardTitle className="text-base font-bold tracking-tight text-[var(--text)]">Coupons & Deals</CardTitle>
+            <CardDescription className="text-xs text-[var(--muted)] mt-0.5">Manage coupon codes and direct deals from one place.</CardDescription>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            {selectedOfferIds.length ? (
-              <Button type="button" variant="outline" className="rounded-lg" onClick={() => setDeleteTarget({ id: "__bulk__", title: `${selectedOfferIds.length} selected offers` })}>
-                Delete Selected ({selectedOfferIds.length})
-              </Button>
-            ) : null}
-            <Button type="button" variant="ghost" size="sm" className="h-10 w-10 rounded-lg border border-[var(--border)] px-0" onClick={loadData} aria-label="Refresh offers">
+            <Button 
+              type="button" 
+              variant="outline" 
+              className={cn(
+                "h-10 rounded-xl font-bold transition-all duration-200 px-4 flex items-center gap-1.5 text-xs",
+                selectedOfferIds.length 
+                  ? "border border-red-500/25 bg-red-500/5 text-red-500 hover:bg-red-500 hover:text-white hover:border-red-600 cursor-pointer"
+                  : "border border-[var(--border)] bg-[var(--surface-soft)]/20 text-[var(--muted)]/40 cursor-not-allowed opacity-50"
+              )}
+              disabled={!selectedOfferIds.length}
+              onClick={() => setDeleteTarget({ id: "__bulk__", title: `${selectedOfferIds.length} selected offers` })}
+            >
+              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 stroke-current" fill="none" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 6h18" />
+                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+              </svg>
+              Delete Selected {selectedOfferIds.length ? `(${selectedOfferIds.length})` : ""}
+            </Button>
+            <Button type="button" variant="ghost" size="sm" className="h-10 w-10 rounded-xl border border-[var(--border)] px-0 bg-[var(--surface)] hover:bg-[var(--surface-soft)] transition" onClick={loadData} aria-label="Refresh offers">
               <RefreshIcon />
             </Button>
-            <Button type="button" variant="outline" className="rounded-lg" onClick={() => setBulkImportOpen(true)}>
+            <Button type="button" variant="outline" className="rounded-xl font-bold bg-[var(--surface-soft)] border border-[var(--border)] text-[var(--text)] hover:bg-[var(--surface)] transition px-4 py-2 text-xs cursor-pointer h-10" onClick={() => setBulkImportOpen(true)}>
               Import CSV
             </Button>
-            <Button type="button" onClick={handleOpenCreate}>
+            <Button type="button" className="rounded-xl font-bold bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white shadow-sm transition-all duration-200 px-4 py-2 cursor-pointer text-xs h-10" onClick={handleOpenCreate}>
               Add Coupon / Deal
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="pt-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-14">
-                  <label className="flex items-center justify-center">
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 rounded border border-[var(--border)] bg-[var(--surface-soft)] accent-[var(--color-primary)]"
-                      checked={offers.length > 0 && selectedOfferIds.length === offers.length}
-                      onChange={toggleSelectAll}
-                      aria-label="Select all offers"
-                    />
-                  </label>
-                </TableHead>
-                <TableHead>Title</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Store</TableHead>
-                <TableHead>Source</TableHead>
-                <TableHead>Expiry Date</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Edit/Delete</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {offers.map((offer) => (
-                <TableRow key={offer.id}>
-                  <TableCell>
-                    <label className="flex items-center justify-center">
+        <CardContent className="p-6">
+          <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
+            <Table>
+              <TableHeader className="bg-[var(--surface-soft)]/50">
+                <TableRow className="border-b border-[var(--border)] hover:bg-transparent">
+                  <TableHead className="w-14 h-10 px-4 text-center">
+                    <label className="flex items-center justify-center cursor-pointer">
                       <input
                         type="checkbox"
-                        className="h-4 w-4 rounded border border-[var(--border)] bg-[var(--surface-soft)] accent-[var(--color-primary)]"
-                        checked={selectedOfferIds.includes(offer.id)}
-                        onChange={() => toggleOfferSelection(offer.id)}
-                        aria-label={`Select ${offer.title}`}
+                        className="h-4 w-4 appearance-none rounded-full border-2 border-[var(--muted)]/60 bg-[var(--surface-soft)] checked:bg-[var(--color-primary)] checked:border-[var(--color-primary)] focus:outline-none transition-all cursor-pointer relative after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:w-1.5 after:h-1.5 after:rounded-full after:bg-transparent checked:after:bg-white"
+                        checked={offers.length > 0 && selectedOfferIds.length === offers.length}
+                        onChange={toggleSelectAll}
+                        aria-label="Select all offers"
                       />
                     </label>
-                  </TableCell>
-                  <TableCell className="font-medium">{offer.title}</TableCell>
-                  <TableCell>{offer.type}</TableCell>
-                  <TableCell>{offer.storeName}</TableCell>
-                  <TableCell>{offer.source}</TableCell>
-                  <TableCell>{offer.expiryDate}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{offer.status}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button type="button" variant="outline" size="sm" onClick={() => handleOpenEdit(offer)}>
-                        Edit
-                      </Button>
-                      <Button type="button" variant="ghost" size="sm" className="border border-[var(--border)]" onClick={() => openDeleteModal(offer)}>
-                        Delete
-                      </Button>
-                    </div>
-                  </TableCell>
+                  </TableHead>
+                  <TableHead className="h-10 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] px-4">Title</TableHead>
+                  <TableHead className="h-10 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] px-4">Type</TableHead>
+                  <TableHead className="h-10 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] px-4">Store</TableHead>
+                  <TableHead className="h-10 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] px-4">Source</TableHead>
+                  <TableHead className="h-10 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] px-4">Expiry Date</TableHead>
+                  <TableHead className="h-10 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] px-4">Status</TableHead>
+                  <TableHead className="h-10 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] px-4">Edit/Delete</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {offers.map((offer) => (
+                  <TableRow key={offer.id} className="border-b border-[var(--border)]/60 last:border-0 hover:bg-[var(--surface-soft)]/30 transition-colors duration-150">
+                    <TableCell className="w-14 h-10 px-4 text-center">
+                      <label className="flex items-center justify-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 appearance-none rounded-full border-2 border-[var(--muted)]/60 bg-[var(--surface-soft)] checked:bg-[var(--color-primary)] checked:border-[var(--color-primary)] focus:outline-none transition-all cursor-pointer relative after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:w-1.5 after:h-1.5 after:rounded-full after:bg-transparent checked:after:bg-white"
+                          checked={selectedOfferIds.includes(offer.id)}
+                          onChange={() => toggleOfferSelection(offer.id)}
+                          aria-label={`Select ${offer.title}`}
+                        />
+                      </label>
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-xs font-semibold text-[var(--text)]">{offer.title}</TableCell>
+                    <TableCell className="px-4 py-3 text-xs font-semibold text-[var(--muted)]">{offer.type}</TableCell>
+                    <TableCell className="px-4 py-3 text-xs font-semibold text-[var(--text)]">{offer.storeName}</TableCell>
+                    <TableCell className="px-4 py-3 text-xs text-[var(--muted)]">{offer.source}</TableCell>
+                    <TableCell className="px-4 py-3 text-xs font-mono text-[var(--muted)]">{offer.expiryDate}</TableCell>
+                    <TableCell className="px-4 py-3 text-xs">
+                      <span className={cn(
+                        "inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold border",
+                        offer.status === "Active"
+                          ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+                          : offer.status === "Scheduled"
+                          ? "bg-blue-500/10 text-blue-600 border-blue-500/20"
+                          : "bg-red-500/10 text-red-600 border-red-500/20"
+                      )}>
+                        {offer.status}
+                      </span>
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-xs">
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 rounded-lg border border-[var(--border)] p-0 text-[var(--muted)] hover:text-[var(--color-primary)] hover:bg-[var(--surface-soft)] cursor-pointer"
+                          onClick={() => handleOpenEdit(offer)}
+                          aria-label={`Edit ${offer.title}`}
+                        >
+                          <svg viewBox="0 0 24 24" className="h-4 w-4 stroke-current" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M12 20h9" />
+                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                          </svg>
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 rounded-lg border border-[var(--border)] p-0 text-[var(--muted)] hover:text-red-600 hover:bg-red-500/5 cursor-pointer"
+                          onClick={() => openDeleteModal(offer)}
+                          aria-label={`Delete ${offer.title}`}
+                        >
+                          <svg viewBox="0 0 24 24" className="h-4 w-4 stroke-current" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="3 6 5 6 21 6" />
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                            <line x1="10" y1="11" x2="10" y2="17" />
+                            <line x1="14" y1="11" x2="14" y2="17" />
+                          </svg>
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 

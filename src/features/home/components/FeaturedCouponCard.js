@@ -94,7 +94,7 @@ export default function FeaturedCouponCard({ coupon, index = 0 }) {
   return (
     <article
       className={cn(
-        "group relative flex flex-col overflow-hidden rounded-[28px] border transition-all duration-500 hover:-translate-y-1",
+        "group relative flex flex-col h-full overflow-hidden rounded-[28px] border transition-all duration-500 hover:-translate-y-1",
         isHighlight
           ? "border-[var(--color-primary)]/25 bg-gradient-to-b from-[#110d22] to-[#07050f] text-white hover:border-[var(--color-primary)]/50 hover:shadow-[0_20px_45px_rgba(139,92,246,0.12),0_0_20px_rgba(139,92,246,0.05)]"
           : "border-white/5 bg-[#09090c] text-white hover:border-[var(--color-primary)]/30 hover:shadow-[0_20px_40px_rgba(0,0,0,0.5),0_0_30px_rgba(139,92,246,0.03)]"
@@ -106,25 +106,25 @@ export default function FeaturedCouponCard({ coupon, index = 0 }) {
       )}
 
       {/* Top Section */}
-      <div className="relative flex flex-col p-6 pb-7 z-10">
+      <div className="relative flex flex-col flex-1 p-6 pb-7 z-10">
         <div className="flex items-center justify-between">
           {coupon.logoImage ? (
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-[8px] bg-white p-1 shadow-sm border border-white/10">
+            <div className="flex items-center gap-[14px]">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-[14px] bg-white p-1.5 shadow-sm border border-white/10">
                 <img
                   src={coupon.logoImage}
                   alt=""
                   className="h-full w-full object-contain"
                 />
               </div>
-              <span className="text-[11px] font-bold tracking-wide uppercase text-white/70">
+              <span className="text-[18px] font-black tracking-[-0.02em] text-white transition-colors duration-300 group-hover:text-[var(--color-primary-hover)]">
                 {coupon.brand}
               </span>
             </div>
           ) : (
             <span
               className={cn(
-                "rounded-lg border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider",
+                "rounded-xl border px-3 py-1.5 text-xs font-extrabold uppercase tracking-wider",
                 isHighlight
                   ? "bg-[var(--color-primary)]/10 border-[var(--color-primary)]/20 text-[var(--color-primary)]"
                   : "bg-white/5 border-white/10 text-white/50"
@@ -211,7 +211,7 @@ export default function FeaturedCouponCard({ coupon, index = 0 }) {
       </div>
 
       {/* Bottom Section */}
-      <div className="flex flex-col p-6 pt-7 z-10">
+      <div className="mt-auto flex flex-col p-6 pt-7 z-10">
         {/* Ticket Copy Button */}
         <button
           type="button"

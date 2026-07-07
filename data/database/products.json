@@ -13,7 +13,7 @@
     "productUrl": "/stores/store/bodily/products/nike-airmax-2026",
     "status": "Active",
     "createdAt": "2026-06-26T20:23:49.669Z",
-    "updatedAt": "2026-06-26T20:23:49.669Z"
+    "updatedAt": "2026-07-06T10:33:08.415Z"
   },
   {
     "id": "product_esmi_3z673rrj",
@@ -154,9 +154,9 @@
     "price": 99.99,
     "originalPrice": 129.99,
     "ctaLabel": "View Product",
-    "productUrl": "/stores/store/nike-store/products/nike-airmax-2026",
+    "productUrl": "https://www.nike.com/",
     "status": "Active",
     "createdAt": "2026-04-03T22:49:09.938Z",
-    "updatedAt": "2026-04-03T22:49:09.938Z"
+    "updatedAt": "2026-07-06T10:36:55.093Z"
   }
 ]

@@ -3,7 +3,7 @@ import FeaturedCouponsSection from "./FeaturedCouponsSection";
 import FeaturedProductsSection from "./FeaturedProductsSection";
 import HeroSection from "./HeroSection";
 import CategoriesSection from "./CategoriesSection";
-import LiveVaultSection from "./LiveVaultSection";
+import HowItWorksSection from "./HowItWorksSection";
 import TrendingStoresSection from "./TrendingStoresSection";
 
 export default function HomePage({
@@ -35,7 +35,7 @@ export default function HomePage({
       <FeaturedCouponsSection featuredCoupons={featuredCoupons} title={featuredCouponsTitle} />
       <FeaturedProductsSection featuredProducts={featuredProducts} title={featuredProductsTitle} />
       <CategoriesSection categories={categories} title={categoriesTitle} />
-      <LiveVaultSection />
+      <HowItWorksSection />
     </div>
   );
 }

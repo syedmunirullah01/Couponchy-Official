@@ -218,7 +218,9 @@ export default function FeaturedProductsSection({ featuredProducts, title = "Fea
                       <div className="flex items-center justify-between gap-4">
                         <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--color-primary)]">Ready to explore</p>
                         <Button asChild variant="outline" size="sm" className="rounded-full px-5 hover:bg-[var(--color-primary)] hover:text-black hover:border-[var(--color-primary)] transition-all duration-300">
-                          <Link href={product.productUrl}>{product.ctaLabel || "View Product"}</Link>
+                          <Link href={product.productUrl} target="_blank" rel="noopener noreferrer">
+                            {product.ctaLabel || "View Product"}
+                          </Link>
                         </Button>
                       </div>
                     </div>

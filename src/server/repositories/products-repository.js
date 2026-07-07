@@ -4,6 +4,8 @@ import { readCollection, writeCollection } from "@/server/database/json-store";
 
 const FILE_NAME = "products.json";
 
+import { getStoreBySlug } from "./stores-repository";
+
 function slugify(value) {
   return value
     .toLowerCase()
@@ -17,10 +19,22 @@ function normalizePrice(value, fallback = 0) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-function normalizeProduct(input) {
+async function normalizeProduct(input) {
   const now = new Date().toISOString();
   const storeSlug = input.storeSlug.trim().toLowerCase();
   const slug = input.slug?.trim() ? slugify(input.slug) : slugify(input.title);
+
+  let defaultUrl = `/stores/${input.categorySlug || "store"}/${storeSlug}/products/${slug}`;
+  if (!input.productUrl?.trim()) {
+    try {
+      const store = await getStoreBySlug(storeSlug);
+      if (store?.affiliateLink) {
+        defaultUrl = store.affiliateLink;
+      }
+    } catch {
+      // fallback
+    }
+  }
 
   return {
     id: input.id || `product_${storeSlug}_${Math.random().toString(36).slice(2, 10)}`,
@@ -33,7 +47,7 @@ function normalizeProduct(input) {
     price: normalizePrice(input.price),
     originalPrice: input.originalPrice === "" || input.originalPrice == null ? null : normalizePrice(input.originalPrice),
     ctaLabel: input.ctaLabel?.trim() || "View Product",
-    productUrl: `/stores/${input.categorySlug || "store"}/${storeSlug}/products/${slug}`,
+    productUrl: input.productUrl?.trim() || defaultUrl,
     status: input.status?.trim() || "Active",
     createdAt: input.createdAt || now,
     updatedAt: now,
@@ -62,7 +76,7 @@ export async function getProductByStoreAndSlug(storeSlug, slug) {
 
 export async function createProduct(payload) {
   const products = await getAllProducts();
-  const product = normalizeProduct(payload);
+  const product = await normalizeProduct(payload);
   const nextProducts = [product, ...products];
   await writeCollection(FILE_NAME, nextProducts);
   return product;
@@ -76,7 +90,7 @@ export async function updateProduct(id, payload) {
     return null;
   }
 
-  const merged = normalizeProduct({
+  const merged = await normalizeProduct({
     ...currentProduct,
     ...payload,
     id: currentProduct.id,

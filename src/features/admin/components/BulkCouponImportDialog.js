@@ -99,6 +99,7 @@ function parseCsvFile(input) {
     Papa.parse(input, {
       header: true,
       skipEmptyLines: true,
+      transformHeader: (header) => header.trim().replace(/^\uFEFF/, ""),
       complete: (results) => resolve(results),
       error: (error) => reject(error),
     });
@@ -375,204 +376,183 @@ export default function BulkCouponImportDialog({ open, onOpenChange, stores, off
       <DialogContent
         titleId={titleId}
         descriptionId={descriptionId}
-        className="max-w-[1080px] rounded-[32px] border border-[var(--border)] bg-[var(--surface)] p-0"
+        className="relative max-w-[520px] rounded-[24px] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-2xl overflow-hidden"
       >
-        <div className="grid gap-0 lg:grid-cols-[0.74fr_1.26fr]">
-          <div className="border-b border-[var(--border)] bg-[linear-gradient(180deg,var(--surface-soft),var(--surface))] p-6 lg:border-r lg:border-b-0 lg:p-8">
-            <DialogHeader className="mb-7">
-              <Badge className="w-fit border border-[var(--color-primary)]/20 bg-[var(--surface)] px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-[var(--color-primary)]">
-                Bulk import
-              </Badge>
-              <DialogTitle id={titleId}>Bulk Import Coupons</DialogTitle>
-              <DialogDescription id={descriptionId}>Upload CSV, review the dry run, then import the batch.</DialogDescription>
-            </DialogHeader>
+        <button
+          type="button"
+          onClick={() => handleOpenChange(false)}
+          className="absolute top-5 right-5 z-50 flex h-8 w-8 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface)] text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--surface-soft)] active:scale-95 transition cursor-pointer"
+          aria-label="Close dialog"
+        >
+          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
 
-            <div className="space-y-4">
-              <Card className="rounded-[24px] border-[var(--border)] bg-[var(--surface)] shadow-none">
-                <CardContent className="p-5">
-                  <div className="space-y-3">
-                    <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3.5">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">Step 01</p>
-                      <p className="mt-2 text-sm font-medium text-[var(--text)]">Attach `offers.csv`</p>
-                    </div>
-                    <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3.5">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">Step 02</p>
-                      <p className="mt-2 text-sm font-medium text-[var(--text)]">Review the dry validation report</p>
-                    </div>
-                    <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3.5">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">Step 03</p>
-                      <p className="mt-2 text-sm font-medium text-[var(--text)]">Import approved coupon rows</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+        <DialogHeader className="mb-6 pr-8">
+          <span className="w-fit inline-flex items-center rounded-full bg-purple-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-purple-600 border border-purple-500/20 dark:text-purple-400">
+            Bulk Import
+          </span>
+          <DialogTitle id={titleId} className="text-base font-bold tracking-tight text-[var(--text)] mt-3">Bulk Import Coupons</DialogTitle>
+          <DialogDescription id={descriptionId} className="text-xs text-[var(--muted)] mt-1.5 leading-relaxed">
+            Attach your coupons CSV spreadsheet to batch-populate offers. Make sure storeSlug matching is accurate.
+          </DialogDescription>
+        </DialogHeader>
 
-              <Card className="rounded-[24px] border-[var(--border)] bg-[var(--surface)] shadow-none">
-                <CardContent className="space-y-4 p-5">
-                  <div className="grid gap-3">
-                    <div className="flex items-center justify-between rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3">
-                      <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">Template</span>
-                      <span className="text-sm font-medium text-[var(--text)]">CSV</span>
-                    </div>
-                    <div className="flex items-center justify-between rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3">
-                      <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">Validation</span>
-                      <span className="text-sm font-medium text-[var(--text)]">Client + API</span>
-                    </div>
-                    <div className="flex items-center justify-between rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3">
-                      <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">Affiliate</span>
-                      <span className="text-sm font-medium text-[var(--text)]">Store fallback</span>
-                    </div>
-                  </div>
+        <div className="space-y-4">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv,text/csv"
+            className="hidden"
+            onChange={(event) => {
+              void selectFile(event.target.files?.[0]);
+            }}
+          />
 
-                  <Button type="button" variant="outline" className="w-full rounded-xl" onClick={downloadTemplate}>
-                    Download CSV Template
-                  </Button>
-                </CardContent>
-              </Card>
+          {/* Coupons CSV File Slot */}
+          <div 
+            className={cn(
+              "rounded-xl border p-4 transition-all duration-200",
+              isDragging ? "border-[var(--color-primary)] bg-[var(--surface-soft)]/40 shadow-sm" : "border-[var(--border)] bg-[var(--surface-soft)]/10 hover:border-[var(--border)]/80"
+            )}
+            onDragOver={(event) => {
+              event.preventDefault();
+              setIsDragging(true);
+            }}
+            onDragLeave={() => setIsDragging(false)}
+            onDrop={(event) => {
+              event.preventDefault();
+              setIsDragging(false);
+              void selectFile(event.dataTransfer.files?.[0]);
+            }}
+          >
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
+                  <svg viewBox="0 0 24 24" className="h-4.5 w-4.5 stroke-current" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                    <line x1="16" y1="13" x2="8" y2="13" />
+                    <line x1="16" y1="17" x2="8" y2="17" />
+                  </svg>
+                </div>
+                <div className="min-w-0">
+                  <h4 className="text-xs font-bold text-[var(--text)]">Coupons CSV File</h4>
+                  <p className="text-[10px] text-[var(--muted)] truncate mt-0.5">
+                    {selectedFile ? `${selectedFile.name} (${Math.max(1, Math.round(selectedFile.size / 1024))} KB)` : "Drop offers.csv here or browse"}
+                  </p>
+                </div>
+              </div>
+              <Button 
+                type="button" 
+                variant="outline" 
+                className="rounded-lg text-[10px] font-bold px-3 h-7.5 border-[var(--border)] bg-[var(--surface)] text-[var(--text)] shrink-0 cursor-pointer"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {selectedFile ? "Change" : "Browse"}
+              </Button>
             </div>
           </div>
 
-          <div className="grid gap-4 p-6 lg:p-8">
-            <div className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-soft)]/35 p-5">
-              <div className="mb-4 flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold text-[var(--text)]">Import assets</p>
-                  <p className="mt-1 text-xs text-[var(--muted)]">CSV only</p>
-                </div>
-                {selectedFile ? <Badge variant="outline">Ready</Badge> : null}
+          <div className="grid gap-3 sm:grid-cols-2 pt-2">
+            <Button 
+              type="button" 
+              variant="outline" 
+              className="w-full rounded-xl text-xs font-bold h-9.5 border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-soft)] text-[var(--text)] cursor-pointer disabled:opacity-50" 
+              disabled={isValidating || isUploading} 
+              onClick={runDryValidation}
+            >
+              {isValidating ? "Validating..." : "Run Validation"}
+            </Button>
+            <Button 
+              type="button" 
+              className="w-full rounded-xl text-xs font-bold h-9.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white shadow-sm cursor-pointer disabled:opacity-50" 
+              disabled={!dryRunSummary?.validRows || isUploading || isValidating} 
+              onClick={handleImport}
+            >
+              {isUploading ? "Importing..." : "Import Coupons"}
+            </Button>
+          </div>
+        </div>
+
+        {(dryRunSummary || finalSummary) ? (
+          <div className="mt-6 border-t border-[var(--border)] pt-5 space-y-4">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-[10px] font-bold text-[var(--text)] uppercase tracking-wider">{finalSummary ? "Import Summary" : "Dry Run Summary"}</p>
+              <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[8px] font-bold uppercase tracking-wider border ${
+                finalSummary 
+                  ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-400" 
+                  : "bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400"
+              }`}>
+                {finalSummary ? "Success" : "Verified"}
+              </span>
+            </div>
+
+            <div className="grid gap-2 grid-cols-2 sm:grid-cols-4">
+              <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-soft)]/20 p-3">
+                <p className="text-[9px] font-bold uppercase tracking-widest text-[var(--muted)]">Total Rows</p>
+                <p className="mt-1 text-base font-bold text-[var(--text)]">{(finalSummary || dryRunSummary).totalRecords}</p>
               </div>
-
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".csv,text/csv"
-                className="hidden"
-                onChange={(event) => {
-                  void selectFile(event.target.files?.[0]);
-                }}
-              />
-
-              <div
-                className={cn(
-                  "rounded-[22px] border border-dashed p-5 transition",
-                  isDragging ? "border-[var(--color-primary)] bg-[var(--surface)]" : "border-[var(--border)] bg-[var(--surface)]"
-                )}
-                onDragOver={(event) => {
-                  event.preventDefault();
-                  setIsDragging(true);
-                }}
-                onDragLeave={() => setIsDragging(false)}
-                onDrop={(event) => {
-                  event.preventDefault();
-                  setIsDragging(false);
-                  void selectFile(event.dataTransfer.files?.[0]);
-                }}
-              >
-                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                  <div>
-                    <p className="text-base font-semibold text-[var(--text)]">Coupons CSV</p>
-                    <p className="mt-1 text-sm text-[var(--muted)]">Drop file here or browse manually</p>
-                  </div>
-                  <Button type="button" variant="outline" className="min-w-[148px] rounded-xl bg-[var(--surface-soft)] px-4" onClick={() => fileInputRef.current?.click()}>
-                    Select CSV
-                  </Button>
-                </div>
+              <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-soft)]/20 p-3">
+                <p className="text-[9px] font-bold uppercase tracking-widest text-[var(--muted)]">
+                  {finalSummary ? "Imported" : "Valid Rows"}
+                </p>
+                <p className="mt-1 text-base font-bold text-[var(--text)]">
+                  {finalSummary ? finalSummary.successfullyAdded : dryRunSummary.validRows}
+                </p>
               </div>
-
-              {selectedFile ? (
-                <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-[var(--text)]">{selectedFile.name}</p>
-                    <p className="mt-1 text-xs text-[var(--muted)]">{Math.max(1, Math.round(selectedFile.size / 1024))} KB</p>
-                  </div>
-                  <Badge variant="outline">CSV</Badge>
-                </div>
-              ) : null}
-
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                <Button type="button" variant="outline" className="w-full rounded-xl" disabled={isValidating || isUploading} onClick={runDryValidation}>
-                  {isValidating ? (
-                    <span className="inline-flex items-center justify-center gap-2 whitespace-nowrap">
-                      <Spinner />
-                      Validating...
-                    </span>
-                  ) : (
-                    "Run Dry Validation"
-                  )}
-                </Button>
-                <Button type="button" className="w-full rounded-xl" disabled={!dryRunSummary?.validRows || isUploading || isValidating} onClick={handleImport}>
-                  {isUploading ? (
-                    <span className="inline-flex items-center justify-center gap-2 whitespace-nowrap">
-                      <Spinner />
-                      Importing...
-                    </span>
-                  ) : (
-                    "Import Coupons"
-                  )}
-                </Button>
+              <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-soft)]/20 p-3">
+                <p className="text-[9px] font-bold uppercase tracking-widest text-[var(--muted)]">Duplicates</p>
+                <p className="mt-1 text-base font-bold text-[var(--text)]">
+                  {finalSummary ? finalSummary.skippedDuplicates : dryRunSummary.duplicates}
+                </p>
+              </div>
+              <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-soft)]/20 p-3">
+                <p className="text-[9px] font-bold uppercase tracking-widest text-[var(--muted)]">Errors</p>
+                <p className="mt-1 text-base font-bold text-[var(--text)]">
+                  {finalSummary ? finalSummary.failed : dryRunSummary.validationErrors}
+                </p>
               </div>
             </div>
 
-            {(dryRunSummary || finalSummary) ? (
-              <Card className="rounded-[24px] border-[var(--border)] bg-[var(--surface)] shadow-none">
-                <CardContent className="space-y-4 p-5">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm font-semibold text-[var(--text)]">{finalSummary ? "Import Summary" : "Dry Run Summary"}</p>
-                    <Badge variant={finalSummary ? "success" : "outline"}>{finalSummary ? "Completed" : "Preview"}</Badge>
-                  </div>
+            {errors.length ? (
+              <div className="rounded-xl border border-red-500/15 bg-red-500/5 p-4 mt-3">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-red-500 mb-2">Errors Trace</p>
+                <div className="max-h-32 space-y-1.5 overflow-y-auto text-[11px] font-semibold text-[var(--text)]/80">
+                  {errors.map((error, index) => (
+                    <p key={`${error.rowNumber}-${index}`}>
+                      <span className="text-red-500 font-mono">Row {error.rowNumber}:</span> {error.reason}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            ) : null}
 
-                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                    <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3">
-                      <p className="text-xs uppercase tracking-[0.16em] text-[var(--muted)]">Total Records</p>
-                      <p className="mt-2 text-xl font-semibold text-[var(--text)]">{(finalSummary || dryRunSummary).totalRecords}</p>
-                    </div>
-                    <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-xs uppercase tracking-[0.16em] text-[var(--muted)]">{finalSummary ? "Successfully Added" : "Valid Rows"}</p>
-                        <Badge variant="success" size="sm">{finalSummary ? finalSummary.successfullyAdded : dryRunSummary.validRows}</Badge>
-                      </div>
-                      <p className="mt-2 text-xl font-semibold text-[var(--text)]">{finalSummary ? finalSummary.successfullyAdded : dryRunSummary.validRows}</p>
-                    </div>
-                    <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-xs uppercase tracking-[0.16em] text-[var(--muted)]">Duplicates</p>
-                        <Badge variant="warning" size="sm">{finalSummary ? finalSummary.skippedDuplicates : dryRunSummary.duplicates}</Badge>
-                      </div>
-                      <p className="mt-2 text-xl font-semibold text-[var(--text)]">{finalSummary ? finalSummary.skippedDuplicates : dryRunSummary.duplicates}</p>
-                    </div>
-                    <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-xs uppercase tracking-[0.16em] text-[var(--muted)]">Errors</p>
-                        <Badge variant="destructive" size="sm">{finalSummary ? finalSummary.failed : dryRunSummary.validationErrors}</Badge>
-                      </div>
-                      <p className="mt-2 text-xl font-semibold text-[var(--text)]">{finalSummary ? finalSummary.failed : dryRunSummary.validationErrors}</p>
-                    </div>
-                  </div>
-
-                  {errors.length ? (
-                    <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3">
-                      <p className="text-xs uppercase tracking-[0.16em] text-[var(--muted)]">Errors</p>
-                      <div className="mt-3 max-h-40 space-y-2 overflow-y-auto text-sm text-[var(--muted)]">
-                        {errors.map((error, index) => (
-                          <p key={`${error.rowNumber}-${index}`}>
-                            Row {error.rowNumber}: {error.reason}
-                          </p>
-                        ))}
-                      </div>
-                    </div>
-                  ) : null}
-
-                  {finalSummary ? (
-                    <div className="flex justify-end">
-                      <Button type="button" className="rounded-xl" onClick={handleCloseAndRefresh}>
-                        Close and Refresh
-                      </Button>
-                    </div>
-                  ) : null}
-                </CardContent>
-              </Card>
+            {finalSummary ? (
+              <div className="flex justify-end pt-2">
+                <Button type="button" className="rounded-xl text-xs font-bold h-9 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white px-4 cursor-pointer" onClick={handleCloseAndRefresh}>
+                  Close and Refresh
+                </Button>
+              </div>
             ) : null}
           </div>
+        ) : null}
+
+        <div className="mt-6 flex justify-center border-t border-[var(--border)] pt-4">
+          <button 
+            type="button" 
+            onClick={downloadTemplate} 
+            className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-[var(--color-primary)] hover:underline cursor-pointer bg-transparent border-0 outline-none p-0"
+          >
+            <svg viewBox="0 0 24 24" className="h-3 w-3 stroke-current" fill="none" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            Download CSV Template Manifest
+          </button>
         </div>
       </DialogContent>
     </Dialog>

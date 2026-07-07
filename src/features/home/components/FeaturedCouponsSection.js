@@ -63,9 +63,11 @@ export default function FeaturedCouponsSection({ featuredCoupons, title = "Featu
       {/* Responsive Grid for exactly 3 Coupons */}
       <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
         {topThreeCoupons.map((coupon, index) => (
-          <div key={`${coupon.storeSlug || coupon.brand}-${index}`}>
-            <FeaturedCouponCard coupon={coupon} index={index} />
-          </div>
+          <FeaturedCouponCard
+            key={`${coupon.storeSlug || coupon.brand}-${index}`}
+            coupon={coupon}
+            index={index}
+          />
         ))}
       </div>
     </section>

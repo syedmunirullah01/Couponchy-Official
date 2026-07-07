@@ -28,6 +28,19 @@ export default async function RootLayout({ children }) {
   return (
     <html lang="en">
       <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                if (localStorage.getItem('admin-theme') === 'light') {
+                  document.documentElement.classList.add('light');
+                } else {
+                  document.documentElement.classList.remove('light');
+                }
+              } catch (_) {}
+            `,
+          }}
+        />
         <CustomMarkup markup={settings.general.customHeadScript} />
       </head>
       <body className={`${plusJakartaSans.variable} antialiased`}>

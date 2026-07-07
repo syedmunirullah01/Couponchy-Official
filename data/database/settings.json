@@ -51,6 +51,18 @@
         "name": "Germany",
         "flag": "🇩🇪",
         "flagUrl": "https://flagcdn.com/w40/de.png"
+      },
+      {
+        "code": "BR",
+        "name": "Brazil",
+        "flag": "🇧🇷",
+        "flagUrl": "https://flagcdn.com/w40/br.png"
+      },
+      {
+        "code": "IT",
+        "name": "iTALY",
+        "flag": "🇮🇹",
+        "flagUrl": "https://flagcdn.com/w40/it.png"
       }
     ],
     "customHeadScript": "",
@@ -216,9 +228,14 @@
           "club-l-london",
           "viator",
           "bigdug",
-          "okweed"
+          "okweed",
+          "pelsbarn",
+          "the-loade-tea-shop",
+          "dorsey",
+          "mixhers",
+          "bodily"
         ],
-        "limit": 12
+        "limit": 15
       },
       "featuredCoupons": {
         "title": "Featured Coupons",
@@ -231,7 +248,18 @@
       },
       "featuredProducts": {
         "title": "Featured Products",
-        "selectedProductIds": [],
+        "selectedProductIds": [
+          "product_bodily_lll6bjyv",
+          "product_esmi_3z673rrj",
+          "product_mixhers_yxon11xc",
+          "product_bodily_rpohy49o",
+          "product_nanoleaf_2oxb6un7",
+          "product_bigdug_urcri3mb",
+          "product_wandernana_9xxdmqsc",
+          "product_crz-yoga_v5hg1j8h",
+          "product_addidas_os8k1gwb",
+          "product_nike-store_x1s1ty7i"
+        ],
         "limit": 4
       },
       "latestStores": {

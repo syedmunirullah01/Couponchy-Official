@@ -80,11 +80,11 @@ const STAT_ICONS = {
 function parseRotation(rotationStr) {
   const tiltMatch = (rotationStr || "").match(/rotate\(([^)]+)deg\)/);
   const translateMatch = (rotationStr || "").match(/translate\(([^,]+)px,\s*([^)]+)px\)/);
-  
+
   const tilt = tiltMatch ? parseInt(tiltMatch[1], 10) : 0;
   const x = translateMatch ? parseInt(translateMatch[1], 10) : 0;
   const y = translateMatch ? parseInt(translateMatch[2], 10) : 0;
-  
+
   return { tilt, x, y };
 }
 
@@ -111,7 +111,7 @@ function SettingsSection({ title, description, icon, children }) {
     <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)]/20 p-5 sm:p-6 transition-all hover:bg-[var(--surface-soft)]/30 backdrop-blur-md">
       <div className="mb-5 flex items-start gap-3">
         {icon ? (
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--border)] bg-black/40">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--surface-soft)]">
             {icon}
           </div>
         ) : null}
@@ -333,7 +333,7 @@ export default function AdminHeroManager() {
 
   if (isLoading) {
     return (
-      <Card className="border-[var(--border)] bg-black/40">
+      <Card className="border-[var(--border)] bg-[var(--surface-soft)]/40">
         <CardContent className="py-20 text-center text-sm text-[var(--muted)] flex flex-col items-center gap-4 justify-center">
           <Spinner />
           <span>Loading hero settings...</span>
@@ -343,30 +343,30 @@ export default function AdminHeroManager() {
   }
 
   return (
-    <Card className="border-[var(--border)] bg-black/20 overflow-hidden shadow-2xl">
-      <CardHeader className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between border-b border-[var(--border)] bg-black/40 p-6">
+    <Card className="border-[var(--border)] bg-[var(--surface)] overflow-hidden shadow-2xl">
+      <CardHeader className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between border-b border-[var(--border)] bg-[var(--surface-soft)]/40 p-6">
         <div>
-          <CardTitle className="text-xl font-extrabold text-white flex items-center gap-2">
+          <CardTitle className="text-xl font-extrabold text-[var(--text)] flex items-center gap-2">
             <span className="text-[var(--color-primary)]">♦</span> Homepage Hero Customizer
           </CardTitle>
           <CardDescription className="text-xs text-[var(--muted)] mt-1">
             Visual editor to control text headings, live stats, and floating coupon layers.
           </CardDescription>
         </div>
-        <Button 
-          type="button" 
-          variant="outline" 
-          size="sm" 
-          onClick={saveHero} 
-          disabled={isSaving} 
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={saveHero}
+          disabled={isSaving}
           leadingIcon={isSaving ? <Spinner /> : null}
-          className="bg-[var(--color-primary)] text-black hover:bg-[var(--color-primary-hover)] border-none font-bold px-6 py-2 shadow-lg shadow-lime-500/10 hover:shadow-lime-500/25 transition-all duration-300"
+          className="bg-[var(--color-primary)] text-[var(--surface)] hover:bg-[var(--color-primary-hover)] border-none font-bold px-6 py-2 shadow-lg shadow-lime-500/10 hover:shadow-lime-500/25 transition-all duration-300"
         >
           {isSaving ? "Saving changes..." : "Save Hero Settings"}
         </Button>
       </CardHeader>
       <CardContent className="grid gap-8 p-6">
-        
+
         {/* Left Side Content Section */}
         <SettingsSection
           title="1. Main Header & Hero Copy"
@@ -380,7 +380,7 @@ export default function AdminHeroManager() {
             <SectionField label="Search Placeholder" hint="Placeholder text inside search bar.">
               <Input value={hero.searchPlaceholder} onChange={(event) => updateHeroField("searchPlaceholder", event.target.value)} />
             </SectionField>
-            <SectionField label="Main Title Line" hint="Large white headline text.">
+            <SectionField label="Main Title Line" hint="Large headline text.">
               <Input value={hero.titleLineOne} onChange={(event) => updateHeroField("titleLineOne", event.target.value)} />
             </SectionField>
             <SectionField label="Highlighted Accent Title" hint="Colored bottom row text.">
@@ -396,7 +396,7 @@ export default function AdminHeroManager() {
               <SectionField label="Hero Description Paragraph" hint="Main supporting text underneath the large headline.">
                 <textarea
                   rows={3}
-                  className="w-full rounded-2xl border border-[var(--border)] bg-black/40 px-4 py-3 text-sm text-[var(--text)] outline-none focus:border-[var(--color-primary)] transition-colors focus:ring-1 focus:ring-[var(--color-primary)]/20"
+                  className="w-full rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)]/30 px-4 py-3 text-sm text-[var(--text)] outline-none focus:border-[var(--color-primary)] transition-colors focus:ring-1 focus:ring-[var(--color-primary)]/20"
                   value={hero.description}
                   onChange={(event) => updateHeroField("description", event.target.value)}
                 />
@@ -420,49 +420,43 @@ export default function AdminHeroManager() {
                 "from-[#60a5fa]/15 to-transparent border-[#60a5fa]/20 hover:border-[#60a5fa]/40",
                 "from-[#f59e0b]/15 to-transparent border-[#f59e0b]/20 hover:border-[#f59e0b]/40",
               ];
-              const glowText = [
-                "text-[#8b5cf6] [text-shadow:0_0_12px_rgba(139, 92, 246,0.3)]",
-                "text-[#d946ef] [text-shadow:0_0_12px_rgba(190,242,100,0.3)]",
-                "text-[#60a5fa] [text-shadow:0_0_12px_rgba(96,165,250,0.3)]",
-                "text-[#f59e0b] [text-shadow:0_0_12px_rgba(245,158,11,0.3)]",
-              ];
 
               return (
-                <div 
-                  key={index} 
+                <div
+                  key={index}
                   className={`rounded-2xl border bg-gradient-to-b ${colors[index % 4]} p-4 flex flex-col gap-4 shadow-lg transition-all duration-300`}
                 >
                   <div className="flex items-center justify-between border-b border-[var(--border)] pb-2.5">
-                    <p className="text-[11px] font-extrabold uppercase tracking-widest text-white/50">Column {index + 1}</p>
-                    
-                    {/* Tiny inline visual mockup of the stats box inside the editor card! */}
-                    <div className="flex items-center gap-1.5 rounded-full bg-black/60 px-2 py-1 text-[9px] border border-white/5">
-                      <span className={stat.accent ? "text-[var(--color-primary)]" : "text-white/50"}>
+                    <p className="text-[11px] font-extrabold uppercase tracking-widest text-[var(--muted)]">Column {index + 1}</p>
+
+                    {/* Tiny inline mockup inside editor */}
+                    <div className="flex items-center gap-1.5 rounded-full bg-[var(--surface-soft)] px-2 py-1 text-[9px] border border-[var(--border)]">
+                      <span className={stat.accent ? "text-[var(--color-primary)]" : "text-[var(--muted)]"}>
                         {STAT_ICONS[stat.icon || "package"]}
                       </span>
-                      <span className="font-extrabold text-white">{stat.value || "0"}</span>
+                      <span className="font-extrabold text-[var(--text)]">{stat.value || "0"}</span>
                     </div>
                   </div>
 
                   <SectionField label="Stat Value" hint="e.g. 612K+ or 98%">
-                    <Input 
-                      className="bg-black/50 border-white/10 text-white font-black"
-                      value={stat.value || ""} 
-                      onChange={(event) => updateHeroStat(index, "value", event.target.value)} 
+                    <Input
+                      className="bg-[var(--surface-soft)]/50 border-[var(--border)] text-[var(--text)] font-black"
+                      value={stat.value || ""}
+                      onChange={(event) => updateHeroStat(index, "value", event.target.value)}
                     />
                   </SectionField>
                   <SectionField label="Label / Description" hint="e.g. Stores Verified">
-                    <Input 
-                      className="bg-black/50 border-white/10 text-white/80"
-                      value={stat.label || ""} 
-                      onChange={(event) => updateHeroStat(index, "label", event.target.value)} 
+                    <Input
+                      className="bg-[var(--surface-soft)]/50 border-[var(--border)] text-[var(--muted)]"
+                      value={stat.label || ""}
+                      onChange={(event) => updateHeroStat(index, "label", event.target.value)}
                     />
                   </SectionField>
                   <SectionField label="Icon SVG representation">
                     <select
                       value={stat.icon || "package"}
                       onChange={(event) => updateHeroStat(index, "icon", event.target.value)}
-                      className="w-full rounded-xl border border-white/10 bg-black/50 px-3 py-2 text-xs text-white outline-none focus:border-[var(--color-primary)] cursor-pointer"
+                      className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] px-3 py-2 text-xs text-[var(--text)] outline-none focus:border-[var(--color-primary)] cursor-pointer"
                     >
                       <option value="package">📦 Box / Package (Stores)</option>
                       <option value="check">✅ Checkmark Badge (Accuracy)</option>
@@ -470,16 +464,16 @@ export default function AdminHeroManager() {
                       <option value="dollar">💵 Dollar Sign (Checkout savings)</option>
                     </select>
                   </SectionField>
-                  
-                  <div className="flex items-center gap-2 mt-1 bg-black/30 rounded-lg p-2 border border-white/5 cursor-pointer hover:bg-black/50 transition-colors">
+
+                  <div className="flex items-center gap-2 mt-1 bg-[var(--surface-soft)]/40 rounded-lg p-2 border border-[var(--border)] cursor-pointer hover:bg-[var(--surface-soft)]/75 transition-colors">
                     <input
                       type="checkbox"
                       id={`stat-accent-${index}`}
                       checked={stat.accent || false}
                       onChange={(event) => updateHeroStat(index, "accent", event.target.checked)}
-                      className="h-3.5 w-3.5 rounded border-white/10 text-[var(--color-primary)] focus:ring-[var(--color-primary)] cursor-pointer bg-black/50"
+                      className="h-3.5 w-3.5 rounded border-[var(--border)] text-[var(--color-primary)] focus:ring-[var(--color-primary)] cursor-pointer bg-[var(--surface)]"
                     />
-                    <label htmlFor={`stat-accent-${index}`} className="text-[11px] font-extrabold text-white/80 cursor-pointer select-none">
+                    <label htmlFor={`stat-accent-${index}`} className="text-[11px] font-extrabold text-[var(--muted)] cursor-pointer select-none">
                       Enable Neon Accent Glow
                     </label>
                   </div>
@@ -497,15 +491,15 @@ export default function AdminHeroManager() {
         >
           <div className="mb-6 flex flex-col items-center justify-between gap-4 md:flex-row border-b border-[var(--border)] pb-4">
             <div>
-              <p className="text-sm font-extrabold text-white flex items-center gap-1.5">
+              <p className="text-sm font-extrabold text-[var(--text)] flex items-center gap-1.5">
                 <span className="inline-block h-2 w-2 rounded-full bg-lime-500 animate-pulse" /> Interactive Deck Manager
               </p>
               <p className="text-xs text-[var(--muted)]">Hover cards in the live deck below to inspect their stack layering and visual placements.</p>
             </div>
-            <Button 
-              type="button" 
-              variant="outline" 
-              size="sm" 
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
               onClick={addHeroCard}
               className="border-[var(--color-primary)]/40 hover:bg-[var(--color-primary)]/10 text-[var(--color-primary)] font-bold text-xs"
             >
@@ -515,7 +509,7 @@ export default function AdminHeroManager() {
 
           {/* Premium Live Visual Preview */}
           {hero.cards && hero.cards.length > 0 && (
-            <div className="mb-8 flex flex-col items-center justify-center rounded-3xl border border-[var(--border)] bg-gradient-to-b from-black/80 to-neutral-900/60 py-12 px-6 shadow-2xl relative overflow-hidden">
+            <div className="mb-8 flex flex-col items-center justify-center rounded-3xl border border-[var(--border)] bg-gradient-to-b from-[var(--surface-soft)] to-[var(--surface)] py-12 px-6 shadow-2xl relative overflow-hidden">
               <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_60%_at_50%_40%,rgba(139, 92, 246,0.06),transparent)] pointer-events-none" />
               <p className="mb-10 self-start text-[10px] font-extrabold uppercase tracking-[0.25em] text-[var(--color-primary)] flex items-center gap-2 z-10">
                 <span className="relative flex h-2 w-2">
@@ -524,8 +518,8 @@ export default function AdminHeroManager() {
                 </span>
                 Interactive Deck Canvas (Real-time Preview)
               </p>
-              
-              <div 
+
+              <div
                 style={{
                   position: "relative",
                   height: `${230 + hero.cards.length * 45}px`,
@@ -545,22 +539,22 @@ export default function AdminHeroManager() {
                       top: `${i * 52}px`,
                       left: `${i * 18}px`,
                       width: "240px",
-                      background: "rgba(18,18,18,0.94)",
-                      border: `1px solid ${card.verified ? "rgba(139, 92, 246,0.3)" : "rgba(255,255,255,0.08)"}`,
+                      background: "var(--surface)",
+                      border: card.verified ? "1px solid var(--color-primary)" : "1px solid var(--border)",
                       borderRadius: "20px",
                       padding: "18px",
                       transform: card.rotation || "rotate(0deg)",
                       zIndex: card.zIndex || (i + 1),
-                      boxShadow: "0 25px 50px -12px rgba(0,0,0,0.8)",
+                      boxShadow: "0 25px 50px -12px rgba(0,0,0,0.15)",
                       cursor: "grab",
                     }}
                   >
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px" }}>
                       <div className="text-left">
-                        <div style={{ fontSize: "20px", fontWeight: 900, color: "#ffffff", letterSpacing: "-0.03em" }}>
+                        <div style={{ fontSize: "20px", fontWeight: 900, color: "var(--text)", letterSpacing: "-0.03em" }}>
                           {card.amount || "10% OFF"}
                         </div>
-                        <div style={{ fontSize: "9px", color: "rgba(255,255,255,0.4)", marginTop: "2px", fontWeight: 600 }}>
+                        <div style={{ fontSize: "9px", color: "var(--muted)", marginTop: "2px", fontWeight: 600 }}>
                           {card.max || "NO MINIMUM"}
                         </div>
                       </div>
@@ -580,15 +574,15 @@ export default function AdminHeroManager() {
                         {card.category || "DEAL"}
                       </span>
                     </div>
-                    <div style={{ height: "1px", background: "rgba(255,255,255,0.06)", marginBottom: "10px" }} />
-                    <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.85)", fontWeight: 700, marginBottom: "12px", textAlign: "left", lineHeight: 1.4 }}>
+                    <div style={{ height: "1px", background: "var(--border)", marginBottom: "10px" }} />
+                    <div style={{ fontSize: "11px", color: "var(--text)", fontWeight: 700, marginBottom: "12px", textAlign: "left", lineHeight: 1.4 }}>
                       {card.title || "Coupon Title"}
                     </div>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                       <span
                         style={{
                           fontSize: "8px",
-                          color: card.verified ? "var(--color-primary)" : "rgba(255,255,255,0.3.5)",
+                          color: card.verified ? "var(--color-primary)" : "var(--muted)",
                           display: "flex",
                           alignItems: "center",
                           gap: "3.5px",
@@ -637,28 +631,28 @@ export default function AdminHeroManager() {
               ];
 
               return (
-                <Card 
-                  key={card.id || index} 
-                  className={`border ${borderColors[index % 3]} bg-neutral-950/30 shadow-xl overflow-hidden transition-all duration-300`}
+                <Card
+                  key={card.id || index}
+                  className={`border ${borderColors[index % 3]} bg-[var(--surface-soft)]/30 shadow-xl overflow-hidden transition-all duration-300`}
                 >
-                  <CardHeader className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between bg-black/30 p-4 border-b border-white/5">
+                  <CardHeader className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between bg-[var(--surface-soft)]/50 p-4 border-b border-[var(--border)]">
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="h-2 w-2 rounded-full bg-[var(--color-primary)]" />
-                        <CardTitle className="text-sm font-extrabold text-white">Coupon Card {index + 1}</CardTitle>
+                        <CardTitle className="text-sm font-extrabold text-[var(--text)]">Coupon Card {index + 1}</CardTitle>
                       </div>
-                      <CardDescription className="text-xs text-[var(--muted)]/80 mt-0.5">
+                      <CardDescription className="text-xs text-[var(--muted)] mt-0.5">
                         {card.title || "Untitled Card Offer"}
                       </CardDescription>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => moveHeroCard(index, -1)} 
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => moveHeroCard(index, -1)}
                         disabled={index === 0}
-                        className="text-xs border-white/10 hover:bg-white/5"
+                        className="text-xs border-[var(--border)] hover:bg-[var(--surface-soft)]"
                       >
                         ↑ Move Up
                       </Button>
@@ -668,24 +662,24 @@ export default function AdminHeroManager() {
                         size="sm"
                         onClick={() => moveHeroCard(index, 1)}
                         disabled={index === hero.cards.length - 1}
-                        className="text-xs border-white/10 hover:bg-white/5"
+                        className="text-xs border-[var(--border)] hover:bg-[var(--surface-soft)]"
                       >
                         ↓ Move Down
                       </Button>
-                      <Button 
-                        type="button" 
-                        variant="ghost" 
-                        size="sm" 
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
                         onClick={() => toggleAdvancedMode(index)}
-                        className={`text-xs ${isAdvanced ? "text-[var(--color-primary)]" : "text-white/60"} hover:text-white`}
+                        className={`text-xs ${isAdvanced ? "text-[var(--color-primary)]" : "text-[var(--muted)]"} hover:text-[var(--text)]`}
                       >
                         🛠️ {isAdvanced ? "Simple Mode" : "Advanced CSS"}
                       </Button>
-                      <Button 
-                        type="button" 
-                        variant="ghost" 
-                        size="sm" 
-                        className="border border-red-500/20 text-red-400 hover:text-red-300 hover:bg-red-950/20 text-xs" 
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="border border-red-500/20 text-red-400 hover:text-red-300 hover:bg-red-950/20 text-xs"
                         onClick={() => removeHeroCard(index)}
                       >
                         ✕ Remove Card
@@ -693,7 +687,7 @@ export default function AdminHeroManager() {
                     </div>
                   </CardHeader>
                   <CardContent className="grid gap-5 p-4 md:grid-cols-2 lg:grid-cols-3">
-                    
+
                     {/* Basic Fields */}
                     <SectionField label="Discount Title / Amount" hint="e.g. 20% OFF or $50 OFF">
                       <Input value={card.amount || ""} onChange={(event) => updateHeroCard(index, "amount", event.target.value)} />
@@ -707,13 +701,13 @@ export default function AdminHeroManager() {
                     <SectionField label="Verification Tag Text" hint="e.g. VERIFIED TODAY or EXPIRES 03/17">
                       <Input value={card.tag || ""} onChange={(event) => updateHeroCard(index, "tag", event.target.value)} />
                     </SectionField>
-                    
+
                     {/* Layer Ordering */}
                     <SectionField label="Stack Depth Order (zIndex)" hint="Higher numbers float on top.">
-                      <select 
-                        value={card.zIndex || (index + 1)} 
+                      <select
+                        value={card.zIndex || (index + 1)}
                         onChange={(event) => updateHeroCard(index, "zIndex", parseInt(event.target.value, 10) || 1)}
-                        className="w-full rounded-2xl border border-white/10 bg-black/40 px-3 py-2 text-xs text-white outline-none focus:border-[var(--color-primary)] cursor-pointer"
+                        className="w-full rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs text-[var(--text)] outline-none focus:border-[var(--color-primary)] cursor-pointer"
                       >
                         <option value="1">1 (Lowest Layer - Bottom)</option>
                         <option value="2">2 (Middle Layer)</option>
@@ -723,15 +717,15 @@ export default function AdminHeroManager() {
                     </SectionField>
 
                     {/* Verification Status Checkbox */}
-                    <div className="flex items-center gap-2 pt-6 bg-black/20 rounded-xl p-3 border border-white/5 cursor-pointer hover:bg-black/35 transition-colors">
-                      <input 
-                        type="checkbox" 
+                    <div className="flex items-center gap-2 pt-6 bg-[var(--surface)] rounded-xl p-3 border border-[var(--border)] cursor-pointer hover:bg-[var(--surface-soft)] transition-colors">
+                      <input
+                        type="checkbox"
                         id={`verified-${card.id || index}`}
-                        checked={card.verified || false} 
+                        checked={card.verified || false}
                         onChange={(event) => updateHeroCard(index, "verified", event.target.checked)}
-                        className="h-4 w-4 rounded border-white/15 text-[var(--color-primary)] focus:ring-[var(--color-primary)] cursor-pointer bg-black/50"
+                        className="h-4 w-4 rounded border-[var(--border)] text-[var(--color-primary)] focus:ring-[var(--color-primary)] cursor-pointer bg-[var(--surface-soft)]"
                       />
-                      <label htmlFor={`verified-${card.id || index}`} className="text-xs font-bold text-white cursor-pointer select-none">
+                      <label htmlFor={`verified-${card.id || index}`} className="text-xs font-bold text-[var(--text)] cursor-pointer select-none">
                         Verified Status (Adds green icon & check)
                       </label>
                     </div>
@@ -744,22 +738,22 @@ export default function AdminHeroManager() {
 
                     {/* Visual Rotation and Translate Sliders (Simple Mode) */}
                     {!isAdvanced ? (
-                      <div className="md:col-span-2 lg:col-span-3 grid gap-4 bg-black/40 p-4 rounded-2xl border border-white/5 mt-2">
-                        <p className="text-xs font-bold text-white/90 flex items-center gap-1.5">
+                      <div className="md:col-span-2 lg:col-span-3 grid gap-4 bg-[var(--surface-soft)] p-4 rounded-2xl border border-[var(--border)] mt-2">
+                        <p className="text-xs font-bold text-[var(--text)] flex items-center gap-1.5">
                           📐 Visual Positioning Sliders <span className="text-[10px] text-[var(--muted)] font-normal">(Updates position in real-time)</span>
                         </p>
-                        
+
                         <div className="grid gap-4 sm:grid-cols-2">
                           <div className="space-y-1">
                             <div className="flex justify-between text-xs text-[var(--muted)] font-medium">
                               <span>Tilt Angle (Degrees)</span>
-                              <span className="font-bold text-white">{parsedRot.tilt}°</span>
+                              <span className="font-bold text-[var(--text)]">{parsedRot.tilt}°</span>
                             </div>
-                            <input 
-                              type="range" 
-                              min="-20" 
-                              max="20" 
-                              value={parsedRot.tilt} 
+                            <input
+                              type="range"
+                              min="-20"
+                              max="20"
+                              value={parsedRot.tilt}
                               onChange={(e) => handleSliderChange(index, "tilt", parseInt(e.target.value, 10))}
                               className="w-full accent-[var(--color-primary)] cursor-ew-resize h-1 bg-neutral-800 rounded-lg appearance-none"
                             />
@@ -768,13 +762,13 @@ export default function AdminHeroManager() {
                           <div className="space-y-1">
                             <div className="flex justify-between text-xs text-[var(--muted)] font-medium">
                               <span>Mobile Tilt (Degrees)</span>
-                              <span className="font-bold text-white">{parsedMobileTilt}°</span>
+                              <span className="font-bold text-[var(--text)]">{parsedMobileTilt}°</span>
                             </div>
-                            <input 
-                              type="range" 
-                              min="-15" 
-                              max="15" 
-                              value={parsedMobileTilt} 
+                            <input
+                              type="range"
+                              min="-15"
+                              max="15"
+                              value={parsedMobileTilt}
                               onChange={(e) => handleSliderChange(index, "mobileTilt", parseInt(e.target.value, 10))}
                               className="w-full accent-[#d946ef] cursor-ew-resize h-1 bg-neutral-800 rounded-lg appearance-none"
                             />
@@ -783,13 +777,13 @@ export default function AdminHeroManager() {
                           <div className="space-y-1">
                             <div className="flex justify-between text-xs text-[var(--muted)] font-medium">
                               <span>Horizontal Shift (X)</span>
-                              <span className="font-bold text-white">{parsedRot.x}px</span>
+                              <span className="font-bold text-[var(--text)]">{parsedRot.x}px</span>
                             </div>
-                            <input 
-                              type="range" 
-                              min="-50" 
-                              max="150" 
-                              value={parsedRot.x} 
+                            <input
+                              type="range"
+                              min="-50"
+                              max="150"
+                              value={parsedRot.x}
                               onChange={(e) => handleSliderChange(index, "x", parseInt(e.target.value, 10))}
                               className="w-full accent-[#60a5fa] cursor-ew-resize h-1 bg-neutral-800 rounded-lg appearance-none"
                             />
@@ -798,13 +792,13 @@ export default function AdminHeroManager() {
                           <div className="space-y-1">
                             <div className="flex justify-between text-xs text-[var(--muted)] font-medium">
                               <span>Vertical Shift (Y)</span>
-                              <span className="font-bold text-white">{parsedRot.y}px</span>
+                              <span className="font-bold text-[var(--text)]">{parsedRot.y}px</span>
                             </div>
-                            <input 
-                              type="range" 
-                              min="0" 
-                              max="250" 
-                              value={parsedRot.y} 
+                            <input
+                              type="range"
+                              min="0"
+                              max="250"
+                              value={parsedRot.y}
                               onChange={(e) => handleSliderChange(index, "y", parseInt(e.target.value, 10))}
                               className="w-full accent-[#f59e0b] cursor-ew-resize h-1 bg-neutral-800 rounded-lg appearance-none"
                             />
@@ -813,7 +807,7 @@ export default function AdminHeroManager() {
                       </div>
                     ) : (
                       // Raw CSS Override Inputs (Advanced Mode)
-                      <div className="md:col-span-2 lg:col-span-3 grid gap-4 bg-black/40 p-4 rounded-2xl border border-red-500/10 mt-2">
+                      <div className="md:col-span-2 lg:col-span-3 grid gap-4 bg-[var(--surface-soft)] p-4 rounded-2xl border border-red-500/20 mt-2">
                         <p className="text-xs font-bold text-red-400">⚠️ Raw CSS Style Overrides</p>
                         <div className="grid gap-4 sm:grid-cols-2">
                           <SectionField label="CSS Desktop Transform Rule" hint="e.g. rotate(-6deg) translate(0px, 0px)">
@@ -831,7 +825,7 @@ export default function AdminHeroManager() {
             })}
 
             {(!hero.cards || hero.cards.length === 0) && (
-              <div className="py-12 text-center text-sm text-[var(--muted)] border border-dashed border-[var(--border)] rounded-2xl bg-black/20">
+              <div className="py-12 text-center text-sm text-[var(--muted)] border border-dashed border-[var(--border)] rounded-2xl bg-[var(--surface-soft)]/50">
                 No coupon cards added yet. Click &quot;Add Coupon Card&quot; to create one.
               </div>
             )}

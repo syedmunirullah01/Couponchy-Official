@@ -14,7 +14,7 @@ const SECTIONS = [
   { id: "governing-law", title: "8. Governing Law" },
 ];
 
-export default function TermsOfServicePage({ settings = {} }) {
+export default function TermsOfServicePage({ settings = {}, company = null }) {
   const [activeSection, setActiveSection] = useState("acceptance");
 
   const scrollToSection = (id) => {
@@ -27,6 +27,8 @@ export default function TermsOfServicePage({ settings = {} }) {
 
   const supportEmail = settings.supportEmail || "contact@couponchy.com";
   const siteName = settings.siteName || "Couponchy";
+
+  const termsData = company?.termsOfService || {};
 
   return (
     <div style={{ color: "#fff", fontFamily: "inherit", overflow: "hidden" }}>
@@ -44,10 +46,10 @@ export default function TermsOfServicePage({ settings = {} }) {
             <span style={{ fontSize: "11px", fontWeight: 800, letterSpacing: "0.2em", textTransform: "uppercase", color: "var(--color-primary)" }}>Agreement</span>
           </div>
           <h1 style={{ fontSize: "clamp(38px, 5vw, 64px)", fontWeight: 900, lineHeight: 0.95, letterSpacing: "-0.04em", margin: "0 0 20px" }}>
-            Terms of Service
+            {termsData.title || "Terms of Service"}
           </h1>
           <p style={{ fontSize: "15px", color: "rgba(255,255,255,0.45)", fontWeight: 500 }}>
-            Effective date: March 2026. Please read these terms carefully before using our platform.
+            Effective date: {termsData.lastUpdated || "March 2026"}. Please read these terms carefully before using our platform.
           </p>
         </div>
 
@@ -99,7 +101,7 @@ export default function TermsOfServicePage({ settings = {} }) {
               <h2 style={{ fontSize: "24px", fontWeight: 900, marginBottom: "20px", color: "var(--color-primary)" }}>1. Acceptance of Terms</h2>
               <div style={{ background: "rgba(15,15,20,0.4)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "24px", padding: "36px", backdropFilter: "blur(12px)" }}>
                 <p style={{ fontSize: "15px", lineHeight: 1.75, color: "rgba(255,255,255,0.6)", margin: 0, fontWeight: 500 }}>
-                  By accessing the website at {siteName}, you agree to comply with and be bound by these terms of service, all applicable laws and regulations, and agree that you are responsible for compliance with any applicable local laws. If you do not agree with any of these terms, you are prohibited from using or accessing this site.
+                  {termsData.acceptanceText || `By accessing the website at ${siteName}, you agree to comply with and be bound by these terms of service, all applicable laws and regulations, and agree that you are responsible for compliance with any applicable local laws. If you do not agree with any of these terms, you are prohibited from using or accessing this site.`}
                 </p>
               </div>
             </section>
@@ -109,14 +111,14 @@ export default function TermsOfServicePage({ settings = {} }) {
               <h2 style={{ fontSize: "24px", fontWeight: 900, marginBottom: "20px", color: "var(--color-primary)" }}>2. Use License</h2>
               <div style={{ background: "rgba(15,15,20,0.4)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "24px", padding: "36px", backdropFilter: "blur(12px)", display: "flex", flexDirection: "column", gap: "16px" }}>
                 <p style={{ fontSize: "15px", lineHeight: 1.75, color: "rgba(255,255,255,0.6)", margin: 0, fontWeight: 500 }}>
-                  Permission is granted to temporarily view the materials (information or codes) on {siteName} for personal, non-commercial transitory viewing only. This is the grant of a license, not a transfer of title, and under this license you may not:
+                  {termsData.licenseText || `Permission is granted to temporarily view the materials (information or codes) on ${siteName} for personal, non-commercial transitory viewing only. This is the grant of a license, not a transfer of title, and under this license you may not:`}
                 </p>
                 <div style={{ display: "grid", gap: "16px", gridTemplateColumns: "1fr sm:1fr" }} className="terms-license-grid">
                   {[
-                    "Modify or copy the materials for commercial distributions.",
-                    "Use the materials for any commercial purpose, or for any public display (commercial or non-commercial).",
-                    "Attempt to decompile, reverse engineer, or script crawlers against the internal data layers of {siteName}.",
-                    "Remove any copyright or other proprietary notations from the materials.",
+                    termsData.licenseBullet1 || "Modify or copy the materials for commercial distributions.",
+                    termsData.licenseBullet2 || "Use the materials for any commercial purpose, or for any public display (commercial or non-commercial).",
+                    termsData.licenseBullet3 || `Attempt to decompile, reverse engineer, or script crawlers against the internal data layers of ${siteName}.`,
+                    termsData.licenseBullet4 || "Remove any copyright or other proprietary notations from the materials.",
                   ].map((text, idx) => (
                     <div key={idx} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.03)", borderRadius: "14px", padding: "20px", fontSize: "13px", lineHeight: 1.6, color: "rgba(255,255,255,0.5)", fontWeight: 500 }}>
                       {text.replace("{siteName}", siteName)}
@@ -131,7 +133,7 @@ export default function TermsOfServicePage({ settings = {} }) {
               <h2 style={{ fontSize: "24px", fontWeight: 900, marginBottom: "20px", color: "var(--color-primary)" }}>3. Disclaimer of Accuracy</h2>
               <div style={{ background: "rgba(15,15,20,0.4)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "24px", padding: "36px", backdropFilter: "blur(12px)" }}>
                 <p style={{ fontSize: "15px", lineHeight: 1.75, color: "rgba(255,255,255,0.6)", margin: 0, fontWeight: 500 }}>
-                  The materials on {siteName} are provided on an 'as is' basis. We make no warranties, expressed or implied, and hereby disclaim and negate all other warranties including, without limitation, implied warranties or conditions of merchantability, fitness for a particular purpose, or non-infringement of intellectual property.
+                  {termsData.disclaimerText || `The materials on ${siteName} are provided on an 'as is' basis. We make no warranties, expressed or implied, and hereby disclaim and negate all other warranties including, without limitation, implied warranties or conditions of merchantability, fitness for a particular purpose, or non-infringement of intellectual property.`}
                 </p>
               </div>
             </section>
@@ -141,7 +143,7 @@ export default function TermsOfServicePage({ settings = {} }) {
               <h2 style={{ fontSize: "24px", fontWeight: 900, marginBottom: "20px", color: "var(--color-primary)" }}>4. Limitations of Liability</h2>
               <div style={{ background: "rgba(15,15,20,0.4)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "24px", padding: "36px", backdropFilter: "blur(12px)" }}>
                 <p style={{ fontSize: "15px", lineHeight: 1.75, color: "rgba(255,255,255,0.6)", margin: 0, fontWeight: 500 }}>
-                  In no event shall {siteName} or its suppliers be liable for any damages (including, without limitation, damages for loss of data or profit, or due to business interruption) arising out of the use or inability to use the materials on our platform, even if {siteName} has been notified orally or in writing of the possibility of such damage.
+                  {termsData.limitationsText || `In no event shall ${siteName} or its suppliers be liable for any damages (including, without limitation, damages for loss of data or profit, or due to business interruption) arising out of the use or inability to use the materials on our platform, even if ${siteName} has been notified orally or in writing of the possibility of such damage.`}
                 </p>
               </div>
             </section>
@@ -151,7 +153,7 @@ export default function TermsOfServicePage({ settings = {} }) {
               <h2 style={{ fontSize: "24px", fontWeight: 900, marginBottom: "20px", color: "var(--color-primary)" }}>5. Revisions and Errata</h2>
               <div style={{ background: "rgba(15,15,20,0.4)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "24px", padding: "36px", backdropFilter: "blur(12px)" }}>
                 <p style={{ fontSize: "15px", lineHeight: 1.75, color: "rgba(255,255,255,0.6)", margin: 0, fontWeight: 500 }}>
-                  The materials appearing on {siteName} could include technical, typographical, or photographic errors. We do not warrant that any of the materials on the platform are accurate, complete, or current. We may make changes to the materials contained on the platform at any time without notice.
+                  {termsData.revisionsText || `The materials appearing on ${siteName} could include technical, typographical, or photographic errors. We do not warrant that any of the materials on the platform are accurate, complete, or current. We may make changes to the materials contained on the platform at any time without notice.`}
                 </p>
               </div>
             </section>
@@ -161,7 +163,7 @@ export default function TermsOfServicePage({ settings = {} }) {
               <h2 style={{ fontSize: "24px", fontWeight: 900, marginBottom: "20px", color: "var(--color-primary)" }}>6. External Links</h2>
               <div style={{ background: "rgba(15,15,20,0.4)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "24px", padding: "36px", backdropFilter: "blur(12px)" }}>
                 <p style={{ fontSize: "15px", lineHeight: 1.75, color: "rgba(255,255,255,0.6)", margin: 0, fontWeight: 500 }}>
-                  We have not reviewed all of the sites linked to our website and are not responsible for the contents of any such linked site. The inclusion of any link does not imply endorsement by {siteName} of the site. Use of any such linked website is at the user's own risk.
+                  {termsData.linksText || `We have not reviewed all of the sites linked to our website and are not responsible for the contents of any such linked site. The inclusion of any link does not imply endorsement by ${siteName} of the site. Use of any such linked website is at the user's own risk.`}
                 </p>
               </div>
             </section>
@@ -171,7 +173,7 @@ export default function TermsOfServicePage({ settings = {} }) {
               <h2 style={{ fontSize: "24px", fontWeight: 900, marginBottom: "20px", color: "var(--color-primary)" }}>7. Terms Modifications</h2>
               <div style={{ background: "rgba(15,15,20,0.4)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "24px", padding: "36px", backdropFilter: "blur(12px)" }}>
                 <p style={{ fontSize: "15px", lineHeight: 1.75, color: "rgba(255,255,255,0.6)", margin: 0, fontWeight: 500 }}>
-                  We may revise these terms of service for its website at any time without notice. By using this website you are agreeing to be bound by the then current version of these terms of service.
+                  {termsData.modificationsText || "We may revise these terms of service for its website at any time without notice. By using this website you are agreeing to be bound by the then current version of these terms of service."}
                 </p>
               </div>
             </section>
@@ -181,7 +183,7 @@ export default function TermsOfServicePage({ settings = {} }) {
               <h2 style={{ fontSize: "24px", fontWeight: 900, marginBottom: "20px", color: "var(--color-primary)" }}>8. Governing Law</h2>
               <div style={{ background: "rgba(15,15,20,0.4)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "24px", padding: "36px", backdropFilter: "blur(12px)" }}>
                 <p style={{ fontSize: "15px", lineHeight: 1.75, color: "rgba(255,255,255,0.6)", margin: 0, fontWeight: 500 }}>
-                  These terms and conditions are governed by and construed in accordance with standard legal procedures, and you irrevocably submit to the exclusive jurisdiction of the courts in that state or location.
+                  {termsData.governingLawText || "These terms and conditions are governed by and construed in accordance with standard legal procedures, and you irrevocably submit to the exclusive jurisdiction of the courts in that state or location."}
                 </p>
               </div>
             </section>
