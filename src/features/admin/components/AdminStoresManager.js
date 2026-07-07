@@ -598,6 +598,7 @@ export default function AdminStoresManager() {
                   <TableHead className="h-10 text-[10px] font-black uppercase tracking-wider text-[var(--muted)] px-4">Category</TableHead>
                   <TableHead className="h-10 text-[10px] font-black uppercase tracking-wider text-[var(--muted)] px-4">Country</TableHead>
                   <TableHead className="h-10 text-[10px] font-black uppercase tracking-wider text-[var(--muted)] px-4">Offers Count</TableHead>
+                  <TableHead className="h-10 text-[10px] font-black uppercase tracking-wider text-[var(--muted)] px-4">Website</TableHead>
                   <TableHead className="h-10 text-[10px] font-black uppercase tracking-wider text-[var(--muted)] px-4">Trust</TableHead>
                   <TableHead className="h-10 text-[10px] font-black uppercase tracking-wider text-[var(--muted)] px-4">Edit/Delete</TableHead>
                 </TableRow>
@@ -644,6 +645,25 @@ export default function AdminStoresManager() {
                     <TableCell className="text-[var(--text)]/80 text-xs py-3 px-4 capitalize font-semibold">{store.category}</TableCell>
                     <TableCell className="text-[var(--text)]/80 text-xs py-3 px-4 font-mono font-semibold">{store.countryCode || DEFAULT_COUNTRY_CODE}</TableCell>
                     <TableCell className="py-3 px-4 font-mono font-semibold text-xs text-[var(--text)]/80">{store.offersCount || 0}</TableCell>
+                    <TableCell className="py-3 px-4 text-xs font-semibold">
+                      {store.affiliateLink ? (
+                        <a
+                          href={store.affiliateLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] transition-colors duration-150"
+                        >
+                          Visit
+                          <svg viewBox="0 0 24 24" className="h-3 w-3 stroke-current" fill="none" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                            <polyline points="15 3 21 3 21 9" />
+                            <line x1="10" y1="14" x2="21" y2="3" />
+                          </svg>
+                        </a>
+                      ) : (
+                        <span className="text-[var(--muted)]/50 italic font-normal">No Link</span>
+                      )}
+                    </TableCell>
                     <TableCell className="py-3 px-4">
                       <span className={`inline-flex items-center rounded px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider border ${store.trustStatus === "Verified" || store.trustStatus === "Active"
                           ? "bg-purple-500/10 text-purple-600 border-purple-500/20 dark:text-purple-400"
