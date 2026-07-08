@@ -307,7 +307,8 @@ export default function BulkCouponImportDialog({ open, onOpenChange, stores, off
   function downloadTemplate() {
     const csv = [
       TEMPLATE_HEADERS.join(","),
-      "nike-store,Spring launch coupon,Use this on selected sneakers,Coupon,https://example.com/track/nike,2026-04-30,Active,1,NIKE20",
+      // Description column is optional — leave it blank if not needed
+      "nike-store,Spring launch coupon,,Coupon,https://example.com/track/nike,2026-04-30,Active,1,NIKE20",
     ].join("\n");
 
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -464,7 +465,7 @@ export default function BulkCouponImportDialog({ open, onOpenChange, stores, off
           </span>
           <DialogTitle id={titleId} className="text-base font-bold tracking-tight text-[var(--text)] mt-3">Bulk Import Coupons</DialogTitle>
           <DialogDescription id={descriptionId} className="text-xs text-[var(--muted)] mt-1.5 leading-relaxed">
-            Attach your coupons CSV spreadsheet to batch-populate offers. Make sure storeSlug matching is accurate.
+            Attach your coupons CSV spreadsheet to batch-populate offers. Make sure storeSlug matching is accurate. <span className="font-semibold text-[var(--text)]">Description column is optional</span> — you may leave it blank.
           </DialogDescription>
         </DialogHeader>
 

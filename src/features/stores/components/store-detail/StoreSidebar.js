@@ -1,15 +1,15 @@
 import Image from "next/image";
 import Link from "next/link";
 import { buildCountryPath } from "@/lib/countries";
+import { generateStoreAboutDescription } from "@/lib/store-seo-templates";
 
-export default function StoreSidebar({ singleStore, relatedStores }) {
+export default function StoreSidebar({ singleStore, relatedStores, offers = [] }) {
   const storeWebsite = singleStore.affiliateLink || singleStore.website || "#";
   const storeDisplayUrl = singleStore.website
     ? singleStore.website.replace(/^https?:\/\//, "").replace(/\/$/, "")
     : `${singleStore.name?.toLowerCase().replace(/\s+/g, "")}.com`;
 
-  const aboutText = singleStore.description ||
-    `${singleStore.name} is a leading brand in its category, offering premium products and services. Known for its innovation and commitment to quality, ${singleStore.name} helps customers achieve their goals. Find the best verified discount codes here to save on your next purchase.`;
+  const aboutText = generateStoreAboutDescription(singleStore, offers);
 
   return (
     <aside className="w-full space-y-4 lg:w-[300px] lg:shrink-0">
@@ -25,21 +25,6 @@ export default function StoreSidebar({ singleStore, relatedStores }) {
         <p className="text-xs leading-5 text-white/45">
           {aboutText}
         </p>
-        {storeWebsite !== "#" && (
-          <a
-            href={storeWebsite}
-            target="_blank"
-            rel="noreferrer"
-            className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-[var(--color-primary)] transition-colors hover:text-[var(--color-primary-hover)]"
-          >
-            Learn More at {storeDisplayUrl}
-            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-              <polyline points="15 3 21 3 21 9" />
-              <line x1="10" y1="14" x2="21" y2="3" />
-            </svg>
-          </a>
-        )}
       </div>
 
       {/* Related Stores */}

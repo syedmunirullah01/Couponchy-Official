@@ -88,7 +88,14 @@ export default function OfferCard({ offer, store, isFirst }) {
   const [feedback, setFeedback] = useState(null);
   const [linkCopied, setLinkCopied] = useState(false);
   const [timeLeft, setTimeLeft] = useState({ days: "00", hours: "00", minutes: "00", seconds: "00" });
-  const { lastUsedNum, unit, usesTodayNum } = getSeededStats(offer.id, offer.title);
+  // Stats are client-only to avoid server/client Date.now() hydration mismatch
+  const [stats, setStats] = useState(null);
+
+  useEffect(() => {
+    setStats(getSeededStats(offer.id, offer.title));
+  }, [offer.id, offer.title]);
+
+  const { lastUsedNum, unit, usesTodayNum } = stats ?? { lastUsedNum: null, unit: null, usesTodayNum: null };
 
   const offerHref = offer.affiliateLink || store.affiliateLink || "#";
   const isExternal = Boolean(offer.affiliateLink || store.affiliateLink);
@@ -141,14 +148,10 @@ export default function OfferCard({ offer, store, isFirst }) {
   useEffect(() => {
     if (!isCoupon) return;
 
-    const calculateTargetDate = () => {
-      const now = new Date();
-      const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-      const targetDay = now.getDate() <= 15 ? 15 : lastDay;
-      return new Date(now.getFullYear(), now.getMonth(), targetDay, 23, 59, 59);
-    };
+    // Use the actual expiry date from the database
+    if (!offer.expiryDate) return;
 
-    const targetDate = calculateTargetDate();
+    const targetDate = new Date(`${offer.expiryDate}T23:59:59Z`);
 
     const updateTimer = () => {
       const difference = targetDate.getTime() - Date.now();
@@ -175,7 +178,7 @@ export default function OfferCard({ offer, store, isFirst }) {
     const interval = setInterval(updateTimer, 1000);
 
     return () => clearInterval(interval);
-  }, [isCoupon]);
+  }, [isCoupon, offer.expiryDate]);
 
   const openInBackground = (url) => {
     if (!url || url === "#") return;
@@ -337,13 +340,13 @@ export default function OfferCard({ offer, store, isFirst }) {
                 <svg className="h-3.5 w-3.5 text-white/20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                 </svg>
-                <span>Last used: <strong className="text-white/60 font-bold">{lastUsedNum}{unit} ago</strong></span>
+                <span>Last used: <strong className="text-white/60 font-bold">{lastUsedNum != null ? `${lastUsedNum}${unit} ago` : "—"}</strong></span>
               </div>
               <div className="flex items-center gap-1.5">
                 <svg className="h-3.5 w-3.5 text-white/20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.109A11.386 11.386 0 0 1 10.025 20a11.38 11.38 0 0 1-4.99-.94v-.11c0-2.28 1.85-4.13 4.13-4.13h1.696c.484 0 .942.083 1.37.234m0 0a3.001 3.001 0 1 0 0-3.006A4.125 4.125 0 0 0 9 12.75a4.125 4.125 0 0 0-4.125 4.125v1.442" />
                 </svg>
-                <span>Uses today: <strong className="text-[var(--color-primary)] font-black">{usesTodayNum}</strong></span>
+                <span>Uses today: <strong className="text-[var(--color-primary)] font-black">{usesTodayNum ?? "—"}</strong></span>
               </div>
             </div>
           </div>
@@ -502,14 +505,14 @@ export default function OfferCard({ offer, store, isFirst }) {
                 <svg className="h-3.5 w-3.5 text-white/20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                 </svg>
-                <span>Last used: <strong className="text-white/60 font-bold">{lastUsedNum}{unit} ago</strong></span>
+                <span>Last used: <strong className="text-white/60 font-bold">{lastUsedNum != null ? `${lastUsedNum}${unit} ago` : "—"}</strong></span>
               </div>
               <span className="text-white/10 select-none">•</span>
               <div className="flex items-center gap-1">
                 <svg className="h-3.5 w-3.5 text-white/20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.109A11.386 11.386 0 0 1 10.025 20a11.38 11.38 0 0 1-4.99-.94v-.11c0-2.28 1.85-4.13 4.13-4.13h1.696c.484 0 .942.083 1.37.234m0 0a3.001 3.001 0 1 0 0-3.006A4.125 4.125 0 0 0 9 12.75a4.125 4.125 0 0 0-4.125 4.125v1.442" />
                 </svg>
-                <span>Uses today: <strong className="text-[var(--color-primary)] font-black">{usesTodayNum}</strong></span>
+                <span>Uses today: <strong className="text-[var(--color-primary)] font-black">{usesTodayNum ?? "—"}</strong></span>
               </div>
             </div>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 
 // ─── FAQ Items ────────────────────────────────────────────────────────────────
@@ -36,6 +36,77 @@ export default function ContactPage({ settings = {} }) {
   const [isSuccess, setIsSuccess] = useState(false);
   const [expandedFaq, setExpandedFaq] = useState(null);
 
+  const [captchaCode, setCaptchaCode] = useState("");
+  const [captchaInput, setCaptchaInput] = useState("");
+
+  const generateCaptcha = () => {
+    const chars = "ABCDEFGHJKLMNOPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+    let result = "";
+    for (let i = 0; i < 5; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setCaptchaCode(result);
+    setCaptchaInput("");
+    
+    // Brief timeout ensures canvas is loaded in DOM
+    setTimeout(() => {
+      drawCaptchaCanvas(result);
+    }, 50);
+  };
+
+  const drawCaptchaCanvas = (code) => {
+    const canvas = document.getElementById("captcha-canvas");
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+    gradient.addColorStop(0, "#050507");
+    gradient.addColorStop(1, "#151520");
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    for (let i = 0; i < 30; i++) {
+      ctx.fillStyle = `rgba(139, 92, 246, ${Math.random() * 0.35})`;
+      ctx.beginPath();
+      ctx.arc(Math.random() * canvas.width, Math.random() * canvas.height, Math.random() * 2 + 0.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    for (let i = 0; i < 5; i++) {
+      ctx.strokeStyle = `rgba(139, 92, 246, ${Math.random() * 0.3})`;
+      ctx.lineWidth = Math.random() * 1.5 + 0.5;
+      ctx.beginPath();
+      ctx.moveTo(Math.random() * canvas.width, Math.random() * canvas.height);
+      ctx.lineTo(Math.random() * canvas.width, Math.random() * canvas.height);
+      ctx.stroke();
+    }
+
+    ctx.font = "italic bold 22px Outfit, sans-serif";
+    ctx.textBaseline = "middle";
+    
+    const letterSpacing = canvas.width / (code.length + 1);
+    for (let i = 0; i < code.length; i++) {
+      const char = code[i];
+      ctx.save();
+      const x = (i + 1) * letterSpacing - 5 + Math.random() * 10;
+      const y = canvas.height / 2 + Math.random() * 6 - 3;
+      ctx.translate(x, y);
+      const angle = (Math.random() * 24 - 12) * Math.PI / 180;
+      ctx.rotate(angle);
+      const colors = ["#8b5cf6", "#d946ef", "#c084fc", "#f472b6", "#ffffff"];
+      ctx.fillStyle = colors[Math.floor(Math.random() * colors.length)];
+      ctx.fillText(char, -8, 0);
+      ctx.restore();
+    }
+  };
+
+  useEffect(() => {
+    generateCaptcha();
+  }, []);
+
   // Handle Input Changes
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -62,6 +133,13 @@ export default function ContactPage({ settings = {} }) {
     if (!formData.message.trim()) tempErrors.message = "Message is required";
     else if (formData.message.trim().length < 10) tempErrors.message = "Message must be at least 10 characters";
 
+    if (!captchaInput.trim()) {
+      tempErrors.captcha = "Verification code is required";
+    } else if (captchaInput.trim().toLowerCase() !== captchaCode.toLowerCase()) {
+      tempErrors.captcha = "Incorrect verification code";
+      generateCaptcha();
+    }
+
     setErrors(tempErrors);
     return Object.keys(tempErrors).length === 0;
   };
@@ -87,6 +165,8 @@ export default function ContactPage({ settings = {} }) {
           subject: "support",
           message: "",
         });
+        setCaptchaInput("");
+        generateCaptcha();
       } else {
         const data = await res.json();
         setErrors({ submit: data.error || "Failed to submit message." });
@@ -325,6 +405,58 @@ export default function ContactPage({ settings = {} }) {
                     className="focus:border-[var(--color-primary)]/40 focus:ring-2 focus:ring-[rgba(139,92,246,0.1)]"
                   />
                   {errors.message && <span style={{ fontSize: "12px", color: "#ef4444", fontWeight: 700, marginTop: "4px", display: "block" }}>{errors.message}</span>}
+                </div>
+
+                {/* Graphical Captcha Verification */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  <label style={{ display: "block", fontSize: "11px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.5)" }}>
+                    Security Verification
+                  </label>
+                  
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "16px", alignItems: "center" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                      <canvas 
+                        id="captcha-canvas" 
+                        width="130" 
+                        height="46" 
+                        style={{ borderRadius: "12px", border: "1px solid rgba(255, 255, 255, 0.08)", background: "#050507" }} 
+                      />
+                      <button
+                        type="button"
+                        onClick={generateCaptcha}
+                        title="Get a new code"
+                        style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "10px", width: "38px", height: "38px", display: "flex", alignItems: "center", justifyCenter: "center", justifyContent: "center", cursor: "pointer", color: "var(--color-primary)", transition: "all 0.2s" }}
+                        onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.06)"}
+                        onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.03)"}
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ width: 16, height: 16 }}>
+                          <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+                        </svg>
+                      </button>
+                    </div>
+
+                    <div style={{ flex: 1, minWidth: "140px" }}>
+                      <input
+                        type="text"
+                        name="captcha"
+                        value={captchaInput}
+                        onChange={(e) => {
+                          setCaptchaInput(e.target.value);
+                          if (errors.captcha) {
+                            setErrors((prev) => ({ ...prev, captcha: "" }));
+                          }
+                        }}
+                        placeholder="Enter code"
+                        style={{ width: "100%", height: "46px", background: "rgba(5,5,7,0.8)", border: errors.captcha ? "1px solid #ef4444" : "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", paddingLeft: "16px", paddingRight: "16px", color: "#fff", fontSize: "14px", outline: "none", transition: "all 0.2s" }}
+                        className="focus:border-[var(--color-primary)]/40 focus:ring-2 focus:ring-[rgba(139,92,246,0.1)]"
+                      />
+                    </div>
+                  </div>
+                  {errors.captcha && (
+                    <span style={{ fontSize: "12px", color: "#ef4444", fontWeight: 700, marginTop: "2px", display: "block" }}>
+                      {errors.captcha}
+                    </span>
+                  )}
                 </div>
 
                 {errors.submit && (

@@ -197,6 +197,10 @@ export default function Navbar({
   const menuRef = useRef(null);
   const countryDropdownRef = useRef(null);
   const mobileCountryDropdownRef = useRef(null);
+  const desktopSearchDropdownRef = useRef(null);
+  const mobileSearchDropdownRef = useRef(null);
+  const searchFormRef = useRef(null);
+  const mobileSearchFormRef = useRef(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [megaOpen, setMegaOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -216,6 +220,8 @@ export default function Navbar({
   const [mobileDealsOpen, setMobileDealsOpen] = useState(false);
   const [mobileActiveCategorySlug, setMobileActiveCategorySlug] = useState("");
   const [desktopSearchOpen, setDesktopSearchOpen] = useState(false);
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+  const [searchFocusedIndex, setSearchFocusedIndex] = useState(-1);
   const [exclusiveOpen, setExclusiveOpen] = useState(false);
   const [blogOpen, setBlogOpen] = useState(false);
   const [blogPosts, setBlogPosts] = useState([]);
@@ -299,6 +305,14 @@ export default function Navbar({
       if (!mobileCountryDropdownRef.current?.contains(event.target)) {
         setMobileCountryDropdownOpen(false);
       }
+      if (
+        !searchFormRef.current?.contains(event.target) &&
+        !mobileSearchFormRef.current?.contains(event.target) &&
+        !desktopSearchDropdownRef.current?.contains(event.target) &&
+        !mobileSearchDropdownRef.current?.contains(event.target)
+      ) {
+        setShowSearchDropdown(false);
+      }
     }
 
     function handleEscape(event) {
@@ -309,6 +323,7 @@ export default function Navbar({
         setMobileDealsOpen(false);
         setMobileActiveCategorySlug("");
         setDesktopSearchOpen(false);
+        setShowSearchDropdown(false);
         setEventsOpen(false);
         setMobileEventsOpen(false);
         setCountryDropdownOpen(false);
@@ -452,6 +467,8 @@ export default function Navbar({
     const normalizedQuery = rawQuery.toLowerCase();
     const exactStoreMatch = countryStores.find((store) => isExactStoreMatch(store, normalizedQuery));
 
+    setShowSearchDropdown(false);
+
     if (exactStoreMatch) {
       router.push(getStoreHref(exactStoreMatch, selectedCountryCode));
       setMegaOpen(false);
@@ -472,6 +489,33 @@ export default function Navbar({
     setMobileOpen(false);
     setMobileDealsOpen(false);
     setDesktopSearchOpen(false);
+  }
+
+  function handleSelectStore(store) {
+    setShowSearchDropdown(false);
+    setSearchValue("");
+    setDesktopSearchOpen(false);
+    setMobileOpen(false);
+    router.push(getStoreHref(store, selectedCountryCode));
+  }
+
+  function handleSearchKeyDown(e) {
+    if (!showSearchDropdown || searchMatches.length === 0) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setSearchFocusedIndex((prev) => (prev + 1) % searchMatches.length);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setSearchFocusedIndex((prev) => (prev - 1 + searchMatches.length) % searchMatches.length);
+    } else if (e.key === "Escape") {
+      setShowSearchDropdown(false);
+    } else if (e.key === "Enter") {
+      if (searchFocusedIndex >= 0 && searchFocusedIndex < searchMatches.length) {
+        e.preventDefault();
+        handleSelectStore(searchMatches[searchFocusedIndex]);
+      }
+    }
   }
 
   function handleOpenMegaMenu() {
@@ -1024,20 +1068,93 @@ export default function Navbar({
             <SearchIcon />
           </button>
           {desktopSearchOpen ? (
-            <form
-              onSubmit={handleSearchSubmit}
-              className="absolute right-0 top-[calc(100%+12px)] hidden w-[340px] items-center gap-3 rounded-[16px] border border-white/14 bg-[#090909] px-4 py-3 shadow-[0_18px_50px_rgba(0,0,0,0.45)] ring-1 ring-white/6 lg:flex"
-            >
-              <span className="text-white/55">
-                <SearchIcon className="h-4.5 w-4.5" />
-              </span>
-              <input
-                value={searchValue}
-                onChange={(event) => setSearchValue(event.target.value)}
-                placeholder="Search stores, coupons, deals"
-                className="w-full border-0 bg-transparent text-[0.98rem] font-medium tracking-[0.01em] text-white outline-none placeholder:font-normal placeholder:text-white/38"
-              />
-            </form>
+            <div className="absolute right-0 top-[calc(100%+12px)] z-55 hidden w-[340px] flex-col lg:flex">
+              <form
+                ref={searchFormRef}
+                onSubmit={handleSearchSubmit}
+                className="flex items-center gap-3 rounded-[16px] border border-white/14 bg-[#090909] px-4 py-3 shadow-[0_18px_50px_rgba(0,0,0,0.45)] ring-1 ring-white/6"
+              >
+                <span className="text-white/55">
+                  <SearchIcon className="h-4.5 w-4.5" />
+                </span>
+                <input
+                  value={searchValue}
+                  onChange={(event) => {
+                    setSearchValue(event.target.value);
+                    setShowSearchDropdown(true);
+                    setSearchFocusedIndex(-1);
+                  }}
+                  onFocus={() => {
+                    setShowSearchDropdown(true);
+                    setSearchFocusedIndex(-1);
+                  }}
+                  onKeyDown={handleSearchKeyDown}
+                  placeholder="Search stores, coupons, deals"
+                  className="w-full border-0 bg-transparent text-[0.98rem] font-medium tracking-[0.01em] text-white outline-none placeholder:font-normal placeholder:text-white/38"
+                />
+              </form>
+
+              {/* Suggestions Dropdown */}
+              {showSearchDropdown && searchMatches.length > 0 && (
+                <div
+                  ref={desktopSearchDropdownRef}
+                  className="absolute right-0 top-full mt-2 rounded-[16px] border border-white/10 bg-[#0c0c0c] p-2.5 shadow-[0_20px_50px_rgba(0,0,0,0.95)] z-50 text-left w-[340px]"
+                >
+                  <div className="grid gap-1">
+                    {searchMatches.map((store, index) => {
+                      const isFocused = index === searchFocusedIndex;
+                      return (
+                        <button
+                          key={store.id || store.slug}
+                          type="button"
+                          onClick={() => handleSelectStore(store)}
+                          onMouseEnter={() => setSearchFocusedIndex(index)}
+                          className={cn(
+                            "flex w-full items-center gap-3 rounded-[12px] p-2.5 transition text-left cursor-pointer border border-transparent",
+                            isFocused ? "bg-white/5 border-white/5" : "bg-transparent"
+                          )}
+                        >
+                          {/* Logo image or text initials fallback */}
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/8 bg-white/5">
+                            {store.logoImage ? (
+                              <img
+                                src={store.logoImage}
+                                alt={`${store.name} logo`}
+                                className="h-full w-full object-contain p-1"
+                              />
+                            ) : (
+                              <span className="text-[10px] font-black uppercase tracking-wider text-[var(--color-primary)]">
+                                {(store.logoText || store.name || "ST").slice(0, 2)}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Name and category */}
+                          <div className="flex-1 min-w-0">
+                            <p className={cn(
+                              "truncate text-sm font-bold leading-normal",
+                              isFocused ? "text-[var(--color-primary)]" : "text-white"
+                            )}>
+                              {store.name}
+                            </p>
+                            <p className="truncate text-[10px] font-bold text-white/40 uppercase mt-0.5">
+                              {store.category || "Store"}
+                            </p>
+                          </div>
+
+                          {/* Offers/Deals Count Badge */}
+                          {store.offersCount > 0 && (
+                            <span className="shrink-0 rounded-full border border-[var(--color-primary)]/20 bg-[var(--color-primary)]/10 px-2.5 py-0.5 text-[9px] font-black tracking-wider text-[var(--color-primary)]">
+                              {store.offersCount} {store.offersCount === 1 ? 'Code' : 'Codes'}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
           ) : null}
 
           <button
@@ -1134,17 +1251,93 @@ export default function Navbar({
           </div>
 
           {desktopSearchOpen ? (
-            <form onSubmit={handleSearchSubmit} className="mt-4 flex items-center gap-3 rounded-[16px] border border-white/12 bg-white/[0.04] px-4 py-3.5 ring-1 ring-white/6">
-              <span className="text-white/55">
-                <SearchIcon className="h-4.5 w-4.5" />
-              </span>
-              <input
-                value={searchValue}
-                onChange={(event) => setSearchValue(event.target.value)}
-                placeholder="Search stores, coupons, deals"
-                className="w-full border-0 bg-transparent text-[0.98rem] font-medium text-white outline-none placeholder:font-normal placeholder:text-white/38"
-              />
-            </form>
+            <div className="mt-4 relative flex flex-col">
+              <form
+                ref={mobileSearchFormRef}
+                onSubmit={handleSearchSubmit}
+                className="flex items-center gap-3 rounded-[16px] border border-white/12 bg-white/[0.04] px-4 py-3.5 ring-1 ring-white/6"
+              >
+                <span className="text-white/55">
+                  <SearchIcon className="h-4.5 w-4.5" />
+                </span>
+                <input
+                  value={searchValue}
+                  onChange={(event) => {
+                    setSearchValue(event.target.value);
+                    setShowSearchDropdown(true);
+                    setSearchFocusedIndex(-1);
+                  }}
+                  onFocus={() => {
+                    setShowSearchDropdown(true);
+                    setSearchFocusedIndex(-1);
+                  }}
+                  onKeyDown={handleSearchKeyDown}
+                  placeholder="Search stores, coupons, deals"
+                  className="w-full border-0 bg-transparent text-[0.98rem] font-medium text-white outline-none placeholder:font-normal placeholder:text-white/38"
+                />
+              </form>
+
+              {/* Suggestions Dropdown */}
+              {showSearchDropdown && searchMatches.length > 0 && (
+                <div
+                  ref={mobileSearchDropdownRef}
+                  className="absolute left-0 right-0 top-full mt-2 rounded-[16px] border border-white/10 bg-[#0c0c0c] p-2.5 shadow-[0_20px_50px_rgba(0,0,0,0.95)] z-50 text-left"
+                >
+                  <div className="grid gap-1">
+                    {searchMatches.map((store, index) => {
+                      const isFocused = index === searchFocusedIndex;
+                      return (
+                        <button
+                          key={store.id || store.slug}
+                          type="button"
+                          onClick={() => handleSelectStore(store)}
+                          onMouseEnter={() => setSearchFocusedIndex(index)}
+                          className={cn(
+                            "flex w-full items-center gap-3 rounded-[12px] p-2.5 transition text-left cursor-pointer border border-transparent",
+                            isFocused ? "bg-white/5 border-white/5" : "bg-transparent"
+                          )}
+                        >
+                          {/* Logo image or text initials fallback */}
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/8 bg-white/5">
+                            {store.logoImage ? (
+                              <img
+                                src={store.logoImage}
+                                alt={`${store.name} logo`}
+                                className="h-full w-full object-contain p-1"
+                              />
+                            ) : (
+                              <span className="text-[10px] font-black uppercase tracking-wider text-[var(--color-primary)]">
+                                {(store.logoText || store.name || "ST").slice(0, 2)}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Name and category */}
+                          <div className="flex-1 min-w-0">
+                            <p className={cn(
+                              "truncate text-sm font-bold leading-normal",
+                              isFocused ? "text-[var(--color-primary)]" : "text-white"
+                            )}>
+                              {store.name}
+                            </p>
+                            <p className="truncate text-[10px] font-bold text-white/40 uppercase mt-0.5">
+                              {store.category || "Store"}
+                            </p>
+                          </div>
+
+                          {/* Offers/Deals Count Badge */}
+                          {store.offersCount > 0 && (
+                            <span className="shrink-0 rounded-full border border-[var(--color-primary)]/20 bg-[var(--color-primary)]/10 px-2.5 py-0.5 text-[9px] font-black tracking-wider text-[var(--color-primary)]">
+                              {store.offersCount} {store.offersCount === 1 ? 'Code' : 'Codes'}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
           ) : null}
 
           <div className="border-b border-white/8 py-5">

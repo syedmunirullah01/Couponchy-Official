@@ -15,7 +15,7 @@ export default function SingleStorePage({ singleStore, storeTabs, offerTabs, off
           <StoreContent singleStore={singleStore} faqs={faqs} />
         </div>
         {/* Right: sidebar */}
-        <StoreSidebar singleStore={singleStore} relatedStores={relatedStores} />
+        <StoreSidebar singleStore={singleStore} relatedStores={relatedStores} offers={offers} />
       </div>
 
       {/* How It Works Section */}

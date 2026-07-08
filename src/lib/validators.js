@@ -47,10 +47,6 @@ export function validateOfferPayload(payload) {
     return "Offer store name is required.";
   }
 
-  if (!payload?.expiryDate?.trim()) {
-    return "Offer expiry date is required.";
-  }
-
   return null;
 }
 

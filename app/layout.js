@@ -28,11 +28,11 @@ export default async function RootLayout({ children }) {
   const settings = await getSettings();
 
   return (
-    <html lang="en" className={`${outfit.variable}`}>
+    <html lang="en" className={`${outfit.variable}`} suppressHydrationWarning>
       <head>
         <CustomMarkup markup={settings.general.customHeadScript} />
       </head>
-      <body className="antialiased">
+      <body className="antialiased" suppressHydrationWarning>
         <CustomMarkup markup={settings.general.customBodyStartScript} />
         <Providers>
           {children}

@@ -68,6 +68,49 @@ function slugify(value) {
     .replace(/^-+|-+$/g, "");
 }
 
+function parseMarkdownToHTML(text) {
+  if (!text) return "";
+  let html = text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+
+  // Bold
+  html = html.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+  html = html.replace(/__(.*?)__/g, "<strong>$1</strong>");
+
+  // Italic
+  html = html.replace(/\*(.*?)\*/g, "<em>$1</em>");
+  html = html.replace(/_(.*?)_/g, "<em>$1</em>");
+
+  // Images
+  html = html.replace(/!\[(.*?)\]\((.*?)\)/g, "<div class='my-4 rounded-xl overflow-hidden border border-[var(--border)] bg-[var(--surface-soft)] p-1.5 shadow-md max-w-lg mx-auto'><img src='$2' alt='$1' class='w-full h-auto object-cover rounded-lg' /></div>");
+
+  // Headings
+  html = html.replace(/^### (.*?)$/gm, "<h3 class='text-xs font-bold text-[var(--text)] mt-4 mb-2'>$1</h3>");
+  html = html.replace(/^## (.*?)$/gm, "<h2 class='text-sm font-extrabold text-[var(--text)] mt-6 mb-3 border-l-2 border-[var(--color-primary)] pl-2'>$1</h2>");
+  html = html.replace(/^# (.*?)$/gm, "<h1 class='text-base font-black text-[var(--text)] mt-8 mb-4 border-b border-[var(--border)] pb-2'>$1</h1>");
+
+  // Links
+  html = html.replace(/\[(.*?)\]\((.*?)\)/g, "<a href='$2' target='_blank' class='text-[var(--color-primary)] hover:underline'>$1</a>");
+
+  // Lists
+  html = html.replace(/^\s*-\s+(.*?)$/gm, "<li class='list-disc ml-4 my-1 text-[var(--text)]/75'>$1</li>");
+  html = html.replace(/^\s*\*\s+(.*?)$/gm, "<li class='list-disc ml-4 my-1 text-[var(--text)]/75'>$1</li>");
+
+  // Convert line breaks to paragraphs
+  const paragraphs = html.split(/\n\n+/);
+  return paragraphs
+    .map(p => {
+      const trimmed = p.trim();
+      if (trimmed.startsWith("<h") || trimmed.startsWith("<li") || trimmed.startsWith("<div")) {
+        return p;
+      }
+      return `<p class="leading-relaxed text-[var(--text)]/75 mb-3">${p.replace(/\n/g, "<br />")}</p>`;
+    })
+    .join("\n");
+}
+
 export default function AdminBlogManager() {
   const [posts, setPosts] = useState([]);
   const [isHydrating, setIsHydrating] = useState(false);
@@ -77,7 +120,137 @@ export default function AdminBlogManager() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const slugEditedRef = useRef(false);
+  const contentTextareaRef = useRef(null);
+  const blogImageInputRef = useRef(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const { titleId, descriptionId } = useDialogA11yIds();
+
+  const handleBlogImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be 5MB or smaller.");
+      return;
+    }
+
+    const uploadToastId = toast.loading("Uploading image to Cloudinary...");
+    try {
+      setIsUploadingImage(true);
+
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("title", watch("title") || "blog-image");
+
+      const res = await fetch("/api/uploads/blog-image", {
+        method: "POST",
+        body: formData,
+      });
+
+      const payload = await res.json();
+
+      if (!res.ok) {
+        throw new Error(payload.error || "Unable to upload image.");
+      }
+
+      toast.success("Image uploaded successfully.");
+
+      const textarea = contentTextareaRef.current;
+      if (textarea) {
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const text = textarea.value;
+        
+        const cleanName = file.name.split(".")[0].toLowerCase().replace(/[^a-z0-9]+/g, "-");
+        const replacement = `\n![${cleanName}](${payload.data.secureUrl})\n`;
+        const newValue = text.substring(0, start) + replacement + text.substring(end);
+        setValue("content", newValue, { shouldValidate: true });
+
+        setTimeout(() => {
+          textarea.focus();
+          textarea.setSelectionRange(start + replacement.length, start + replacement.length);
+        }, 50);
+      }
+    } catch (error) {
+      toast.error(error.message || "Failed to upload image.");
+    } finally {
+      toast.dismiss(uploadToastId);
+      setIsUploadingImage(false);
+      e.target.value = "";
+    }
+  };
+
+  const insertFormatting = (type) => {
+    const textarea = contentTextareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = textarea.value;
+    const selectedText = text.substring(start, end);
+
+    let replacement = "";
+    let selectionStartOffset = 0;
+    let selectionLength = 0;
+
+    switch (type) {
+      case "bold":
+        replacement = `**${selectedText || "bold text"}**`;
+        selectionStartOffset = 2;
+        selectionLength = selectedText ? selectedText.length : 9;
+        break;
+      case "italic":
+        replacement = `*${selectedText || "italic text"}*`;
+        selectionStartOffset = 1;
+        selectionLength = selectedText ? selectedText.length : 11;
+        break;
+      case "h1":
+        replacement = `\n# ${selectedText || "Heading 1"}\n`;
+        selectionStartOffset = 3;
+        selectionLength = selectedText ? selectedText.length : 9;
+        break;
+      case "h2":
+        replacement = `\n## ${selectedText || "Heading 2"}\n`;
+        selectionStartOffset = 4;
+        selectionLength = selectedText ? selectedText.length : 9;
+        break;
+      case "h3":
+        replacement = `\n### ${selectedText || "Heading 3"}\n`;
+        selectionStartOffset = 5;
+        selectionLength = selectedText ? selectedText.length : 9;
+        break;
+      case "image":
+        replacement = `![${selectedText || "Image description"}](https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600)`;
+        selectionStartOffset = 2;
+        selectionLength = selectedText ? selectedText.length : 17;
+        break;
+      case "link":
+        replacement = `[${selectedText || "link text"}](https://example.com)`;
+        selectionStartOffset = 1;
+        selectionLength = selectedText ? selectedText.length : 9;
+        break;
+      case "list":
+        replacement = `\n- ${selectedText || "list item"}\n`;
+        selectionStartOffset = 3;
+        selectionLength = selectedText ? selectedText.length : 9;
+        break;
+      case "p":
+        replacement = `\n\n${selectedText || "New paragraph text"}\n\n`;
+        selectionStartOffset = 2;
+        selectionLength = selectedText ? selectedText.length : 18;
+        break;
+      default:
+        return;
+    }
+
+    const newValue = text.substring(0, start) + replacement + text.substring(end);
+    setValue("content", newValue, { shouldValidate: true });
+
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + selectionStartOffset, start + selectionStartOffset + selectionLength);
+    }, 50);
+  };
 
   const {
     register,
@@ -504,17 +677,168 @@ export default function AdminBlogManager() {
                     {errors.excerpt ? <span className="text-xs text-red-500">{errors.excerpt.message}</span> : null}
                   </label>
 
-                  {/* Content Body */}
-                  <label className="grid gap-2">
-                    <span className="text-xs font-bold uppercase tracking-wider text-[var(--text)]">Article Content Body</span>
+                  {/* Content Body Editor with Toolbar */}
+                  <div className="grid gap-2">
+                    {/* Header Row: Label on Left, Toolbar on Right */}
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <span className="text-xs font-bold uppercase tracking-wider text-[var(--text)]">Article Content Body</span>
+                      
+                      {/* Formatting Toolbar */}
+                      <div className="flex items-center gap-1 bg-[var(--surface-soft)] px-2 py-1 rounded-xl border border-[var(--border)] select-none">
+                        {/* Heading 1 Button */}
+                        <button
+                          type="button"
+                          onClick={() => insertFormatting("h1")}
+                          className="h-6 rounded px-2.5 text-[10px] font-black text-[var(--text)] hover:bg-[var(--surface)] hover:text-[var(--color-primary)] transition cursor-pointer"
+                          title="Insert Heading 1"
+                        >
+                          H1
+                        </button>
+                        {/* Heading 2 Button */}
+                        <button
+                          type="button"
+                          onClick={() => insertFormatting("h2")}
+                          className="h-6 rounded px-2.5 text-[10px] font-black text-[var(--text)] hover:bg-[var(--surface)] hover:text-[var(--color-primary)] transition cursor-pointer"
+                          title="Insert Heading 2"
+                        >
+                          H2
+                        </button>
+                        
+                        {/* Heading 3 Button */}
+                        <button
+                          type="button"
+                          onClick={() => insertFormatting("h3")}
+                          className="h-6 rounded px-2.5 text-[10px] font-bold text-[var(--text)] hover:bg-[var(--surface)] hover:text-[var(--color-primary)] transition cursor-pointer"
+                          title="Insert Heading 3"
+                        >
+                          H3
+                        </button>
+
+                        <div className="h-3 w-[1px] bg-[var(--border)] mx-0.5" />
+
+                        {/* Bold Button */}
+                        <button
+                          type="button"
+                          onClick={() => insertFormatting("bold")}
+                          className="h-6 w-6 rounded flex items-center justify-center text-[10px] font-black text-[var(--text)] hover:bg-[var(--surface)] hover:text-[var(--color-primary)] transition cursor-pointer"
+                          title="Bold text"
+                        >
+                          B
+                        </button>
+
+                        {/* Italic Button */}
+                        <button
+                          type="button"
+                          onClick={() => insertFormatting("italic")}
+                          className="h-6 w-6 rounded flex items-center justify-center text-[10px] font-bold italic text-[var(--text)] hover:bg-[var(--surface)] hover:text-[var(--color-primary)] transition cursor-pointer"
+                          title="Italic text"
+                        >
+                          I
+                        </button>
+
+                        {/* Link Button */}
+                        <button
+                          type="button"
+                          onClick={() => insertFormatting("link")}
+                          className="h-6 w-6 rounded flex items-center justify-center text-[var(--text)] hover:bg-[var(--surface)] hover:text-[var(--color-primary)] transition cursor-pointer"
+                          title="Insert Link"
+                        >
+                          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                          </svg>
+                        </button>
+
+                        {/* Image Button */}
+                        <button
+                          type="button"
+                          onClick={() => blogImageInputRef.current?.click()}
+                          disabled={isUploadingImage}
+                          className="h-6 w-6 rounded flex items-center justify-center text-[var(--text)] hover:bg-[var(--surface)] hover:text-[var(--color-primary)] transition cursor-pointer disabled:opacity-50"
+                          title="Upload & Insert Image"
+                        >
+                          {isUploadingImage ? (
+                            <Spinner />
+                          ) : (
+                            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                              <circle cx="8.5" cy="8.5" r="1.5" />
+                              <polyline points="21 15 16 10 5 21" />
+                            </svg>
+                          )}
+                        </button>
+
+                        <div className="h-3 w-[1px] bg-[var(--border)] mx-0.5" />
+
+                        {/* Paragraph Button */}
+                        <button
+                          type="button"
+                          onClick={() => insertFormatting("p")}
+                          className="h-6 w-6 rounded flex items-center justify-center text-[10px] font-bold text-[var(--text)] hover:bg-[var(--surface)] hover:text-[var(--color-primary)] transition cursor-pointer"
+                          title="Insert Paragraph Break"
+                        >
+                          ¶
+                        </button>
+
+                        {/* List Button */}
+                        <button
+                          type="button"
+                          onClick={() => insertFormatting("list")}
+                          className="h-6 w-6 rounded flex items-center justify-center text-[var(--text)] hover:bg-[var(--surface)] hover:text-[var(--color-primary)] transition cursor-pointer"
+                          title="Insert Bullet List"
+                        >
+                          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <line x1="8" y1="6" x2="21" y2="6" />
+                            <line x1="8" y1="12" x2="21" y2="12" />
+                            <line x1="8" y1="18" x2="21" y2="18" />
+                            <line x1="3" y1="6" x2="3.01" y2="6" />
+                            <line x1="3" y1="12" x2="3.01" y2="12" />
+                            <line x1="3" y1="18" x2="3.01" y2="18" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Textarea */}
                     <textarea
-                      rows={7}
-                      className="min-h-[160px] w-full resize-y rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3 text-sm text-[var(--text)] outline-none transition placeholder:text-[var(--muted)] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/10"
-                      placeholder="Write the paragraphs of the article here. Use line breaks to split paragraphs."
-                      {...register("content")}
+                      rows={8}
+                      ref={(e) => {
+                        const r = register("content");
+                        r.ref(e);
+                        contentTextareaRef.current = e;
+                      }}
+                      name="content"
+                      onChange={register("content").onChange}
+                      onBlur={register("content").onBlur}
+                      className="min-h-[160px] w-full resize-y rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3 text-sm text-[var(--text)] outline-none transition placeholder:text-[var(--muted)] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/10 font-mono text-[13px] leading-normal"
+                      placeholder="Write paragraphs. Markdown supported (e.g. **bold**, [link](url), ## Heading)."
                     />
                     {errors.content ? <span className="text-xs text-red-500">{errors.content.message}</span> : null}
-                  </label>
+
+                    {/* Hidden input for blog image uploading */}
+                    <input
+                      type="file"
+                      ref={blogImageInputRef}
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleBlogImageUpload}
+                    />
+                  </div>
+
+                  {/* Live Preview Row (Under the editor) */}
+                  <div className="grid gap-2">
+                    <span className="text-xs font-bold uppercase tracking-wider text-[var(--text)]">Live Content Render Preview</span>
+                    <div className="min-h-[120px] max-h-[220px] w-full rounded-xl border border-[var(--border)] bg-[var(--surface-soft)]/45 px-4 py-3 text-xs text-[var(--text)] overflow-y-auto select-text">
+                      {watchedContent ? (
+                        <div 
+                          className="text-left break-words text-[var(--text)] text-sm space-y-3"
+                          dangerouslySetInnerHTML={{ __html: parseMarkdownToHTML(watchedContent) }} 
+                        />
+                      ) : (
+                        <span className="italic text-[var(--muted)]/60 font-normal">Your formatted article body will render here in real-time as you write...</span>
+                      )}
+                    </div>
+                  </div>
 
                   {/* Featured toggle */}
                   <div className="flex items-start gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-soft)]/60 p-4">

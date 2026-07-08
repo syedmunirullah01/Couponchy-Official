@@ -4,15 +4,18 @@ export default function Pagination({ currentPage, totalPages, onPageChange }) {
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
 
   return (
-    <div className="mt-10 flex items-center justify-center gap-3">
+    <div className="mt-12 flex items-center justify-center gap-2">
       {/* Previous Page Button */}
       <button
         type="button"
         disabled={currentPage === 1}
         onClick={() => onPageChange(currentPage - 1)}
-        className="grid h-9 w-9 place-items-center rounded-full border border-[var(--border)] bg-[var(--surface-soft)]/60 text-white/55 transition cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed hover:border-[var(--accent)]/45"
+        className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/5 bg-[#0e0e13]/60 text-white/50 transition cursor-pointer disabled:opacity-20 disabled:cursor-not-allowed hover:border-violet-500/30 hover:bg-[#13131b]/80 hover:text-white active:scale-95 shrink-0"
+        title="Previous Page"
       >
-        ‹
+        <svg viewBox="0 0 24 24" className="h-4.5 w-4.5 stroke-current" fill="none" strokeWidth="2.5">
+          <polyline points="15 18 9 12 15 6" />
+        </svg>
       </button>
 
       {/* Numerical Page Buttons */}
@@ -21,10 +24,10 @@ export default function Pagination({ currentPage, totalPages, onPageChange }) {
           key={page}
           type="button"
           onClick={() => onPageChange(page)}
-          className={`grid h-9 w-9 place-items-center rounded-full border text-sm font-semibold transition cursor-pointer ${
+          className={`flex h-10 w-10 items-center justify-center rounded-xl text-xs font-black transition-all duration-200 cursor-pointer active:scale-95 ${
             currentPage === page
-              ? "border-[var(--accent)] bg-[var(--accent)] text-black shadow-[0_0_15px_rgba(139,92,246,0.25)]"
-              : "border-[var(--border)] bg-[var(--surface-soft)]/60 text-white/65 hover:border-[var(--accent)]/45"
+              ? "bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white shadow-[0_0_15px_rgba(139,92,246,0.25)] border-0"
+              : "border border-white/5 bg-[#0e0e13]/60 text-white/60 hover:border-violet-500/20 hover:bg-[#13131b]/80 hover:text-white"
           }`}
         >
           {page}
@@ -36,9 +39,12 @@ export default function Pagination({ currentPage, totalPages, onPageChange }) {
         type="button"
         disabled={currentPage === totalPages}
         onClick={() => onPageChange(currentPage + 1)}
-        className="grid h-9 w-9 place-items-center rounded-full border border-[var(--border)] bg-[var(--surface-soft)]/60 text-white/55 transition cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed hover:border-[var(--accent)]/45"
+        className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/5 bg-[#0e0e13]/60 text-white/50 transition cursor-pointer disabled:opacity-20 disabled:cursor-not-allowed hover:border-violet-500/30 hover:bg-[#13131b]/80 hover:text-white active:scale-95 shrink-0"
+        title="Next Page"
       >
-        ›
+        <svg viewBox="0 0 24 24" className="h-4.5 w-4.5 stroke-current" fill="none" strokeWidth="2.5">
+          <polyline points="9 18 15 12 9 6" />
+        </svg>
       </button>
     </div>
   );

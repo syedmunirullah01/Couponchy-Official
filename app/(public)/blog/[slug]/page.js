@@ -67,6 +67,49 @@ function ContentVisual({ type }) {
   return null;
 }
 
+function parseMarkdownToHTML(text) {
+  if (!text) return "";
+  let html = text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+
+  // Bold
+  html = html.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+  html = html.replace(/__(.*?)__/g, "<strong>$1</strong>");
+
+  // Italic
+  html = html.replace(/\*(.*?)\*/g, "<em>$1</em>");
+  html = html.replace(/_(.*?)_/g, "<em>$1</em>");
+
+  // Images
+  html = html.replace(/!\[(.*?)\]\((.*?)\)/g, "<div class='my-6 rounded-2xl overflow-hidden border border-white/8 bg-black/40 p-2 shadow-lg max-w-2xl mx-auto'><img src='$2' alt='$1' class='w-full h-auto object-cover rounded-xl' /></div>");
+
+  // Headings
+  html = html.replace(/^### (.*?)$/gm, "<h3 class='text-base font-bold text-white mt-5 mb-2.5'>$1</h3>");
+  html = html.replace(/^## (.*?)$/gm, "<h2 class='text-xl font-extrabold text-white mt-8 mb-4 border-l-4 border-[var(--color-primary)] pl-3'>$1</h2>");
+  html = html.replace(/^# (.*?)$/gm, "<h1 class='text-2xl font-black text-white mt-10 mb-5 border-b border-white/5 pb-2'>$1</h1>");
+
+  // Links
+  html = html.replace(/\[(.*?)\]\((.*?)\)/g, "<a href='$2' target='_blank' class='text-[var(--color-primary)] hover:underline'>$1</a>");
+
+  // Lists
+  html = html.replace(/^\s*-\s+(.*?)$/gm, "<li class='list-disc ml-6 my-1.5 text-white/70'>$1</li>");
+  html = html.replace(/^\s*\*\s+(.*?)$/gm, "<li class='list-disc ml-6 my-1.5 text-white/70'>$1</li>");
+
+  // Convert line breaks to paragraphs
+  const paragraphs = html.split(/\n\n+/);
+  return paragraphs
+    .map(p => {
+      const trimmed = p.trim();
+      if (trimmed.startsWith("<h") || trimmed.startsWith("<li") || trimmed.startsWith("<div")) {
+        return p;
+      }
+      return `<p class="leading-relaxed text-white/70 mb-4">${p.replace(/\n/g, "<br />")}</p>`;
+    })
+    .join("\n");
+}
+
 export default function BlogPostPage() {
   const { slug } = useParams();
   const pathname = usePathname();
@@ -139,13 +182,13 @@ export default function BlogPostPage() {
   // Generate headings automatically from article content for table of contents
   const headings = article?.content
     ? [
-        { id: "introduction", label: "Introduction" },
-        ...(article.content.includes("Shift") || article.content.includes("E-commerce")
-          ? [{ id: "market-shift", label: "Market Insights" }]
-          : []),
-        { id: "detailed-analysis", label: "Analysis Detail" },
-        { id: "conclusion", label: "Conclusion" }
-      ]
+      { id: "introduction", label: "Introduction" },
+      ...(article.content.includes("Shift") || article.content.includes("E-commerce")
+        ? [{ id: "market-shift", label: "Market Insights" }]
+        : []),
+      { id: "detailed-analysis", label: "Analysis Detail" },
+      { id: "conclusion", label: "Conclusion" }
+    ]
     : [];
 
   if (loading) {
@@ -176,7 +219,7 @@ export default function BlogPostPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-[1240px] flex-col gap-12 px-5 py-10 sm:px-6 sm:py-12 lg:px-8 lg:py-16">
-      
+
       {/* Breadcrumbs */}
       <nav className="text-xs font-semibold uppercase tracking-wider text-white/40 flex items-center gap-2">
         <Link href={buildCountryPath("/blog", countryCode)} className="hover:text-[var(--color-primary)] transition-colors">
@@ -196,11 +239,11 @@ export default function BlogPostPage() {
           <h1 className="mt-5 text-3xl sm:text-4xl lg:text-5xl font-black tracking-[-0.05em] text-white leading-tight">
             {article.title}
           </h1>
-          
+
           <div className="mt-6 flex flex-wrap items-center gap-4 text-xs font-semibold text-white/50">
             <span className="flex items-center gap-2">
               <div className="h-6 w-6 rounded-full bg-[var(--color-primary)]/20 border border-[var(--color-primary)]/30 flex items-center justify-center text-[9px] font-bold text-[var(--color-primary)]">
-                {article.author?.slice(0,2)}
+                {article.author?.slice(0, 2)}
               </div>
               <span className="text-white/80">{article.author}</span>
             </span>
@@ -230,14 +273,14 @@ export default function BlogPostPage() {
 
       {/* Main Page Layout (Two Columns) */}
       <div className="grid gap-8 lg:grid-cols-[280px_1fr]">
-        
+
         {/* Sticky Left Sidebar (Outline and Author details) */}
         <aside className="lg:sticky lg:top-24 lg:self-start space-y-8 order-2 lg:order-1">
           {/* Author Card */}
           <div className="rounded-2xl border border-white/5 bg-[#0e0e11] p-5">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-xl bg-[var(--color-primary)]/20 border border-[var(--color-primary)]/30 flex items-center justify-center text-xs font-bold text-[var(--color-primary)]">
-                {article.author?.slice(0,2)}
+                {article.author?.slice(0, 2)}
               </div>
               <div>
                 <p className="text-sm font-bold text-white leading-none">{article.author}</p>
@@ -278,7 +321,7 @@ export default function BlogPostPage() {
                 className="flex h-9 w-9 items-center justify-center rounded-full bg-[#25D366] text-white hover:scale-110 transition-all shadow-md cursor-pointer"
               >
                 <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.73-1.455L0 24zm6.59-4.846c1.6.95 2.698 1.488 4.737 1.488 5.485 0 9.948-4.468 9.95-9.95.002-2.656-1.02-5.156-2.875-7.01C16.55 1.83 14.056.806 11.403.806c-5.49 0-9.953 4.468-9.955 9.95-.001 1.92.493 3.796 1.43 5.473l-.952 3.477 3.56-.934z"/>
+                  <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.73-1.455L0 24zm6.59-4.846c1.6.95 2.698 1.488 4.737 1.488 5.485 0 9.948-4.468 9.95-9.95.002-2.656-1.02-5.156-2.875-7.01C16.55 1.83 14.056.806 11.403.806c-5.49 0-9.953 4.468-9.955 9.95-.001 1.92.493 3.796 1.43 5.473l-.952 3.477 3.56-.934z" />
                 </svg>
               </button>
               <button
@@ -286,7 +329,7 @@ export default function BlogPostPage() {
                 className="flex h-9 w-9 items-center justify-center rounded-full bg-[#1DA1F2] text-white hover:scale-110 transition-all shadow-md cursor-pointer"
               >
                 <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
                 </svg>
               </button>
               <button
@@ -308,26 +351,16 @@ export default function BlogPostPage() {
         {/* Right Column (Single Article Content Markup) */}
         <article className="prose prose-invert max-w-none order-1 lg:order-2 bg-[#0e0e11] rounded-3xl border border-white/5 p-6 sm:p-10 leading-relaxed text-white/70">
           <div className="space-y-6">
-            <p className="text-lg leading-8 text-white/80 font-medium first-letter:text-5xl first-letter:font-black first-letter:text-[var(--color-primary)] first-letter:mr-3 first-letter:float-left">
-              {article.excerpt}
-            </p>
+            {article.excerpt && (
+              <p className="text-lg leading-8 text-white/80 font-medium first-letter:text-5xl first-letter:font-black first-letter:text-[var(--color-primary)] first-letter:mr-3 first-letter:float-left">
+                {article.excerpt}
+              </p>
+            )}
 
-            <h2 id="introduction" className="text-2xl font-extrabold tracking-tight text-white mt-10 mb-4 uppercase border-l-4 border-[var(--color-primary)] pl-3">
-              Introduction
-            </h2>
-            <div className="whitespace-pre-line leading-7 text-white/60">
-              {article.content}
-            </div>
-
-            {/* Custom visual mockup phone */}
-            <ContentVisual type="phone-mockup" />
-
-            <h2 id="conclusion" className="text-2xl font-extrabold tracking-tight text-white mt-10 mb-4 uppercase border-l-4 border-[var(--color-primary)] pl-3">
-              Conclusion
-            </h2>
-            <p className="leading-7 text-white/60">
-              In conclusion, staying ahead of dynamic discount parameters is critical for coupon validation platforms. At Couponchy, we strive to build a fully automated and manual hand-tested loop to save you time.
-            </p>
+            <div 
+              className="prose prose-invert prose-sm max-w-none text-left break-words mt-6 text-white/75"
+              dangerouslySetInnerHTML={{ __html: parseMarkdownToHTML(article.content) }}
+            />
           </div>
         </article>
       </div>
