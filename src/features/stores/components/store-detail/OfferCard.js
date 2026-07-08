@@ -22,8 +22,24 @@ function getOfferValue(offer) {
   const percentMatch = source.match(/(\d{1,3})\s*%/);
   if (percentMatch) return `${percentMatch[1]}% Off`;
 
-  const amountMatch = source.match(/\$ ?(\d[\d,]*)/);
-  if (amountMatch) return `$${amountMatch[1]}`;
+  // Currency extraction (e.g. $10, £20, €5, etc. or 15$)
+  const currencyMatch = source.match(/(?:\$|£|€|¥|₹)\s*(\d{1,4})|(\d{1,4})\s*(?:\$|£|€|¥|₹|usd|gbp|eur)/i);
+  if (currencyMatch) {
+    if (currencyMatch[1]) {
+      const symbol = source.match(/(\$|£|€|¥|₹)/)?.[1] || "$";
+      return `${symbol}${currencyMatch[1]} Off`;
+    }
+    if (currencyMatch[2]) {
+      const symbol = source.match(/(\$|£|€|¥|₹|usd|gbp|eur)/i)?.[0] || "$";
+      return `${currencyMatch[2]}${symbol.toUpperCase()} Off`;
+    }
+  }
+
+  // Digit flat off (e.g. "10 Off")
+  const flatOffMatch = source.match(/(\d{1,3})\s*(?:off|discount)/i);
+  if (flatOffMatch) {
+    return `$${flatOffMatch[1]} Off`;
+  }
 
   return offer.type === "Deal" ? "Deal" : "Code";
 }
@@ -638,16 +654,16 @@ export default function OfferCard({ offer, store, isFirst }) {
               Did this {isCoupon ? "coupon" : "deal"} work?
             </p>
             {feedback === null ? (
-              <div className="flex gap-3 justify-center">
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <button
                   onClick={() => submitFeedback("yes")}
-                  className="flex items-center gap-1.5 rounded-xl border border-white/5 bg-white/[0.02] px-4 py-2 text-xs font-bold text-white/60 hover:bg-white/10 hover:text-white transition-colors duration-200 cursor-pointer active:scale-95"
+                  className="flex items-center justify-center gap-1.5 rounded-xl border border-white/5 bg-white/[0.02] px-4 py-2.5 text-xs font-bold text-white/60 hover:bg-white/10 hover:text-white transition-colors duration-200 cursor-pointer active:scale-95 w-full sm:w-auto"
                 >
                   👍 Yes, it worked!
                 </button>
                 <button
                   onClick={() => submitFeedback("no")}
-                  className="flex items-center gap-1.5 rounded-xl border border-white/5 bg-white/[0.02] px-4 py-2 text-xs font-bold text-white/60 hover:bg-white/10 hover:text-white transition-colors duration-200 cursor-pointer active:scale-95"
+                  className="flex items-center justify-center gap-1.5 rounded-xl border border-white/5 bg-white/[0.02] px-4 py-2.5 text-xs font-bold text-white/60 hover:bg-white/10 hover:text-white transition-colors duration-200 cursor-pointer active:scale-95 w-full sm:w-auto"
                 >
                   👎 Didn't work
                 </button>

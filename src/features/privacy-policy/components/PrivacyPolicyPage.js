@@ -213,12 +213,12 @@ export default function PrivacyPolicyPage({ settings = {}, company = null }) {
               onMouseLeave={e => { e.currentTarget.style.background = "var(--color-primary)"; e.currentTarget.style.transform = "translateY(0)"; }}>
               Support Center →
             </Link>
-            <a href={`mailto:${supportEmail}`}
+            <Link href="/contact"
               style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff", fontWeight: 700, fontSize: "14px", padding: "14px 28px", borderRadius: "12px", textDecoration: "none", transition: "all 0.2s" }}
               onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.transform = "translateY(0)"; }}>
               Email Support
-            </a>
+            </Link>
           </div>
         </div>
 

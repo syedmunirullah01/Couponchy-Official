@@ -3,6 +3,7 @@ import { getPublicSiteSettings } from "@/server/services/settings-service";
 import { resolveRequestCountryCode } from "@/server/resolve-request-country";
 import { buildCountryPath } from "@/lib/countries";
 import { getAllStores } from "@/server/repositories/stores-repository";
+import NewsletterForm from "./NewsletterForm";
 
 const topCategories = ["Fashion", "Food", "Footwear", "Travel", "Beauty", "Furniture", "Home & Garden", "E-Bike"];
 const topStores = ["Waterdrop", "Dorothy Perkins", "Debenhams", "Gousto UK", "EcoFlow", "FlexShopper", "Vitality", "Beginning Boutique AU"];
@@ -302,26 +303,7 @@ export default async function Footer() {
               <p className="mt-4 text-[13px] leading-[1.6] text-white/45 font-medium">
                 Subscribe For Updates, Featured Drops, And Store Highlights. Never Miss A Deal.
               </p>
-              <div className="mt-6 flex flex-col gap-4">
-                <input
-                  type="email"
-                  placeholder="Your Email Address"
-                  className="h-12 w-full rounded-xl border border-white/10 bg-[#050507] px-5 text-sm font-medium text-white outline-none transition-all placeholder:text-white/20 focus:border-[var(--color-primary)]/30 focus:bg-[#07070a]"
-                />
-                <button
-                  type="button"
-                  className="group/btn relative overflow-hidden flex items-center justify-center gap-2 w-full h-12 rounded-xl bg-[var(--color-primary)] text-black font-bold transition-all hover:scale-[1.01] hover:bg-[var(--color-primary-hover)] active:scale-[0.98] cursor-pointer"
-                >
-                  {/* Shimmer Light Sweep Hover Effect */}
-                  <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/35 to-transparent transition-transform duration-1000 group-hover/btn:translate-x-full" />
-
-                  <span className="relative z-10 text-[14px] font-extrabold">Subscribe Now</span>
-                  <span className="relative z-10 text-[16px] transition-transform duration-300 group-hover/btn:translate-x-1">→</span>
-                </button>
-                <p className="text-[10px] text-center text-white/20 font-bold uppercase tracking-[0.05em] mt-1">
-                  No Spam. Unsubscribe Anytime.
-                </p>
-              </div>
+              <NewsletterForm />
             </div>
           </div>
 

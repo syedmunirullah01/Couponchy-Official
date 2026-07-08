@@ -1,14 +1,15 @@
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { Outfit } from "next/font/google";
 import { Providers } from "./Providers";
 import "./globals.css";
 import AppToaster from "@/components/ui/Toaster";
 import { getMetadataDefaults } from "@/server/services/settings-service";
 import { getSettings } from "@/server/repositories/settings-repository";
 
-const plusJakartaSans = Plus_Jakarta_Sans({
-  variable: "--font-plus-jakarta",
+const outfit = Outfit({
+  variable: "--font-outfit",
   subsets: ["latin"],
   display: "swap",
+  weight: ["300", "400", "500", "600", "700", "800", "900"],
 });
 
 export async function generateMetadata() {
@@ -27,11 +28,11 @@ export default async function RootLayout({ children }) {
   const settings = await getSettings();
 
   return (
-    <html lang="en">
+    <html lang="en" className={`${outfit.variable}`}>
       <head>
         <CustomMarkup markup={settings.general.customHeadScript} />
       </head>
-      <body className={`${plusJakartaSans.variable} antialiased`}>
+      <body className="antialiased">
         <CustomMarkup markup={settings.general.customBodyStartScript} />
         <Providers>
           {children}

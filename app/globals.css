@@ -36,10 +36,10 @@
   --body-bg: #f4f6fa;
 }
 
-@theme inline {
+@theme {
   --color-background: var(--page-bg);
   --color-foreground: var(--text);
-  --font-sans: var(--font-plus-jakarta);
+  --font-sans: var(--font-outfit), system-ui, -apple-system, sans-serif;
 }
 
 * {
@@ -56,7 +56,7 @@ body {
   margin: 0;
   background: var(--body-bg);
   color: var(--text);
-  font-family: var(--font-plus-jakarta), sans-serif;
+  font-family: var(--font-outfit), system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -100,4 +100,15 @@ input {
   body.modal-open header {
     display: none !important;
   }
+}
+
+/* Make typography look extremely premium by softening font-weights slightly */
+.font-black {
+  font-weight: 800 !important;
+}
+.font-extrabold {
+  font-weight: 700 !important;
+}
+.font-bold {
+  font-weight: 600 !important;
 }

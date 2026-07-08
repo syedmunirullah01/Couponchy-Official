@@ -239,7 +239,20 @@ export default function AdminTopbar({ title, breadcrumbTrail = [] }) {
                             >
                               {/* Icon column */}
                               <div className="flex-shrink-0 mt-0.5">
-                                {n.feedback === "yes" ? (
+                                {n.type === "contact" ? (
+                                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-[0_0_10px_rgba(245,158,11,0.1)]">
+                                    <svg viewBox="0 0 24 24" className="h-4.5 w-4.5 stroke-current" fill="none" strokeWidth="2.5">
+                                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                                    </svg>
+                                  </div>
+                                ) : n.type === "subscriber" ? (
+                                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 shadow-[0_0_10px_rgba(59,130,246,0.1)]">
+                                    <svg viewBox="0 0 24 24" className="h-4.5 w-4.5 stroke-current" fill="none" strokeWidth="2.5">
+                                      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                                      <polyline points="22,6 12,13 2,6" />
+                                    </svg>
+                                  </div>
+                                ) : n.feedback === "yes" ? (
                                   <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.1)]">
                                     <svg viewBox="0 0 24 24" className="h-4.5 w-4.5 stroke-current" fill="none" strokeWidth="2.5">
                                       <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
@@ -248,7 +261,7 @@ export default function AdminTopbar({ title, breadcrumbTrail = [] }) {
                                 ) : (
                                   <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20 shadow-[0_0_10px_rgba(244,63,94,0.1)]">
                                     <svg viewBox="0 0 24 24" className="h-4.5 w-4.5 stroke-current" fill="none" strokeWidth="2.5">
-                                      <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm12-7h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3" />
+                                      <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm12-7h3a2 2 0 0 1 2 2v7a2 2 0 0 1 2 2h-3" />
                                     </svg>
                                   </div>
                                 )}
@@ -258,19 +271,19 @@ export default function AdminTopbar({ title, breadcrumbTrail = [] }) {
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center justify-between gap-2 mb-1">
                                   <span className={`text-[10.5px] font-black uppercase tracking-wider ${
-                                    n.feedback === "yes" ? "text-emerald-400" : "text-rose-400"
+                                    n.type === "contact" ? "text-amber-400" : n.type === "subscriber" ? "text-blue-400" : n.feedback === "yes" ? "text-emerald-400" : "text-rose-400"
                                   }`}>
-                                    {n.feedback === "yes" ? "Coupon Works" : "Coupon Broken"}
+                                    {n.type === "contact" ? "New Contact Message" : n.type === "subscriber" ? "New Subscriber" : n.feedback === "yes" ? "Coupon Works" : "Coupon Broken"}
                                   </span>
                                   <span className="text-[10px] font-bold text-[var(--muted)]/50">
                                     {new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                   </span>
                                 </div>
-                                <p className="text-sm font-black text-white leading-normal truncate">
-                                  {n.storeName}
+                                <p className="text-sm font-black text-[var(--text)] leading-normal truncate">
+                                  {n.type === "contact" ? `${n.name} (${n.email})` : n.type === "subscriber" ? n.email : n.storeName}
                                 </p>
                                 <p className="text-[11px] font-semibold text-[var(--muted)]/70 leading-normal truncate">
-                                  {n.offerTitle}
+                                  {n.type === "contact" ? `Subject: ${n.subject || "General"}` : n.type === "subscriber" ? "Joined the newsletter list." : n.offerTitle}
                                 </p>
                               </div>
                               

@@ -850,16 +850,22 @@ export default function Navbar({
                         >
                           <div className="grid gap-1">
                             {visibleExclusive.length ? (
-                              visibleExclusive.map((offer) => (
-                                <Link
-                                  key={offer.id}
-                                  href={buildCountryPath(`/stores/${offer.storeSlug}`, selectedCountryCode)}
-                                  className="flex items-center justify-between rounded-[10px] px-3.5 py-2.5 text-left text-white/80 transition hover:bg-white/5 hover:text-white"
-                                >
-                                  <span className="truncate text-[0.88rem] font-medium max-w-[140px]">{offer.storeName}</span>
-                                  <ChevronRightIcon className="h-3.5 w-3.5 text-white/30 shrink-0" />
-                                </Link>
-                              ))
+                              visibleExclusive.map((offer) => {
+                                const store = storeMap.get(offer.storeSlug);
+                                const href = store 
+                                  ? getStoreHref(store, selectedCountryCode)
+                                  : buildCountryPath("/stores", selectedCountryCode);
+                                return (
+                                  <Link
+                                    key={offer.id}
+                                    href={href}
+                                    className="flex items-center justify-between rounded-[10px] px-3.5 py-2.5 text-left text-white/80 transition hover:bg-white/5 hover:text-white"
+                                  >
+                                    <span className="truncate text-[0.88rem] font-medium max-w-[140px]">{offer.storeName}</span>
+                                    <ChevronRightIcon className="h-3.5 w-3.5 text-white/30 shrink-0" />
+                                  </Link>
+                                );
+                              })
                             ) : (
                               <div className="px-3.5 py-2.5 text-[0.82rem] text-white/45">
                                 No offers yet.

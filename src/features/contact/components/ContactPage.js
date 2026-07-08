@@ -67,23 +67,36 @@ export default function ContactPage({ settings = {} }) {
   };
 
   // Submit Handler
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
 
     setIsSubmitting(true);
-
-    // Simulate API request
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setIsSuccess(true);
-      setFormData({
-        name: "",
-        email: "",
-        subject: "support",
-        message: "",
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
       });
-    }, 1500);
+
+      if (res.ok) {
+        setIsSuccess(true);
+        setFormData({
+          name: "",
+          email: "",
+          subject: "support",
+          message: "",
+        });
+      } else {
+        const data = await res.json();
+        setErrors({ submit: data.error || "Failed to submit message." });
+      }
+    } catch (err) {
+      console.error("Submission error:", err);
+      setErrors({ submit: "Something went wrong. Please try again." });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const supportEmail = settings.supportEmail || "contact@couponchy.com";
@@ -313,6 +326,12 @@ export default function ContactPage({ settings = {} }) {
                   />
                   {errors.message && <span style={{ fontSize: "12px", color: "#ef4444", fontWeight: 700, marginTop: "4px", display: "block" }}>{errors.message}</span>}
                 </div>
+
+                {errors.submit && (
+                  <p style={{ fontSize: "12px", color: "#ef4444", fontWeight: 700, textAlign: "center" }}>
+                    {errors.submit}
+                  </p>
+                )}
 
                 {/* Submit button */}
                 <button
