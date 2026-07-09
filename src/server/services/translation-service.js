@@ -814,6 +814,9 @@ export async function translateSettingsOnSave(settings) {
             translatePrivacyOnSave(activeLangs, company.privacyPolicy || {}).catch((err) =>
               console.error("[translateSettingsOnSave] Privacy auto-translation failed:", err)
             );
+            translateTermsOnSave(activeLangs, company.termsOfService || {}).catch((err) =>
+              console.error("[translateSettingsOnSave] Terms auto-translation failed:", err)
+            );
           }
         })
         .catch((err) =>
@@ -2604,3 +2607,111 @@ export async function translatePrivacyOnSave(activeLangs, sourcePolicyData = {})
     }
   }
 }
+
+// ─── Terms Of Service Page Translations ────────────────────────────────────────
+
+const DEFAULT_TERMS = {
+  title: "Terms of Service",
+  lastUpdated: "2026-03-01",
+  acceptanceText: "By accessing the website at Couponchy, you agree to comply with and be bound by these terms of service, all applicable laws and regulations, and agree that you are responsible for compliance with any applicable local laws. If you do not agree with any of these terms, you are prohibited from using or accessing this site.",
+  licenseText: "Permission is granted to temporarily view the materials (information or codes) on Couponchy for personal, non-commercial transitory viewing only. This is the grant of a license, not a transfer of title, and under this license you may not:",
+  licenseBullet1: "Modify or copy the materials for commercial distributions.",
+  licenseBullet2: "Use the materials for any commercial purpose, or for any public display (commercial or non-commercial).",
+  licenseBullet3: "Attempt to decompile, reverse engineer, or script crawlers against the internal data layers of Couponchy.",
+  licenseBullet4: "Remove any copyright or other proprietary notations from the materials.",
+  disclaimerText: "The materials on Couponchy are provided on an 'as is' basis. We make no warranties, expressed or implied, and hereby disclaim and negate all other warranties including, without limitation, implied warranties or conditions of merchantability, fitness for a particular purpose, or non-infringement of intellectual property.",
+  limitationsText: "In no event shall Couponchy or its suppliers be liable for any damages (including, without limitation, damages for loss of data or profit, or due to business interruption) arising out of the use or inability to use the materials on our platform, even if Couponchy has been notified orally or in writing of the possibility of such damage.",
+  revisionsText: "The materials appearing on Couponchy could include technical, typographical, or photographic errors. We do not warrant that any of the materials on the platform are accurate, complete, or current. We may make changes to the materials contained on the platform at any time without notice.",
+  linksText: "We have not reviewed all of the sites linked to our website and are not responsible for the contents of any such linked site. The inclusion of any link does not imply endorsement by Couponchy of the site. Use of any such linked website is at the user's own risk.",
+  modificationsText: "We may revise these terms of service for its website at any time without notice. By using this website you are agreeing to be bound by the then current version of these terms of service.",
+  governingLawText: "These terms and conditions are governed by and construed in accordance with standard legal procedures, and you irrevocably submit to the exclusive jurisdiction of the courts in that state or location.",
+};
+
+const TERMS_ADMIN_KEYS = [
+  "title", "lastUpdated", "acceptanceText", "licenseText", "licenseBullet1", "licenseBullet2",
+  "licenseBullet3", "licenseBullet4", "disclaimerText", "limitationsText", "revisionsText",
+  "linksText", "modificationsText", "governingLawText"
+];
+
+function buildTermsSource(sourceTermsData = {}) {
+  const adminOverrides = Object.fromEntries(
+    TERMS_ADMIN_KEYS.map((k) => [k, sourceTermsData[k]]).filter(([, v]) => v)
+  );
+  return { ...DEFAULT_TERMS, ...adminOverrides };
+}
+
+/**
+ * Returns translated strings for the Terms of Service page.
+ * Cache miss/stale: serves source text, queues background DeepSeek update.
+ */
+export async function getTranslatedTerms(lang, sourceTermsData = {}) {
+  if (!lang || lang === "en") return null;
+
+  const source = buildTermsSource(sourceTermsData);
+
+  try {
+    const translations = await getEntityTranslationsWithHashes("settings", "terms", lang);
+    const result = {};
+
+    for (const key of Object.keys(source)) {
+      const originalText = source[key];
+      if (!originalText || typeof originalText !== "string" || !originalText.trim()) continue;
+
+      const currentHash = getHash(originalText);
+      const dbEntry = translations[key];
+
+      if (dbEntry && dbEntry.text && dbEntry.text.trim() && dbEntry.hash === currentHash) {
+        result[key] = dbEntry.text;
+      } else {
+        result[key] = originalText;
+        const capturedText = originalText;
+        const capturedHash = currentHash;
+        callDeepSeek(capturedText, lang)
+          .then((translatedText) =>
+            saveTranslation("settings", "terms", key, lang, translatedText, capturedHash)
+          )
+          .catch((err) =>
+            console.error(`[getTranslatedTerms] Background translation failed for ${key} in ${lang}:`, err)
+          );
+      }
+    }
+
+    return result;
+  } catch (err) {
+    console.error(`[getTranslatedTerms] Translation failed for ${lang}:`, err);
+    return null;
+  }
+}
+
+/**
+ * Called on admin company settings save.
+ * Translates all Terms of Service fields for all active languages.
+ */
+export async function translateTermsOnSave(activeLangs, sourceTermsData = {}) {
+  const source = buildTermsSource(sourceTermsData);
+
+  for (const lang of activeLangs) {
+    if (lang === "en") continue;
+    for (const key of Object.keys(source)) {
+      const originalText = source[key];
+      if (!originalText || typeof originalText !== "string" || !originalText.trim()) continue;
+
+      const hash = getHash(originalText);
+
+      const { data: existing } = await supabase
+        .from("translations")
+        .select("translated_text, original_hash")
+        .eq("entity_type", "settings")
+        .eq("entity_id", "terms")
+        .eq("field_key", key)
+        .eq("language", lang)
+        .single();
+
+      if (!existing?.translated_text || existing.original_hash !== hash) {
+        const translated = await callDeepSeek(originalText, lang);
+        await saveTranslation("settings", "terms", key, lang, translated, hash);
+      }
+    }
+  }
+}
+
