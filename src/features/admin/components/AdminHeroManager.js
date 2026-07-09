@@ -10,6 +10,7 @@ const initialHeroState = {
   eyebrow: "Exclusive Daily Deals",
   titleLineOne: "Smart Shopping,",
   titleAccent: "Better Saving",
+  titleLineTwo: "Every Time.",
   description: "Unlock verified discounts from the world's leading brands. The smarter way to checkout.",
   searchPlaceholder: "Search stores, coupons, deals",
   searchButtonLabel: "Search Offers",
@@ -383,8 +384,11 @@ export default function AdminHeroManager() {
             <SectionField label="Main Title Line" hint="Large headline text.">
               <Input value={hero.titleLineOne} onChange={(event) => updateHeroField("titleLineOne", event.target.value)} />
             </SectionField>
-            <SectionField label="Highlighted Accent Title" hint="Colored bottom row text.">
+            <SectionField label="Highlighted Accent Title" hint="Colored (purple) line — 2nd row.">
               <Input value={hero.titleAccent} onChange={(event) => updateHeroField("titleAccent", event.target.value)} />
+            </SectionField>
+            <SectionField label="Gradient Title Line" hint="Gradient white-to-purple line — 3rd row (e.g. Every Time.).">
+              <Input value={hero.titleLineTwo || ""} onChange={(event) => updateHeroField("titleLineTwo", event.target.value)} />
             </SectionField>
             <SectionField label="Search Button Label" hint="Text on the search CTA button.">
               <Input value={hero.searchButtonLabel} onChange={(event) => updateHeroField("searchButtonLabel", event.target.value)} />

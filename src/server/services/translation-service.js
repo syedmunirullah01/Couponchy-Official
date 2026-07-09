@@ -14,6 +14,7 @@ const LANGUAGE_NAMES = {
   ar: "Arabic",
   ja: "Japanese",
   pt: "Portuguese",
+  sv: "Swedish",
 };
 
 function getHash(text) {
@@ -166,16 +167,18 @@ export const COUNTRY_TO_LANG = {
   CA: "en",
   AU: "en",
   IN: "en",
+  AE: "en", // UAE (English)
+  CH: "en", // Switzerland (English)
   DE: "de", // German
   FR: "fr", // French
   NL: "nl", // Dutch
   PL: "pl", // Polish
   IT: "it", // Italian
   ES: "es", // Spanish
-  AE: "ar", // Arabic (UAE)
   SA: "ar", // Arabic (Saudi Arabia)
   JP: "ja", // Japanese
   PT: "pt", // Portuguese
+  SE: "sv", // Swedish
 };
 
 // Fetch translations for a batch of entity IDs in a single database query (with 50-item chunking)
@@ -280,7 +283,7 @@ export async function getEntityTranslationsWithHashes(entityType, entityId, lang
 // Utility to apply translations on a loaded object/entity
 export function applyTranslations(entity, translations) {
   if (!entity || !translations) return entity;
-  
+
   const result = { ...entity };
   for (const [key, val] of Object.entries(translations)) {
     if (val != null && val.trim()) {
@@ -442,9 +445,42 @@ export async function getTranslatedCategories(categories, lang) {
 // Decorate settings
 export async function getTranslatedSettings(settings, lang) {
   if (!settings || lang === "en") return settings;
-  const translations = await getEntityTranslations("settings", "global", lang);
-  return applyTranslations(settings, translations);
+
+  const translations = await getEntityTranslationsWithHashes("settings", "global", lang);
+
+  // For hero text fields: verify hash. If changed, fire background re-translation.
+  const heroTextFields = ["eyebrow", "titleLineOne", "titleAccent", "titleLineTwo", "description", "searchPlaceholder", "searchButtonLabel", "memberCountText"];
+  const hero = settings.homepage?.hero || {};
+
+  for (const key of heroTextFields) {
+    const originalText = hero[key];
+    if (!originalText || !originalText.trim()) continue;
+
+    const fieldKey = `homepage.hero.${key}`;
+    const currentHash = getHash(originalText);
+    const dbEntry = translations[fieldKey];
+
+    if (!dbEntry || !dbEntry.text || !dbEntry.text.trim() || dbEntry.hash !== currentHash) {
+      // Text changed or never translated — fire background re-translation
+      callDeepSeek(originalText, lang)
+        .then((translatedText) =>
+          saveTranslation("settings", "global", fieldKey, lang, translatedText, currentHash)
+        )
+        .catch((err) =>
+          console.error(`[getTranslatedSettings] Background re-translation failed for ${fieldKey} in ${lang}:`, err)
+        );
+    }
+  }
+
+  // Build a plain translations map (text only) for applyTranslations
+  const plainTranslations = {};
+  for (const [key, entry] of Object.entries(translations)) {
+    if (entry && entry.text) plainTranslations[key] = entry.text;
+  }
+
+  return applyTranslations(settings, plainTranslations);
 }
+
 
 // Decorate a single event
 export async function getTranslatedEvent(event, lang) {
@@ -651,20 +687,43 @@ export async function translateAllStoresForLangs(activeLangs) {
 }
 
 // Background auto translation for Homepage settings
+// Hash-check ensures API is called ONCE per unique text — already-translated content is skipped.
 export async function translateSettingsOnSave(settings) {
   if (!settings) return;
   try {
     const activeLangs = await getActiveLanguages();
     if (!activeLangs.length) return;
 
+    // Pre-fetch all existing homepage translations in one batch query
+    const { data: existingRows } = await supabase
+      .from("translations")
+      .select("field_key, language, original_hash")
+      .eq("entity_type", "settings")
+      .eq("entity_id", "global");
+
+    // Build a lookup: existingMap[lang][field_key] = original_hash
+    const existingMap = {};
+    for (const row of existingRows || []) {
+      if (!existingMap[row.language]) existingMap[row.language] = {};
+      existingMap[row.language][row.field_key] = row.original_hash;
+    }
+
+    // Helper: only call DeepSeek if text is new or changed
+    const translateIfChanged = async (fieldKey, originalText, lang) => {
+      if (!originalText || !originalText.trim()) return;
+      const hash = getHash(originalText);
+      const savedHash = existingMap[lang]?.[fieldKey];
+      if (savedHash === hash) return; // Already up-to-date, skip API call
+      const translated = await callDeepSeek(originalText, lang);
+      await saveTranslation("settings", "global", fieldKey, lang, translated, hash);
+    };
+
     const hero = settings.homepage?.hero || {};
-    const heroTextFields = ["eyebrow", "titleLineOne", "titleAccent", "description", "searchPlaceholder", "searchButtonLabel", "memberCountText"];
+    const heroTextFields = ["eyebrow", "titleLineOne", "titleAccent", "titleLineTwo", "description", "searchPlaceholder", "searchButtonLabel", "memberCountText"];
     for (const key of heroTextFields) {
       if (hero[key]) {
-        const hash = getHash(hero[key]);
         for (const lang of activeLangs) {
-          const translated = await callDeepSeek(hero[key], lang);
-          await saveTranslation("settings", "global", `homepage.hero.${key}`, lang, translated, hash);
+          await translateIfChanged(`homepage.hero.${key}`, hero[key], lang);
         }
       }
     }
@@ -674,10 +733,8 @@ export async function translateSettingsOnSave(settings) {
       const slide = slides[idx];
       for (const key of ["badge", "kicker", "title", "description"]) {
         if (slide[key]) {
-          const hash = getHash(slide[key]);
           for (const lang of activeLangs) {
-            const translated = await callDeepSeek(slide[key], lang);
-            await saveTranslation("settings", "global", `homepage.hero.slides.${idx}.${key}`, lang, translated, hash);
+            await translateIfChanged(`homepage.hero.slides.${idx}.${key}`, slide[key], lang);
           }
         }
       }
@@ -688,10 +745,8 @@ export async function translateSettingsOnSave(settings) {
       const card = cards[idx];
       for (const key of ["title", "category", "tag"]) {
         if (card[key]) {
-          const hash = getHash(card[key]);
           for (const lang of activeLangs) {
-            const translated = await callDeepSeek(card[key], lang);
-            await saveTranslation("settings", "global", `homepage.hero.cards.${idx}.${key}`, lang, translated, hash);
+            await translateIfChanged(`homepage.hero.cards.${idx}.${key}`, card[key], lang);
           }
         }
       }
@@ -701,10 +756,8 @@ export async function translateSettingsOnSave(settings) {
     for (let idx = 0; idx < statsList.length; idx++) {
       const stat = statsList[idx];
       if (stat.label) {
-        const hash = getHash(stat.label);
         for (const lang of activeLangs) {
-          const translated = await callDeepSeek(stat.label, lang);
-          await saveTranslation("settings", "global", `homepage.hero.stats.${idx}.label`, lang, translated, hash);
+          await translateIfChanged(`homepage.hero.stats.${idx}.label`, stat.label, lang);
         }
       }
     }
@@ -712,10 +765,8 @@ export async function translateSettingsOnSave(settings) {
     const sections = settings.homepage?.sections || {};
     for (const secKey of ["trendingStores", "featuredCoupons", "featuredProducts", "latestStores"]) {
       if (sections[secKey]?.title) {
-        const hash = getHash(sections[secKey].title);
         for (const lang of activeLangs) {
-          const translated = await callDeepSeek(sections[secKey].title, lang);
-          await saveTranslation("settings", "global", `homepage.sections.${secKey}.title`, lang, translated, hash);
+          await translateIfChanged(`homepage.sections.${secKey}.title`, sections[secKey].title, lang);
         }
       }
     }
@@ -1244,7 +1295,7 @@ export async function translateFooterOnSave(activeLangs) {
     for (const key of Object.keys(DEFAULT_FOOTER)) {
       const originalText = DEFAULT_FOOTER[key];
       const hash = getHash(originalText);
-      
+
       const { data: existing } = await supabase
         .from("translations")
         .select("translated_text")
@@ -1507,9 +1558,34 @@ export async function getTranslatedStoreDetail(detail, lang) {
     // 2. Localize UI Tabs
     if (detail.storeTabs && detail.storeTabs.length) {
       result.storeTabs = detail.storeTabs.map(tab => {
-        if (tab === "Coupons") return lang === "pl" ? "Kupony" : lang === "de" ? "Gutscheine" : lang === "fr" ? "Coupons" : lang === "nl" ? "Kortingscodes" : lang === "it" ? "Coupon" : lang === "es" ? "Cupones" : tab;
-        if (tab === "Store Info") return lang === "pl" ? "O sklepie" : lang === "de" ? "Shop-Infos" : lang === "fr" ? "Infos Magasin" : lang === "nl" ? "Winkel Info" : lang === "it" ? "Info Negozio" : lang === "es" ? "Info Tienda" : tab;
-        if (tab === "FAQs") return "FAQs";
+        if (tab === "Coupons") {
+          return lang === "pl" ? "Kupony" :
+                 lang === "de" ? "Gutscheine" :
+                 lang === "fr" ? "Coupons" :
+                 lang === "nl" ? "Kortingscodes" :
+                 lang === "it" ? "Coupon" :
+                 lang === "es" ? "Cupones" :
+                 lang === "sv" ? "Kuponger" :
+                 lang === "ja" ? "クーポン" :
+                 lang === "pt" ? "Cupons" :
+                 lang === "ar" ? "الكوبونات" : tab;
+        }
+        if (tab === "Store Info") {
+          return lang === "pl" ? "O sklepie" :
+                 lang === "de" ? "Shop-Infos" :
+                 lang === "fr" ? "Infos Magasin" :
+                 lang === "nl" ? "Winkel Info" :
+                 lang === "it" ? "Info Negozio" :
+                 lang === "es" ? "Info Tienda" :
+                 lang === "sv" ? "Butiksinfo" :
+                 lang === "ja" ? "店舗情報" :
+                 lang === "pt" ? "Informações da loja" :
+                 lang === "ar" ? "معلومات المتجر" : tab;
+        }
+        if (tab === "FAQs") {
+          return lang === "ar" ? "الأسئلة الشائعة" :
+                 lang === "ja" ? "よくある質問" : "FAQs";
+        }
         return tab;
       });
     }
@@ -1521,15 +1597,42 @@ export async function getTranslatedStoreDetail(detail, lang) {
           const type = match[1];
           const count = match[2];
           if (type === "All") {
-            const allLabel = lang === "pl" ? "Wszystkie" : lang === "de" ? "Alle" : lang === "fr" ? "Tout" : lang === "nl" ? "Alle" : lang === "it" ? "Tutto" : lang === "es" ? "Todo" : "All";
+            const allLabel = lang === "pl" ? "Wszystkie" :
+                             lang === "de" ? "Alle" :
+                             lang === "fr" ? "Tout" :
+                             lang === "nl" ? "Alle" :
+                             lang === "it" ? "Tutto" :
+                             lang === "es" ? "Todo" :
+                             lang === "sv" ? "Alla" :
+                             lang === "ja" ? "すべて" :
+                             lang === "pt" ? "Todos" :
+                             lang === "ar" ? "الكل" : "All";
             return `${allLabel} (${count})`;
           }
           if (type === "Coupons") {
-            const couponsLabel = lang === "pl" ? "Kupony" : lang === "de" ? "Gutscheine" : lang === "fr" ? "Coupons" : lang === "nl" ? "Kortingscodes" : lang === "it" ? "Coupon" : lang === "es" ? "Cupones" : "Coupons";
+            const couponsLabel = lang === "pl" ? "Kupony" :
+                                 lang === "de" ? "Gutscheine" :
+                                 lang === "fr" ? "Coupons" :
+                                 lang === "nl" ? "Kortingscodes" :
+                                 lang === "it" ? "Coupon" :
+                                 lang === "es" ? "Cupones" :
+                                 lang === "sv" ? "Kuponger" :
+                                 lang === "ja" ? "クーポン" :
+                                 lang === "pt" ? "Cupons" :
+                                 lang === "ar" ? "الكوبونات" : "Coupons";
             return `${couponsLabel} (${count})`;
           }
           if (type === "Deals") {
-            const dealsLabel = lang === "pl" ? "Oferty" : lang === "de" ? "Angebote" : lang === "fr" ? "Offres" : lang === "nl" ? "Deals" : lang === "it" ? "Offerte" : lang === "es" ? "Ofertas" : "Deals";
+            const dealsLabel = lang === "pl" ? "Oferty" :
+                               lang === "de" ? "Angebote" :
+                               lang === "fr" ? "Offres" :
+                               lang === "nl" ? "Deals" :
+                               lang === "it" ? "Offerte" :
+                               lang === "es" ? "Ofertas" :
+                               lang === "sv" ? "Erbjudanden" :
+                               lang === "ja" ? "お得な情報" :
+                               lang === "pt" ? "Ofertas" :
+                               lang === "ar" ? "العروض" : "Deals";
             return `${dealsLabel} (${count})`;
           }
         }
@@ -1707,7 +1810,7 @@ export async function getTranslatedTrendingStores(lang) {
 
       if (SHORT_TRANSLATIONS[lang] && SHORT_TRANSLATIONS[lang][key]) {
         result[key] = SHORT_TRANSLATIONS[lang][key];
-        saveTranslation("settings", "trending_stores", key, lang, result[key], currentHash).catch(() => {});
+        saveTranslation("settings", "trending_stores", key, lang, result[key], currentHash).catch(() => { });
       } else if (dbEntry && dbEntry.text && dbEntry.text.trim() && dbEntry.hash === currentHash) {
         result[key] = dbEntry.text;
       } else {
@@ -1744,7 +1847,7 @@ export async function getTranslatedStoreDirectory(lang) {
 
       if (SHORT_TRANSLATIONS[lang] && SHORT_TRANSLATIONS[lang][key]) {
         result[key] = SHORT_TRANSLATIONS[lang][key];
-        saveTranslation("settings", "store_directory", key, lang, result[key], currentHash).catch(() => {});
+        saveTranslation("settings", "store_directory", key, lang, result[key], currentHash).catch(() => { });
       } else if (dbEntry && dbEntry.text && dbEntry.text.trim() && dbEntry.hash === currentHash) {
         result[key] = dbEntry.text;
       } else {
@@ -1808,7 +1911,7 @@ export async function getTranslatedHowItWorks(lang) {
 
       if (SHORT_TRANSLATIONS[lang] && SHORT_TRANSLATIONS[lang][key]) {
         result[key] = SHORT_TRANSLATIONS[lang][key];
-        saveTranslation("settings", "how_it_works", key, lang, result[key], currentHash).catch(() => {});
+        saveTranslation("settings", "how_it_works", key, lang, result[key], currentHash).catch(() => { });
       } else if (dbEntry && dbEntry.text && dbEntry.text.trim() && dbEntry.hash === currentHash) {
         result[key] = dbEntry.text;
       } else {
@@ -1864,7 +1967,7 @@ export async function getTranslatedFeaturedCoupons(lang) {
 
       if (SHORT_TRANSLATIONS[lang] && SHORT_TRANSLATIONS[lang][key]) {
         result[key] = SHORT_TRANSLATIONS[lang][key];
-        saveTranslation("settings", "featured_coupons", key, lang, result[key], currentHash).catch(() => {});
+        saveTranslation("settings", "featured_coupons", key, lang, result[key], currentHash).catch(() => { });
       } else if (dbEntry && dbEntry.text && dbEntry.text.trim() && dbEntry.hash === currentHash) {
         result[key] = dbEntry.text;
       } else {
@@ -2413,10 +2516,10 @@ const DEFAULT_PRIVACY = {
 };
 
 const PRIVACY_ADMIN_KEYS = [
-  "introText","collectText","collectBullet1Title","collectBullet1Desc",
-  "collectBullet2Title","collectBullet2Desc","useText","useGrid1","useGrid2",
-  "useGrid3","useGrid4","cookiesText","dataSecurityText","thirdPartyText",
-  "userRightsText","policyUpdatesText",
+  "introText", "collectText", "collectBullet1Title", "collectBullet1Desc",
+  "collectBullet2Title", "collectBullet2Desc", "useText", "useGrid1", "useGrid2",
+  "useGrid3", "useGrid4", "cookiesText", "dataSecurityText", "thirdPartyText",
+  "userRightsText", "policyUpdatesText",
 ];
 
 function buildPrivacySource(sourcePolicyData = {}) {

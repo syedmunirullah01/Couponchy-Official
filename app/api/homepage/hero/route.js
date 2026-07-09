@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requirePermission } from "@/server/auth";
 import { getSettings, updateSettings } from "@/server/repositories/settings-repository";
 import { revalidatePath } from "next/cache";
+import { translateSettingsOnSave } from "@/server/services/translation-service";
 
 export async function GET() {
   const access = await requirePermission("hero");
@@ -26,6 +27,11 @@ export async function PUT(request) {
         hero: payload.hero,
       },
     });
+
+    // Trigger background translation for all changed hero text fields
+    translateSettingsOnSave(settings).catch((err) =>
+      console.error("[PUT /api/homepage/hero] Auto translation failed:", err)
+    );
 
     revalidatePath("/", "layout");
     return NextResponse.json({ data: settings.homepage.hero });

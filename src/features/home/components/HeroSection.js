@@ -394,7 +394,7 @@ export default function HeroSection({ hero, countryCode = DEFAULT_COUNTRY_CODE, 
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
                 backgroundClip: "text",
-              }}>Every Time.</span>
+              }}>{hero?.titleLineTwo || "Every Time."}</span>
             </h1>
 
             {/* Subtext */}
