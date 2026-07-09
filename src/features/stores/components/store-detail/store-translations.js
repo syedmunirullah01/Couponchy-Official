@@ -56,7 +56,10 @@ const STORE_TRANSLATIONS = {
     "titleTemplate": "{name} Discount & Coupons Code {month} {year}",
     "promoCodesCount": "Promo Codes",
     "topVerified": "Top Verified",
-    "verifiedPercent": "100% Verified"
+    "verifiedPercent": "100% Verified",
+    "coupon": "coupon",
+    "deal": "deal",
+    "code": "code"
   },
   "pl": {
     "savingsGuide": "PORADNIK OSZCZĘDZANIA",
@@ -115,7 +118,10 @@ const STORE_TRANSLATIONS = {
     "titleTemplate": "Kody rabatowe i promocje {name} {month} {year}",
     "promoCodesCount": "Kody rabatowe",
     "topVerified": "Najlepszy zweryfikowany",
-    "verifiedPercent": "W 100% zweryfikowane"
+    "verifiedPercent": "W 100% zweryfikowane",
+    "coupon": "kupon",
+    "deal": "promocja",
+    "code": "kod"
   },
   "de": {
     "savingsGuide": "SPAR-GUIDE",
@@ -174,7 +180,10 @@ const STORE_TRANSLATIONS = {
     "titleTemplate": "{name} Gutscheine & Rabattcodes {month} {year}",
     "promoCodesCount": "Gutscheincodes",
     "topVerified": "Top verifiziert",
-    "verifiedPercent": "100% Verifiziert"
+    "verifiedPercent": "100% Verifiziert",
+    "coupon": "gutschein",
+    "deal": "angebot",
+    "code": "code"
   },
   "fr": {
     "savingsGuide": "GUIDE D'ÉPARGNE",
@@ -233,7 +242,10 @@ const STORE_TRANSLATIONS = {
     "titleTemplate": "Codes Promo et Réductions {name} {month} {year}",
     "promoCodesCount": "Codes Promo",
     "topVerified": "Top Vérifié",
-    "verifiedPercent": "100% Vérifié"
+    "verifiedPercent": "100% Vérifié",
+    "coupon": "coupon",
+    "deal": "offre",
+    "code": "code"
   },
   "nl": {
     "savingsGuide": "BESPAARGIDS",
@@ -292,7 +304,10 @@ const STORE_TRANSLATIONS = {
     "titleTemplate": "{name} Kortingscodes & Aanbiedingen {month} {year}",
     "promoCodesCount": "Kortingscodes",
     "topVerified": "Beste geverifieerd",
-    "verifiedPercent": "100% Geverifieerd"
+    "verifiedPercent": "100% Geverifieerd",
+    "coupon": "kortingsbon",
+    "deal": "aanbieding",
+    "code": "code"
   },
   "it": {
     "savingsGuide": "GUIDA AL RISPARMIO",
@@ -351,7 +366,10 @@ const STORE_TRANSLATIONS = {
     "titleTemplate": "Codici Sconto e Offerte {name} {month} {year}",
     "promoCodesCount": "Codici Sconto",
     "topVerified": "Top verificato",
-    "verifiedPercent": "100% Verificato"
+    "verifiedPercent": "100% Verificato",
+    "coupon": "coupon",
+    "deal": "offerta",
+    "code": "codice"
   },
   "es": {
     "savingsGuide": "GUÍA DE AHORRO",
@@ -410,7 +428,10 @@ const STORE_TRANSLATIONS = {
     "titleTemplate": "Códigos de Descuento y Ofertas {name} {month} {year}",
     "promoCodesCount": "Códigos Promocionales",
     "topVerified": "Mejor verificado",
-    "verifiedPercent": "100% Verificado"
+    "verifiedPercent": "100% Verificado",
+    "coupon": "cupón",
+    "deal": "oferta",
+    "code": "código"
   },
   "sv": {
     "savingsGuide": "SPARGUIDE",
@@ -469,7 +490,10 @@ const STORE_TRANSLATIONS = {
     "titleTemplate": "{name} Rabatt & Kupongkod {month} {year}",
     "promoCodesCount": "Kampanjkoder",
     "topVerified": "Topp verifierad",
-    "verifiedPercent": "100% Verifierad"
+    "verifiedPercent": "100% Verifierad",
+    "coupon": "kupong",
+    "deal": "erbjudande",
+    "code": "kod"
   },
   "ja": {
     "savingsGuide": "節約ガイド",
@@ -528,7 +552,10 @@ const STORE_TRANSLATIONS = {
     "titleTemplate": "{name} 割引＆クーポンコード {month} {year}",
     "promoCodesCount": "プロモコード",
     "topVerified": "トップ認証済み",
-    "verifiedPercent": "100% 確認済み"
+    "verifiedPercent": "100% 確認済み",
+    "coupon": "クーポン",
+    "deal": "セール",
+    "code": "コード"
   },
   "pt": {
     "savingsGuide": "GUIA DE ECONOMIA",
@@ -587,7 +614,10 @@ const STORE_TRANSLATIONS = {
     "titleTemplate": "{name} Código de Desconto e Cupons {month} {year}",
     "promoCodesCount": "Códigos Promocionais",
     "topVerified": "Principais Verificados",
-    "verifiedPercent": "100% Verificado"
+    "verifiedPercent": "100% Verificado",
+    "coupon": "cupom",
+    "deal": "oferta",
+    "code": "código"
   },
   "ar": {
     "savingsGuide": "دليل التوفير",
@@ -646,7 +676,10 @@ const STORE_TRANSLATIONS = {
     "titleTemplate": "{name} خصم ورموز القسائم {month} {year}",
     "promoCodesCount": "أكواد الخصم",
     "topVerified": "أفضل التحقق منه",
-    "verifiedPercent": "100% موثقة"
+    "verifiedPercent": "100% موثقة",
+    "coupon": "كوبون",
+    "deal": "صفقة",
+    "code": "كود"
   }
 };
 

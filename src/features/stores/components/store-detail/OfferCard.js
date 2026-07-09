@@ -332,11 +332,11 @@ export default function OfferCard({ offer, store, isFirst, t }) {
               {offerValue}
             </p>
             <p className="mt-1.5 text-[10px] font-black uppercase tracking-[0.22em] text-white/30">
-              {isCoupon && offerValue !== "Code"
-                ? (t.verifiedCodes === "Zweryfikowane kody" ? "kod" : "code")
+              {(isCoupon && offerValue !== "Code"
+                ? (t.code || "code")
                 : (offer.type === "Coupon"
-                    ? (t.verifiedCodes === "Zweryfikowane kody" ? "KUPON" : "COUPON")
-                    : (t.verifiedCodes === "Zweryfikowane kody" ? "OFERTA" : "DEAL")).toLowerCase()}
+                    ? (t.coupon || "coupon")
+                    : (t.deal || "deal"))).toUpperCase()}
             </p>
           </div>
 
@@ -346,8 +346,8 @@ export default function OfferCard({ offer, store, isFirst, t }) {
             <div className="flex flex-wrap items-center gap-2">
               <span className="rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-[0.18em] bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 text-[var(--color-primary)]">
                 {offer.type === "Coupon"
-                  ? (t.verifiedCodes === "Zweryfikowane kody" ? "Kupon" : "Coupon")
-                  : (t.verifiedCodes === "Zweryfikowane kody" ? "Oferta" : "Deal")}
+                  ? (t.coupon || "Coupon")
+                  : (t.deal || "Deal")}
               </span>
               <span className="rounded-full bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-[0.18em] text-[var(--color-primary)]">
                 ✓ {t.verified}
@@ -492,7 +492,7 @@ export default function OfferCard({ offer, store, isFirst, t }) {
               <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
                 {/* Type Badge */}
                 <span className="rounded-md bg-white/10 px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wider text-white">
-                  {isCoupon ? (t.verifiedCodes === "Zweryfikowane kody" ? "KOD" : "CODE") : (t.verifiedCodes === "Zweryfikowane kody" ? "OFERTA" : "DEAL")}
+                  {(isCoupon ? (t.code || "CODE") : (t.deal || "DEAL")).toUpperCase()}
                 </span>
                 {/* Verified Badge */}
                 <span className="flex items-center gap-1 text-[9.5px] font-bold text-[var(--color-primary)]">

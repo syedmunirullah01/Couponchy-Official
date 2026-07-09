@@ -332,6 +332,11 @@ export default function Navbar({
     document.cookie = `${COUNTRY_COOKIE_KEY}=${encodeURIComponent(normalizedCountryCode)}; path=/; max-age=31536000; samesite=lax`;
     const nextPath = buildCountryPath("/", normalizedCountryCode);
     const search = typeof window !== "undefined" ? window.location.search : "";
+    
+    // Close mobile menu drawers automatically on country selection
+    setMobileOpen(false);
+    setMobileCountryDropdownOpen(false);
+    
     router.replace(`${nextPath}${search}`);
     router.refresh();
   }
@@ -1074,7 +1079,7 @@ export default function Navbar({
 
               {countryDropdownOpen && (
                 <div className="absolute right-0 top-full mt-2 z-50">
-                  <div className="w-[52px] overflow-hidden rounded-[16px] border border-white/10 bg-[#0c0c0c] p-1.5 shadow-[0_20px_50px_rgba(0,0,0,0.85)]">
+                  <div className="w-[52px] max-h-[280px] overflow-y-auto overflow-x-hidden rounded-[16px] border border-white/10 bg-[#0c0c0c] p-1.5 shadow-[0_20px_50px_rgba(0,0,0,0.85)]">
                     <div className="grid gap-1">
                       {countries.map((country) => (
                         <button

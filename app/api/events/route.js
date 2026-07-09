@@ -29,7 +29,7 @@ export async function POST(request) {
     }
 
     const event = await createEvent(payload);
-    translateEventOnSave(event).catch((err) =>
+    await translateEventOnSave(event).catch((err) =>
       console.error("[POST /api/events] Auto translation failed:", err)
     );
     return NextResponse.json({ data: event }, { status: 201 });

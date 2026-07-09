@@ -9,6 +9,13 @@ import { getEventBySlug } from "@/server/repositories/events-repository";
 import { resolveRequestCountryCode } from "@/server/resolve-request-country";
 import { getMetadataDefaults } from "@/server/services/settings-service";
 import { normalizeCountryCode } from "@/lib/countries";
+import {
+  getTranslatedEvent,
+  getTranslatedEventUI,
+  getTranslatedOffers,
+  getTranslatedStores,
+  COUNTRY_TO_LANG
+} from "@/server/services/translation-service";
 
 export const dynamic = "force-dynamic";
 
@@ -90,14 +97,17 @@ function getHeroAccent() {
 
 export async function generateMetadata({ params }) {
   const resolvedParams = await params;
+  const countryCode = await resolveRequestCountryCode();
+  const lang = COUNTRY_TO_LANG[String(countryCode || "").toUpperCase()] || "en";
   const event = await getEventBySlug(resolvedParams?.event);
-  const eventName = event?.name || formatEventName(resolvedParams?.event || "Event");
+  const translatedEvent = await getTranslatedEvent(event, lang);
+  const eventName = translatedEvent?.name || formatEventName(resolvedParams?.event || "Event");
   const defaults = await getMetadataDefaults(`${eventName} Event`);
 
   return {
     ...defaults,
-    title: event?.seoTitle || defaults.title,
-    description: event?.seoDescription || defaults.description,
+    title: translatedEvent?.seoTitle || defaults.title,
+    description: translatedEvent?.seoDescription || defaults.description,
   };
 }
 
@@ -118,13 +128,23 @@ export default async function EventPage({ params }) {
     }
   }
 
-  const eventName = eventConfig?.name || formatEventName(eventSlug || "event");
-  const eventKeyword = String(eventConfig?.keyword || eventSlug).trim().toLowerCase();
+  const lang = COUNTRY_TO_LANG[String(countryCode || "").toUpperCase()] || "en";
+
+  const [translatedEvent, translatedUI] = await Promise.all([
+    getTranslatedEvent(eventConfig, lang),
+    getTranslatedEventUI(lang),
+  ]);
+
+  const t = translatedUI;
+  const eventName = translatedEvent?.name || formatEventName(eventSlug || "event");
+  const eventKeyword = String(translatedEvent?.keyword || eventConfig?.keyword || eventSlug).trim().toLowerCase();
+
   const [offers, stores] = await Promise.all([getAllOffers(), getAllStores()]);
   const scopedStores = stores.filter((store) => normalizeCountryCode(store.countryCode) === countryCode);
   const allowedStoreSlugs = new Set(scopedStores.map((store) => store.slug));
   const scopedOffers = offers.filter((offer) => allowedStoreSlugs.has(offer.storeSlug));
   const eventOffers = scopedOffers.filter((offer) => isEventOffer(offer, eventKeyword));
+  
   const relatedStores = scopedStores
     .filter((store) => eventOffers.some((offer) => offer.storeSlug === store.slug))
     .map((store) => ({
@@ -133,6 +153,14 @@ export default async function EventPage({ params }) {
       href: buildCountryPath(`/stores/${store.categorySlug}/${store.slug}`, countryCode),
     }))
     .sort((a, b) => b.eventCount - a.eventCount || a.name.localeCompare(b.name));
+
+  const [translatedOffers, translatedStores] = await Promise.all([
+    getTranslatedOffers(eventOffers, lang),
+    getTranslatedStores(relatedStores, lang),
+  ]);
+
+  const displayOffers = translatedOffers;
+  const displayStores = translatedStores;
 
   return (
     <div className="mx-auto flex w-full max-w-[1240px] flex-col gap-8 px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
@@ -177,16 +205,16 @@ export default async function EventPage({ params }) {
 
         <div className="relative z-10 max-w-2xl lg:max-w-[640px]">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 px-3.5 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-primary)] shadow-[0_0_15px_rgba(139,92,246,0.1)]">
-            Event Spotlight
+            {t.eventSpotlight || "Event Spotlight"}
           </span>
           <h1 className="mt-4 text-[28px] sm:text-4xl lg:text-[54px] font-black tracking-[-0.04em] leading-[1.12] text-white">
-            Best {eventName}{" "}
+            {t.bestPrefix || "Best"} {eventName}{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-hover)] drop-shadow-[0_0_15px_rgba(139,92,246,0.2)]">
-              Coupons & Deals Today
+              {t.couponsAndDealsToday || "Coupons & Deals Today"}
             </span>
           </h1>
           <p className="mt-4 text-xs sm:text-base leading-6 sm:leading-7 text-[var(--muted)]/90">
-            {eventConfig?.shortDescription || `Discover active ${eventName.toLowerCase()} offers, coupon codes, and timely savings from featured stores in one place.`}
+            {translatedEvent?.shortDescription || t.defaultShortDesc?.replace("{eventName}", eventName) || `Discover active ${eventName.toLowerCase()} offers, coupon codes, and timely savings from featured stores in one place.`}
           </p>
           <div className="mt-6 flex flex-row flex-wrap gap-2.5 sm:gap-4">
             <div className="flex items-center gap-2 rounded-full border border-white/5 bg-white/[0.03] backdrop-blur-md px-3.5 py-1.5 sm:px-4.5 sm:py-2 text-[11px] sm:text-xs font-semibold text-white/80 shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]">
@@ -195,8 +223,8 @@ export default async function EventPage({ params }) {
                 <circle cx="7.5" cy="7.5" r="1.5" fill="currentColor" />
               </svg>
               <span>
-                <span className="inline sm:hidden">{eventOffers.length} Offers</span>
-                <span className="hidden sm:inline">{eventOffers.length} {eventName} Offers</span>
+                <span className="inline sm:hidden">{displayOffers.length} {t.offersLabel || "Offers"}</span>
+                <span className="hidden sm:inline">{displayOffers.length} {eventName} {t.offersLabel || "Offers"}</span>
               </span>
             </div>
             <div className="flex items-center gap-2 rounded-full border border-white/5 bg-white/[0.03] backdrop-blur-md px-3.5 py-1.5 sm:px-4.5 sm:py-2 text-[11px] sm:text-xs font-semibold text-white/80 shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]">
@@ -206,8 +234,8 @@ export default async function EventPage({ params }) {
                 <path d="M16 10a4 4 0 0 1-8 0" />
               </svg>
               <span>
-                <span className="inline sm:hidden">{relatedStores.length} Stores</span>
-                <span className="hidden sm:inline">{relatedStores.length} Related Stores</span>
+                <span className="inline sm:hidden">{displayStores.length} {t.storesLabel || "Stores"}</span>
+                <span className="hidden sm:inline">{displayStores.length} {t.relatedStores || "Related Stores"}</span>
               </span>
             </div>
           </div>
@@ -219,12 +247,12 @@ export default async function EventPage({ params }) {
         <aside className="order-2 xl:order-1 xl:sticky xl:top-24 xl:self-start">
           <Card className="rounded-[28px] border-white/10 bg-white/[0.01] backdrop-blur-md shadow-2xl p-5">
             <CardHeader className="border-b border-white/5 pb-4.5 px-0 pt-0">
-              <CardTitle className="text-lg font-black text-white/95">Related Stores</CardTitle>
-              <CardDescription className="text-xs text-[var(--muted)]/60 leading-normal mt-1">Stores currently featuring live {eventName.toLowerCase()} offers.</CardDescription>
+              <CardTitle className="text-lg font-black text-white/95">{t.relatedStores || "Related Stores"}</CardTitle>
+              <CardDescription className="text-xs text-[var(--muted)]/60 leading-normal mt-1">{t.relatedStoresDesc?.replace("{eventName}", eventName.toLowerCase()) || `Stores currently featuring live ${eventName.toLowerCase()} offers.`}</CardDescription>
             </CardHeader>
             <CardContent className="mt-5 p-0 max-h-[480px] overflow-y-auto pr-1 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-1 gap-3">
-              {relatedStores.length ? (
-                relatedStores.map((store) => (
+              {displayStores.length ? (
+                displayStores.map((store) => (
                   <Link
                     key={store.slug}
                     href={store.href}
@@ -241,7 +269,7 @@ export default async function EventPage({ params }) {
                 ))
               ) : (
                 <div className="col-span-full rounded-2xl border border-dashed border-white/5 bg-white/[0.01] p-4 text-center text-xs text-[var(--muted)]/50 italic">
-                  No related stores found.
+                  {t.noRelatedStores || "No related stores found."}
                 </div>
               )}
             </CardContent>
@@ -250,13 +278,13 @@ export default async function EventPage({ params }) {
 
         {/* Offers List - render first on mobile */}
         <div className="order-1 xl:order-2">
-          {eventOffers.length ? (
+          {displayOffers.length ? (
             <div className="grid gap-4.5">
-              {eventOffers.map((offer) => {
-                const matchedStore = relatedStores.find((store) => store.slug === offer.storeSlug);
+              {displayOffers.map((offer) => {
+                const matchedStore = displayStores.find((store) => store.slug === offer.storeSlug);
                 const storeHref = matchedStore?.href || "#";
                 const offerValue = getOfferValue(offer, eventName);
-                const offerMeta = getOfferMetaLabel(offer);
+                const offerMeta = offer.status?.toLowerCase().includes("verified") ? (t.verified || "Verified") : (offer.type === "Deal" ? (t.unlocked || "Unlocked") : (t.official || "Official"));
 
                 return (
                   <Card
@@ -269,12 +297,12 @@ export default async function EventPage({ params }) {
                         <div className="relative overflow-hidden flex flex-row lg:flex-col items-center justify-between lg:justify-center border-b lg:border-b-0 lg:border-r border-white/10 bg-white/[0.01] px-5 py-3.5 lg:px-6 lg:py-6.5 lg:w-[170px] lg:flex-shrink-0">
                           {/* Accent background mesh */}
                           <div className="absolute inset-0 bg-gradient-to-br from-[var(--color-primary)]/5 to-transparent pointer-events-none" />
-                          <span className="relative z-10 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-primary)]">Discount</span>
+                          <span className="relative z-10 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-primary)]">{t.discount || "Discount"}</span>
                           <div className="relative z-10 text-2xl lg:text-4xl sm:text-[42px] font-black leading-none tracking-[-0.05em] text-white bg-clip-text text-transparent bg-gradient-to-b from-white to-white/70 lg:mt-2.5">
                             {offerValue.replace(" off", "")}
                           </div>
                           <span className="relative z-10 text-[10px] font-bold uppercase tracking-[0.15em] text-white/40 lg:mt-1.5">
-                            {offerValue.toLowerCase().includes("off") ? "OFF" : offer.type}
+                            {offerValue.toLowerCase().includes("off") ? (t.off || "OFF") : (t.deal || offer.type)}
                           </span>
                         </div>
 
@@ -294,7 +322,7 @@ export default async function EventPage({ params }) {
                               {offer.title}
                             </h2>
                             <p className="mt-2 text-sm leading-6 text-[var(--muted)]/80">
-                              {offer.description || "No description added yet."}
+                              {offer.description || (t.noDescYet || "No description added yet.")}
                             </p>
                           </div>
 
@@ -330,7 +358,7 @@ export default async function EventPage({ params }) {
                             href={storeHref}
                             className="group/cta flex items-center justify-center gap-2.5 w-full lg:max-w-[240px] h-12 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-black uppercase tracking-[0.1em] whitespace-nowrap shadow-lg shadow-[var(--color-primary)]/20 hover:shadow-[var(--color-primary)]/40 hover:-translate-y-0.5 transition-all duration-200 active:scale-95 border border-[var(--color-primary-hover)]/20"
                           >
-                            <span>{offer.code ? "Reveal Code" : offer.ctaLabel || "Get Deal"}</span>
+                            <span>{offer.code ? (t.revealCode || "Reveal Code") : (offer.ctaLabel || t.getDeal || "Get Deal")}</span>
                             <svg viewBox="0 0 24 24" className="h-4.5 w-4.5 transition-transform duration-300 group-hover/cta:translate-x-1" fill="none" stroke="currentColor" strokeWidth="2.5">
                               <path d="M5 12h14" />
                               <path d="m13 6 6 6-6 6" />
@@ -345,9 +373,9 @@ export default async function EventPage({ params }) {
             </div>
           ) : (
             <Card className="rounded-[28px] border-dashed p-8 text-center">
-              <p className="text-lg font-semibold text-[var(--text)]">No {eventName.toLowerCase()} offers yet</p>
+              <p className="text-lg font-semibold text-[var(--text)]">{t.noOffersYetTitle?.replace("{eventName}", eventName) || `No ${eventName.toLowerCase()} offers yet`}</p>
               <p className="mt-2 text-sm text-[var(--muted)]">
-                {eventConfig?.longDescription || `Fresh ${eventName.toLowerCase()} deals and coupon codes will appear here as soon as matching offers are available.`}
+                {translatedEvent?.longDescription || t.defaultLongDesc?.replace("{eventName}", eventName) || `Fresh ${eventName.toLowerCase()} deals and coupon codes will appear here as soon as matching offers are available.`}
               </p>
             </Card>
           )}

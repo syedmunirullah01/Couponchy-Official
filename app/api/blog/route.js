@@ -33,7 +33,7 @@ export async function POST(request) {
     }
 
     const post = await createBlogPost(payload);
-    translateBlogOnSave(post).catch((err) =>
+    await translateBlogOnSave(post).catch((err) =>
       console.error("[POST /api/blog] Auto translation failed:", err)
     );
     return NextResponse.json({ data: post }, { status: 201 });

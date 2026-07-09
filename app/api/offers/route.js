@@ -51,7 +51,7 @@ export async function POST(request) {
     const offers = await getAllOffers();
     const storeOfferCount = offers.filter((item) => item.storeSlug === payload.storeSlug).length;
     await syncStoreOfferCount(payload.storeSlug, storeOfferCount);
-    translateOfferOnSave(offer).catch((err) =>
+    await translateOfferOnSave(offer).catch((err) =>
       console.error("[POST /api/offers] Auto translation failed:", err)
     );
     revalidatePath("/", "layout");
