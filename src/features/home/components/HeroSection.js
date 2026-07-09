@@ -165,7 +165,7 @@ function formatStoreCount(count) {
   return `${count}+`;
 }
 
-export default function HeroSection({ hero, countryCode = DEFAULT_COUNTRY_CODE, totalStoresCount = 0, initialStores = [] }) {
+export default function HeroSection({ hero, countryCode = DEFAULT_COUNTRY_CODE, totalStoresCount = 0, initialStores = [], t: propT }) {
   const router = useRouter();
   const [searchValue, setSearchValue] = useState("");
   const [stores, setStores] = useState(initialStores);
@@ -225,13 +225,15 @@ export default function HeroSection({ hero, countryCode = DEFAULT_COUNTRY_CODE, 
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       setFocusedIndex((prev) => (prev - 1 + filteredStores.length) % filteredStores.length);
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (focusedIndex >= 0 && focusedIndex < filteredStores.length) {
+        handleSelectStore(filteredStores[focusedIndex]);
+      } else {
+        handleSearchSubmit(e);
+      }
     } else if (e.key === "Escape") {
       setShowDropdown(false);
-    } else if (e.key === "Enter") {
-      if (focusedIndex >= 0 && focusedIndex < filteredStores.length) {
-        e.preventDefault();
-        handleSelectStore(filteredStores[focusedIndex]);
-      }
     }
   }
 
@@ -251,11 +253,21 @@ export default function HeroSection({ hero, countryCode = DEFAULT_COUNTRY_CODE, 
     router.push(`${buildCountryPath("/stores", countryCode)}?search=${encodeURIComponent(rawQuery)}`);
   }
 
+  const t = propT || {
+    searchPlaceholder: "Search any store (e.g. nike.com)",
+    searchBrand: "Search Brand →",
+    popularStores: "Popular Stores:",
+    storesVerified: "Stores Verified",
+    accuracyRate: "Accuracy Rate",
+    monthlyVerifications: "Monthly Verifications",
+    savedAtCheckout: "Saved at Checkout",
+  };
+
   const headline = hero?.titleLineOne || "Find Coupons";
   const accent = hero?.titleAccent || "That Actually Save";
   const subtext = hero?.description || "Access verified, working discount codes. Stop wasting time with expired links and start saving instantly.";
   const eyebrow = hero?.eyebrow || "Real-Time Code Verification";
-  const searchPlaceholder = "Search any store (e.g. nike.com)";
+  const searchPlaceholder = t.searchPlaceholder || "Search any store (e.g. nike.com)";
   const popularTags = ["Adidas", "J.Crew", "Sephora", "Crocs", "Abercrombie", "ASUS"];
 
   const dynamicPopularStores = stores.length > 0
@@ -267,9 +279,20 @@ export default function HeroSection({ hero, countryCode = DEFAULT_COUNTRY_CODE, 
 
   // Build stats: replace null (Stores Verified) with live count
   const storeCountLabel = formatStoreCount(totalStoresCount);
-  const displayStats = (hero?.stats?.length ? hero.stats : STATS).map((stat) =>
-    stat.value === null ? { ...stat, value: storeCountLabel } : stat
-  );
+  const displayStats = (hero?.stats?.length ? hero.stats : STATS).map((stat) => {
+    const labelKey = stat.translationKey || (
+      stat.label === "Stores Verified" ? "storesVerified" :
+      stat.label === "Accuracy Rate" ? "accuracyRate" :
+      stat.label === "Monthly Verifications" ? "monthlyVerifications" :
+      "savedAtCheckout"
+    );
+    const localizedLabel = t[labelKey] || stat.label;
+    return {
+      ...stat,
+      value: stat.value === null ? storeCountLabel : stat.value,
+      label: localizedLabel,
+    };
+  });
 
   return (
     <section suppressHydrationWarning style={{ position: "relative", overflow: "hidden" }}>
@@ -366,7 +389,12 @@ export default function HeroSection({ hero, countryCode = DEFAULT_COUNTRY_CODE, 
               <br />
               <span style={{ color: "var(--color-primary)" }}>{accent}</span>
               <br />
-              <span style={{ color: "#ffffff" }}>You Money</span>
+              <span style={{
+                background: "linear-gradient(90deg, #ffffff 0%, #c084fc 60%, #8b5cf6 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+              }}>Every Time.</span>
             </h1>
 
             {/* Subtext */}
@@ -459,7 +487,7 @@ export default function HeroSection({ hero, countryCode = DEFAULT_COUNTRY_CODE, 
                 onMouseLeave={(e) => { e.currentTarget.style.background = "var(--color-primary)"; }}
               >
                 <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-1000 group-hover/btn:translate-x-full" />
-                <span className="relative z-10">Search Brand →</span>
+                <span className="relative z-10">{t.searchBrand || "Search Brand →"}</span>
               </button>
 
               {/* Suggestions Dropdown */}
@@ -624,7 +652,7 @@ export default function HeroSection({ hero, countryCode = DEFAULT_COUNTRY_CODE, 
                   <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
                   <polyline points="17 6 23 6 23 12" />
                 </svg>
-                Popular Stores:
+                {t.popularStores || "Popular Stores:"}
               </span>
               {dynamicPopularStores.length > 0 ? (
                 dynamicPopularStores.map((store) => (

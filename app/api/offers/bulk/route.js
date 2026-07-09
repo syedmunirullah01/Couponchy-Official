@@ -3,6 +3,7 @@ import { requirePermission } from "@/server/auth";
 import { createOffersBulk, getAllOffers } from "@/server/repositories/offers-repository";
 import { getAllStores, syncStoreOfferCount } from "@/server/repositories/stores-repository";
 import { revalidatePath } from "next/cache";
+import { translateOffersBulkOnSave } from "@/server/services/translation-service";
 
 function normalizeCsvValue(value) {
   return String(value || "").trim();
@@ -195,7 +196,10 @@ export async function POST(request) {
     });
 
     if (validPayloads.length) {
-      await createOffersBulk(validPayloads);
+      const createdOffers = await createOffersBulk(validPayloads);
+      translateOffersBulkOnSave(createdOffers).catch((err) =>
+        console.error("[POST /api/offers/bulk] Bulk translation trigger failed:", err)
+      );
 
       const affectedStoreSlugs = [...new Set(validPayloads.map((item) => item.storeSlug))];
       const nextOffers = await getAllOffers();

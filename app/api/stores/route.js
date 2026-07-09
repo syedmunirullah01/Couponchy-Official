@@ -4,6 +4,7 @@ import { validateStorePayload } from "@/lib/validators";
 import { normalizeCountryCode } from "@/lib/countries";
 import { requirePermission } from "@/server/auth";
 import { revalidatePath } from "next/cache";
+import { translateStoreOnSave } from "@/server/services/translation-service";
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
@@ -33,9 +34,13 @@ export async function POST(request) {
     }
 
     const store = await createStore(payload);
+    translateStoreOnSave(store).catch((err) =>
+      console.error("[POST /api/stores] Auto translation failed:", err)
+    );
     revalidatePath("/", "layout");
     return NextResponse.json({ data: store }, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: error.message || "Unable to create store." }, { status: 400 });
   }
 }
+

@@ -45,7 +45,7 @@ function getOfferValue(offer) {
   return offer.type === "Deal" ? "Deal" : "Code";
 }
 
-export default function StoreHeader({ singleStore, storeTabs, offerTabs, offers = [] }) {
+export default function StoreHeader({ singleStore, storeTabs, offerTabs, offers = [], t }) {
   const storeTabTargets = {
     Coupons: "#coupons",
     "Store Info": "#store-info",
@@ -53,9 +53,16 @@ export default function StoreHeader({ singleStore, storeTabs, offerTabs, offers 
   };
 
   const now = new Date();
-  const month = now.toLocaleString("en-US", { month: "long" });
+  const country = String(singleStore.countryCode || "").toUpperCase();
+  const monthLocaleMap = {
+    PL: "pl-PL", DE: "de-DE", NL: "nl-NL", IT: "it-IT", FR: "fr-FR", ES: "es-ES"
+  };
+  const monthLocale = monthLocaleMap[country] || "en-US";
+  const month = now.toLocaleString(monthLocale, { month: "long" });
   const year = now.getFullYear();
-  const dynamicTitle = `${singleStore.name} Discount & Coupons Code ${month} ${year}`;
+  const dynamicTitle = t.titleTemplate
+    ? t.titleTemplate.replace("{name}", singleStore.name).replace("{month}", month).replace("{year}", year)
+    : `${singleStore.name} Discount & Coupons Code ${month} ${year}`;
 
   const dynamicRating = (() => {
     let hash = 0;
@@ -66,7 +73,8 @@ export default function StoreHeader({ singleStore, storeTabs, offerTabs, offers 
     const ratingIndex = Math.abs(hash) % 4; // 0, 1, 2, 3
     const ratingVal = (4.6 + ratingIndex * 0.1).toFixed(1); // 4.6, 4.7, 4.8, 4.9
     const reviewsVal = (Math.abs(hash) % 187) + 12; // 12 to 198 reviews
-    return `${ratingVal} (${reviewsVal} reviews)`;
+    const reviewsLabel = t.reviews || "reviews";
+    return `${ratingVal} (${reviewsVal} ${reviewsLabel})`;
   })();
 
   const couponsCount = offers?.filter(o => o.type === "Coupon").length || 0;
@@ -89,7 +97,7 @@ export default function StoreHeader({ singleStore, storeTabs, offerTabs, offers 
       <div className="hidden sm:block relative p-8">
         {/* Breadcrumb */}
         <div className="mb-5 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/30">
-          <Link href="/stores" className="transition hover:text-white/60">Stores</Link>
+          <Link href="/stores" className="transition hover:text-white/60">{t.storesBreadcrumb}</Link>
           <span>/</span>
           {singleStore.categorySlug && (
             <>
@@ -129,23 +137,23 @@ export default function StoreHeader({ singleStore, storeTabs, offerTabs, offers 
                 <span className="text-[var(--color-primary)] font-black text-sm" suppressHydrationWarning>{dynamicRating}</span>
                 <span className="text-white/10 select-none">•</span>
                 <span className="uppercase tracking-wider text-white/50">
-                  Active and verified source for {singleStore.name} Promo Codes
+                  {t.activeVerifiedSource.replace("{name}", singleStore.name)}
                 </span>
               </div>
 
               {/* Trust Badges Row */}
               <div className="mt-4 flex flex-wrap gap-2">
                 <span className="inline-flex items-center gap-1 rounded-full border border-violet-500/20 bg-violet-500/5 px-3.5 py-1 text-xs font-bold text-violet-400 hover:border-violet-500/30 hover:bg-violet-500/10 transition-colors duration-200 cursor-default select-none shadow-[0_2px_10px_rgba(139,92,246,0.02)]">
-                  ✓ Verified Codes
+                  ✓ {t.verifiedCodes}
                 </span>
                 <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-1 text-xs font-bold text-white/80 hover:border-white/20 hover:bg-white/[0.07] transition-colors duration-200 cursor-default select-none shadow-[0_2px_10px_rgba(255,255,255,0.01)]">
-                  🔥 Community Verified
+                  🔥 {t.communityVerified}
                 </span>
                 <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-1 text-xs font-bold text-white/80 hover:border-white/20 hover:bg-white/[0.07] transition-colors duration-200 cursor-default select-none shadow-[0_2px_10px_rgba(255,255,255,0.01)]">
-                  🔒 100% Free
+                  🔒 {t.free100}
                 </span>
                 <span className="inline-flex items-center gap-1 rounded-full border border-violet-500/20 bg-violet-500/5 px-3.5 py-1 text-xs font-bold text-violet-400 hover:border-violet-500/30 hover:bg-violet-500/10 transition-colors duration-200 cursor-default select-none shadow-[0_2px_10px_rgba(139,92,246,0.02)]">
-                  ⚡ Instant Savings
+                  ⚡ {t.instantSavings}
                 </span>
               </div>
             </div>
@@ -161,7 +169,7 @@ export default function StoreHeader({ singleStore, storeTabs, offerTabs, offers 
             >
               <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 group-hover/visit:translate-x-full" />
               <span className="relative flex items-center gap-2">
-                Visit Store
+                {t.visitStore}
                 <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 transition-transform duration-300 group-hover/visit:translate-x-1" fill="none" stroke="currentColor" strokeWidth="3">
                   <path d="M5 12h14" /><path d="m13 6 6 6-6 6" />
                 </svg>
@@ -214,7 +222,7 @@ export default function StoreHeader({ singleStore, storeTabs, offerTabs, offers 
               <path strokeLinecap="round" strokeLinejoin="round" d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581a1.5 1.5 0 0 0 2.122 0l4.318-4.318a1.5 1.5 0 0 0 0-2.122L11.159 3.659A1.5 1.5 0 0 0 9.568 3Z" />
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 6h.008v.008H6V6Z" />
             </svg>
-            <span><strong className="text-white/80">{couponsCount}</strong> Promo Codes</span>
+            <span><strong className="text-white/80">{couponsCount}</strong> {t.promoCodesCount}</span>
           </div>
           <span className="text-white/10 select-none">•</span>
           {/* Top Verified Code */}
@@ -222,7 +230,7 @@ export default function StoreHeader({ singleStore, storeTabs, offerTabs, offers 
             <svg className="h-3.5 w-3.5 text-white/20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.746 3.746 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.746 3.746 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z" />
             </svg>
-            <span>Top Verified: <strong className="text-white/80">{topCouponValue}</strong></span>
+            <span>{t.topVerified}: <strong className="text-white/80">{topCouponValue}</strong></span>
           </div>
           <span className="text-white/10 select-none">•</span>
           {/* Health/Success */}
@@ -230,7 +238,7 @@ export default function StoreHeader({ singleStore, storeTabs, offerTabs, offers 
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941" />
             </svg>
-            <span>100% Verified</span>
+            <span>{t.verifiedPercent}</span>
           </div>
         </div>
 

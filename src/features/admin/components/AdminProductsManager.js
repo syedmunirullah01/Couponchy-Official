@@ -18,6 +18,7 @@ const initialForm = {
   image: "",
   price: "",
   originalPrice: "",
+  currency: "$",
   ctaLabel: "View Product",
   productUrl: "",
   status: "Active",
@@ -133,6 +134,7 @@ export default function AdminProductsManager() {
       image: product.image || "",
       price: String(product.price ?? ""),
       originalPrice: product.originalPrice == null ? "" : String(product.originalPrice),
+      currency: product.currency || "$",
       ctaLabel: product.ctaLabel || "View Product",
       productUrl: product.productUrl || "",
       status: product.status || "Active",
@@ -329,11 +331,11 @@ export default function AdminProductsManager() {
                     <TableCell className="px-4 py-3 text-xs font-mono">
                       {product.originalPrice ? (
                         <div className="flex flex-col">
-                          <span className="font-semibold text-[var(--text)]">${Number(product.price).toFixed(2)}</span>
-                          <span className="text-[10px] text-[var(--muted)] line-through">${Number(product.originalPrice).toFixed(2)}</span>
+                          <span className="font-semibold text-[var(--text)]">{product.currency || "$"}{Number(product.price).toFixed(2)}</span>
+                          <span className="text-[10px] text-[var(--muted)] line-through">{product.currency || "$"}{Number(product.originalPrice).toFixed(2)}</span>
                         </div>
                       ) : (
-                        <span className="font-semibold text-[var(--text)]">${Number(product.price).toFixed(2)}</span>
+                        <span className="font-semibold text-[var(--text)]">{product.currency || "$"}{Number(product.price).toFixed(2)}</span>
                       )}
                     </TableCell>
                     <TableCell className="px-4 py-3 text-xs">
@@ -447,9 +449,9 @@ export default function AdminProductsManager() {
                       {/* Pricing & CTA */}
                       <div className="mt-3 flex items-center justify-between">
                         <div className="font-mono">
-                          <span className="text-xs font-bold text-[var(--text)]">${form.price ? Number(form.price).toFixed(2) : "0.00"}</span>
+                          <span className="text-xs font-bold text-[var(--text)]">{form.currency || "$"}{form.price ? Number(form.price).toFixed(2) : "0.00"}</span>
                           {form.originalPrice ? (
-                            <span className="text-[9px] text-[var(--muted)] line-through ml-1.5">${Number(form.originalPrice).toFixed(2)}</span>
+                            <span className="text-[9px] text-[var(--muted)] line-through ml-1.5">{form.currency || "$"}{Number(form.originalPrice).toFixed(2)}</span>
                           ) : null}
                         </div>
                         <span className={cn(
@@ -606,8 +608,22 @@ export default function AdminProductsManager() {
                       </div>
 
                       <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="grid gap-1.5 sm:col-span-2">
+                          <label className="text-xs font-bold text-[var(--text)]">Currency Symbol</label>
+                          <Input
+                            name="currency"
+                            value={form.currency}
+                            onChange={handleChange}
+                            placeholder="e.g. $, €, £, zł"
+                            className="rounded-lg bg-[var(--surface)] font-mono"
+                            maxLength={5}
+                            required
+                          />
+                          <span className="text-[9px] text-[var(--muted)]">Specify the price currency symbol manually (e.g. $, €, £, zł, Rs).</span>
+                        </div>
+
                         <div className="grid gap-1.5">
-                          <label className="text-xs font-bold text-[var(--text)]">Deal Price ($)</label>
+                          <label className="text-xs font-bold text-[var(--text)]">Deal Price</label>
                           <Input
                             name="price"
                             type="number"
@@ -623,7 +639,7 @@ export default function AdminProductsManager() {
                         </div>
 
                         <div className="grid gap-1.5">
-                          <label className="text-xs font-bold text-[var(--text)]">Original Price ($)</label>
+                          <label className="text-xs font-bold text-[var(--text)]">Original Price</label>
                           <Input
                             name="originalPrice"
                             type="number"
@@ -690,7 +706,7 @@ export default function AdminProductsManager() {
                               <polyline points="21 15 16 10 5 21" />
                             </svg>
                             <p className="text-[11px] font-bold text-[var(--text)]">Upload your product cover media</p>
-                            <p className="text-[10px] text-[var(--muted)] mt-0.5">Supports PNG, JPG, WEBP, SVG up to 2MB</p>
+                            <p className="text-[10px] text-[var(--muted)] mt-0.5">Supports PNG, JPG, WEBP, SVG up to 2MB (Recommended: Aspect ratio 1:1 or 400x400 px)</p>
 
                             <div className="flex gap-2 mt-3">
                               <Button

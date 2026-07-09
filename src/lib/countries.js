@@ -19,8 +19,6 @@ export const SUPPORTED_COUNTRIES = [
   { code: "CA", name: "Canada", flag: "🇨🇦", flagUrl: "https://flagcdn.com/w40/ca.png" },
   { code: "AU", name: "Australia", flag: "🇦🇺", flagUrl: "https://flagcdn.com/w40/au.png" },
   { code: "IN", name: "India", flag: "🇮🇳", flagUrl: "https://flagcdn.com/w40/in.png" },
-  { code: "AE", name: "United Arab Emirates", flag: "🇦🇪", flagUrl: "https://flagcdn.com/w40/ae.png" },
-  { code: "SA", name: "Saudi Arabia", flag: "🇸🇦", flagUrl: "https://flagcdn.com/w40/sa.png" },
   { code: "DE", name: "Germany", flag: "🇩🇪", flagUrl: "https://flagcdn.com/w40/de.png" },
 ];
 

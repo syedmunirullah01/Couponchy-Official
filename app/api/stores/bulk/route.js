@@ -7,6 +7,7 @@ import { getSettings } from "@/server/repositories/settings-repository";
 import { uploadImageBuffer } from "@/server/cloudinary";
 import { normalizeCountryCode } from "@/lib/countries";
 import { revalidatePath } from "next/cache";
+import { translateStoresBulkOnSave } from "@/server/services/translation-service";
 
 function slugify(value) {
   return String(value || "")
@@ -324,6 +325,9 @@ export async function POST(request) {
 
     if (preparedStores.length) {
       await upsertStoresBulk(preparedStores);
+      translateStoresBulkOnSave(preparedStores).catch((err) =>
+        console.error("[POST /api/stores/bulk] Bulk translation trigger failed:", err)
+      );
       revalidatePath("/", "layout");
     }
 

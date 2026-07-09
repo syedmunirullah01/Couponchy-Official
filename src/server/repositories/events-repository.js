@@ -27,6 +27,7 @@ function normalizeEvent(input, currentEvent) {
     shortDescription: String(input.shortDescription || "").trim(),
     longDescription: String(input.longDescription || "").trim(),
     status: input.status === "disabled" ? "disabled" : "enabled",
+    countryCode: String(input.countryCode || "GLOBAL").trim().toUpperCase(),
     createdAt: currentEvent?.createdAt || input.createdAt || now,
     updatedAt: now,
   };

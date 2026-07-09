@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getCompanyContent, updateCompanyContent } from "@/server/repositories/company-repository";
 import { requirePermission } from "@/server/auth";
 import { revalidatePath } from "next/cache";
+import { getActiveLanguages, translateAboutOnSave, translateContactOnSave, translatePrivacyOnSave } from "@/server/services/translation-service";
 
 export async function GET() {
   const access = await requirePermission("company");
@@ -23,6 +24,19 @@ export async function PUT(request) {
     const payload = await request.json();
     const content = await updateCompanyContent(payload);
     revalidatePath("/", "layout");
+
+    // Background: re-translate About & Contact pages for all active languages
+    getActiveLanguages()
+      .then((langs) => {
+        translateAboutOnSave(langs, content.aboutUs || {})
+          .catch((err) => console.error("[company PUT] About auto-translation failed:", err));
+        translateContactOnSave(langs, content.contactUs || {})
+          .catch((err) => console.error("[company PUT] Contact auto-translation failed:", err));
+        translatePrivacyOnSave(langs, content.privacyPolicy || {})
+          .catch((err) => console.error("[company PUT] Privacy auto-translation failed:", err));
+      })
+      .catch((err) => console.error("[company PUT] getActiveLanguages failed:", err));
+
     return NextResponse.json({ data: content });
   } catch (error) {
     return NextResponse.json({ error: error.message || "Unable to save company content." }, { status: 400 });

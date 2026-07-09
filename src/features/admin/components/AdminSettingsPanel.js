@@ -34,6 +34,8 @@ const initialState = {
     x: "",
     tiktok: "",
     youtube: "",
+    discord: "",
+    pinterest: "",
     defaultShareText: "Verified coupons and deals from Couponchy.",
   },
   seo: {
@@ -55,6 +57,7 @@ const tabs = [
   { key: "affiliate", label: "Affiliate Networks" },
   { key: "social", label: "Social Media" },
   { key: "seo", label: "SEO Defaults" },
+  { key: "verification", label: "Verification Files" },
   { key: "users", label: "Users & Roles" },
 ];
 
@@ -126,6 +129,11 @@ export default function AdminSettingsPanel() {
   const [newCountryName, setNewCountryName] = useState("");
   const [countryDeleteTarget, setCountryDeleteTarget] = useState(null);
 
+  // Verification files state
+  const [verificationFiles, setVerificationFiles] = useState([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [deleteTargetFile, setDeleteTargetFile] = useState(null);
+
   useEffect(() => {
     let active = true;
 
@@ -156,6 +164,77 @@ export default function AdminSettingsPanel() {
       active = false;
     };
   }, []);
+
+  async function loadVerificationFiles() {
+    try {
+      const res = await fetch("/api/settings/verification");
+      const data = await res.json();
+      if (res.ok) {
+        setVerificationFiles(data.data || []);
+      } else {
+        toast.error(data.error || "Failed to load verification files.");
+      }
+    } catch (err) {
+      toast.error("Failed to load verification files.");
+    }
+  }
+
+  useEffect(() => {
+    if (activeTab === "verification") {
+      loadVerificationFiles();
+    }
+  }, [activeTab]);
+
+  async function handleFileUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    setIsUploading(true);
+    try {
+      const res = await fetch("/api/settings/verification", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success("File uploaded successfully.");
+        loadVerificationFiles();
+      } else {
+        toast.error(data.error || "Failed to upload file.");
+      }
+    } catch (err) {
+      toast.error("Failed to upload file.");
+    } finally {
+      setIsUploading(false);
+      e.target.value = "";
+    }
+  }
+
+  async function handleDeleteFileConfirmed() {
+    if (!deleteTargetFile) return;
+
+    setIsUploading(true);
+    try {
+      const res = await fetch(`/api/settings/verification?filename=${encodeURIComponent(deleteTargetFile.name)}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success("File deleted successfully.");
+        loadVerificationFiles();
+      } else {
+        toast.error(data.error || "Failed to delete file.");
+      }
+    } catch (err) {
+      toast.error("Failed to delete file.");
+    } finally {
+      setIsUploading(false);
+      setDeleteTargetFile(null);
+    }
+  }
 
   function updateSection(section, field, value) {
     setSettings((current) => ({
@@ -579,6 +658,20 @@ export default function AdminSettingsPanel() {
               placeholder="https://youtube.com/..."
             />
           </SectionField>
+          <SectionField label="Discord URL">
+            <Input
+              value={settings.social.discord}
+              onChange={(event) => updateSection("social", "discord", event.target.value)}
+              placeholder="https://discord.gg/..."
+            />
+          </SectionField>
+          <SectionField label="Pinterest URL">
+            <Input
+              value={settings.social.pinterest}
+              onChange={(event) => updateSection("social", "pinterest", event.target.value)}
+              placeholder="https://pinterest.com/..."
+            />
+          </SectionField>
           <SectionField label="Default Share Copy" hint="Used in promotional and social sharing flows.">
             <textarea
               rows={4}
@@ -675,6 +768,101 @@ export default function AdminSettingsPanel() {
         <AdminUsersManager />
       ) : null}
 
+      {activeTab === "verification" ? (
+        <Card>
+          <CardHeader className="flex flex-col gap-4 border-b border-[var(--border)] pb-6 p-6">
+            <div>
+              <CardTitle className="text-base font-bold tracking-tight text-[var(--text)]">
+                Verification File Upload
+              </CardTitle>
+              <CardDescription className="text-xs text-[var(--muted)] mt-0.5">
+                Upload Google/Bing verification files (`.html` or `.txt`). They are saved in `public/` and become available at `https://your-domain.com/file-name.html`.
+              </CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6 p-6">
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)]/30 overflow-hidden p-5">
+              <label className="grid gap-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-[var(--text)]">
+                  Upload `.html` or `.txt` file
+                </span>
+                <div className="relative flex items-center">
+                  <input
+                    type="file"
+                    accept=".html,.txt"
+                    onChange={handleFileUpload}
+                    disabled={isUploading}
+                    className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3 text-xs text-[var(--text)] outline-none file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[var(--color-primary)]/10 file:text-[var(--color-primary)] hover:file:bg-[var(--color-primary)]/20 cursor-pointer disabled:opacity-50"
+                  />
+                </div>
+                <span className="text-[11px] text-[var(--muted)] leading-relaxed">
+                  Allowed: `.html` or `.txt`, max size 1MB.
+                </span>
+              </label>
+            </div>
+
+            <div className="space-y-3">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--text)]">
+                Uploaded verification files
+              </h4>
+              
+              {verificationFiles.length === 0 ? (
+                <div className="text-center py-6 text-xs text-[var(--muted)] rounded-xl border border-dashed border-[var(--border)]">
+                  No verification files uploaded yet.
+                </div>
+              ) : (
+                <div className="grid gap-2">
+                  {verificationFiles.map((file) => (
+                    <div
+                      key={file.name}
+                      className="flex items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 hover:bg-[var(--surface-soft)]/30 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="h-8 w-8 rounded-lg bg-[var(--surface-soft)] flex items-center justify-center text-[var(--color-primary)] shrink-0">
+                          <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
+                            className="h-4 w-4"
+                          >
+                            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+                            <polyline points="14 2 14 8 20 8" />
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-[var(--text)]">{file.name}</p>
+                          <p className="text-[10px] text-[var(--muted)]">
+                            {(file.size / 1024).toFixed(2)} KB · {new Date(file.updatedAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <a
+                          href={`/${file.name}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex h-8 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--surface-soft)] px-3 text-xs font-bold text-[var(--text)] transition hover:bg-[var(--surface-soft)]"
+                        >
+                          Open
+                        </a>
+                        <button
+                          type="button"
+                          className="inline-flex h-8 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--surface-soft)] px-3 text-xs font-bold text-[var(--muted)] transition hover:text-red-600 hover:bg-red-500/5 hover:border-red-500/20 cursor-pointer"
+                          onClick={() => setDeleteTargetFile(file)}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
+
       <ConfirmModal
         open={Boolean(countryDeleteTarget)}
         onOpenChange={(open) => {
@@ -692,6 +880,25 @@ export default function AdminSettingsPanel() {
         cancelLabel="Cancel"
         onConfirm={handleRemoveCountryConfirmed}
         isSubmitting={savingSection === "general"}
+      />
+
+      <ConfirmModal
+        open={Boolean(deleteTargetFile)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleteTargetFile(null);
+          }
+        }}
+        title="Delete verification file"
+        description={
+          deleteTargetFile
+            ? `Are you sure you want to permanently delete the verification file "${deleteTargetFile.name}"? This file will no longer be accessible.`
+            : ""
+        }
+        confirmLabel="Delete File"
+        cancelLabel="Cancel"
+        onConfirm={handleDeleteFileConfirmed}
+        isSubmitting={isUploading}
       />
     </div>
   );

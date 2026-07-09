@@ -106,20 +106,38 @@ function useInView(ref) {
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
-export default function AboutPage({ totalStores = 0, totalOffers = 0, company = null }) {
+export default function AboutPage({ totalStores = 0, totalOffers = 0, company = null, t = null }) {
   const statsRef = useRef(null);
   const statsInView = useInView(statsRef);
   const [hoveredVal, setHoveredVal] = useState(null);
   const [hoveredStep, setHoveredStep] = useState(null);
 
   const aboutData = company?.aboutUs || {};
+  const tr = t || {};
 
   // Build dynamic stats that match the homepage numbers
   const STATS = [
-    { value: formatCount(totalStores), label: "Verified Stores" },
-    { value: aboutData.statMonthlyUsers || "4.6M+", label: "Monthly Users" },
-    { value: aboutData.statCodeAccuracy || "98%", label: "Code Accuracy" },
-    { value: formatCount(totalOffers), label: "Active Deals" },
+    { value: formatCount(totalStores), label: tr.statVerifiedStoresLabel || "Verified Stores" },
+    { value: aboutData.statMonthlyUsers || "4.6M+", label: tr.statMonthlyUsersLabel || "Monthly Users" },
+    { value: aboutData.statCodeAccuracy || "98%", label: tr.statCodeAccuracyLabel || "Code Accuracy" },
+    { value: formatCount(totalOffers), label: tr.statActiveDealsLabel || "Active Deals" },
+  ];
+
+  // Build translated VALUES and STEPS from `t` prop
+  const VALUES_T = [
+    { icon: VALUES[0].icon, title: tr.value1Title || VALUES[0].title, desc: tr.value1Desc || VALUES[0].desc },
+    { icon: VALUES[1].icon, title: tr.value2Title || VALUES[1].title, desc: tr.value2Desc || VALUES[1].desc },
+    { icon: VALUES[2].icon, title: tr.value3Title || VALUES[2].title, desc: tr.value3Desc || VALUES[2].desc },
+    { icon: VALUES[3].icon, title: tr.value4Title || VALUES[3].title, desc: tr.value4Desc || VALUES[3].desc },
+    { icon: VALUES[4].icon, title: tr.value5Title || VALUES[4].title, desc: tr.value5Desc || VALUES[4].desc },
+    { icon: VALUES[5].icon, title: tr.value6Title || VALUES[5].title, desc: tr.value6Desc || VALUES[5].desc },
+  ];
+
+  const STEPS_T = [
+    { num: "01", title: tr.step1Title || STEPS[0].title, desc: tr.step1Desc || STEPS[0].desc },
+    { num: "02", title: tr.step2Title || STEPS[1].title, desc: tr.step2Desc || STEPS[1].desc },
+    { num: "03", title: tr.step3Title || STEPS[2].title, desc: tr.step3Desc || STEPS[2].desc },
+    { num: "04", title: tr.step4Title || STEPS[3].title, desc: tr.step4Desc || STEPS[3].desc },
   ];
 
   return (
@@ -136,17 +154,17 @@ export default function AboutPage({ totalStores = 0, totalOffers = 0, company = 
           <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: "rgba(139,92,246,0.08)", border: "1px solid rgba(139,92,246,0.2)", borderRadius: "999px", padding: "6px 18px", marginBottom: "32px" }}>
             <span style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--color-primary)", boxShadow: "0 0 10px var(--color-primary)", display: "inline-block", animation: "aboutPulse 2s infinite" }} />
             <span style={{ fontSize: "11px", fontWeight: 800, letterSpacing: "0.2em", textTransform: "uppercase", color: "var(--color-primary)" }}>
-              {aboutData.heroBadge || "Our Story"}
+              {tr.heroBadge || aboutData.heroBadge || "Our Story"}
             </span>
           </div>
 
           <h1 style={{ fontSize: "clamp(44px, 6vw, 80px)", fontWeight: 900, lineHeight: 0.95, letterSpacing: "-0.04em", margin: 0, marginBottom: "28px" }}>
-            {aboutData.heroTitleLine1 || "We killed the"}<br />
-            <span style={{ color: "var(--color-primary)" }}>{aboutData.heroTitleAccent || "expired code."}</span>
+            {tr.heroTitleLine1 || aboutData.heroTitleLine1 || "We killed the"}<br />
+            <span style={{ color: "var(--color-primary)" }}>{tr.heroTitleAccent || aboutData.heroTitleAccent || "expired code."}</span>
           </h1>
 
           <p style={{ fontSize: "clamp(15px, 2vw, 18px)", lineHeight: 1.75, color: "rgba(255,255,255,0.55)", maxWidth: "580px", margin: "0 auto 48px", fontWeight: 500 }}>
-            {aboutData.heroDescription || "Couponchy was built out of frustration. Every other coupon site was full of dead links and fake discounts. We built the infrastructure to verify every code — automatically, in real time, at scale."}
+            {tr.heroDescription || aboutData.heroDescription || "Couponchy was built out of frustration. Every other coupon site was full of dead links and fake discounts. We built the infrastructure to verify every code — automatically, in real time, at scale."}
           </p>
 
           <div style={{ display: "flex", gap: "16px", justifyContent: "center", flexWrap: "wrap" }}>
@@ -154,13 +172,13 @@ export default function AboutPage({ totalStores = 0, totalOffers = 0, company = 
               style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: "var(--color-primary)", color: "#000", fontWeight: 800, fontSize: "14px", padding: "14px 28px", borderRadius: "14px", textDecoration: "none", transition: "all 0.2s", boxShadow: "0 0 24px rgba(139,92,246,0.35)" }}
               onMouseEnter={e => { e.currentTarget.style.background = "var(--color-primary-hover)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "var(--color-primary)"; e.currentTarget.style.transform = "translateY(0)"; }}>
-              Browse Stores →
+              {tr.browseStoresButton || "Browse Stores →"}
             </Link>
             <Link href="/contact"
               style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff", fontWeight: 700, fontSize: "14px", padding: "14px 28px", borderRadius: "14px", textDecoration: "none", transition: "all 0.2s" }}
               onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.transform = "translateY(0)"; }}>
-              Contact Us
+              {tr.contactUsButton || "Contact Us"}
             </Link>
           </div>
         </div>
@@ -186,16 +204,16 @@ export default function AboutPage({ totalStores = 0, totalOffers = 0, company = 
         <div style={{ display: "grid", gap: "60px", alignItems: "center" }} className="about-mission-grid">
           <div>
             <div style={{ fontSize: "11px", fontWeight: 800, letterSpacing: "0.2em", textTransform: "uppercase", color: "var(--color-primary)", marginBottom: "20px", display: "flex", alignItems: "center", gap: "10px" }}>
-              <span style={{ height: "2px", width: "24px", background: "var(--color-primary)", display: "inline-block" }} /> Our Mission
+              <span style={{ height: "2px", width: "24px", background: "var(--color-primary)", display: "inline-block" }} /> {tr.missionLabel || "Our Mission"}
             </div>
             <blockquote style={{ fontSize: "clamp(26px, 4vw, 40px)", fontWeight: 900, lineHeight: 1.2, letterSpacing: "-0.03em", margin: 0, marginBottom: "28px" }}>
-              "{aboutData.missionQuote || "Nobody should waste money on a coupon that doesn't work."}"
+              "{tr.missionQuote || aboutData.missionQuote || "Nobody should waste money on a coupon that doesn't work."}"
             </blockquote>
             <p style={{ fontSize: "16px", lineHeight: 1.8, color: "rgba(255,255,255,0.5)", fontWeight: 500 }}>
-              {aboutData.missionParagraph1 || "We started Couponchy because we kept getting burned — coupon code after coupon code failing at checkout. The problem wasn't a lack of deals. The problem was a lack of honesty."}
+              {tr.missionParagraph1 || aboutData.missionParagraph1 || "We started Couponchy because we kept getting burned — coupon code after coupon code failing at checkout. The problem wasn't a lack of deals. The problem was a lack of honesty."}
             </p>
             <p style={{ fontSize: "16px", lineHeight: 1.8, color: "rgba(255,255,255,0.5)", fontWeight: 500, marginTop: "16px" }}>
-              {aboutData.missionParagraph2 || "So we built a real-time verification engine. Not just a database of codes — an automated system that actually tests them, removes the dead ones, and surfaces the ones that genuinely save you money."}
+              {tr.missionParagraph2 || aboutData.missionParagraph2 || "So we built a real-time verification engine. Not just a database of codes — an automated system that actually tests them, removes the dead ones, and surfaces the ones that genuinely save you money."}
             </p>
           </div>
 
@@ -204,16 +222,16 @@ export default function AboutPage({ totalStores = 0, totalOffers = 0, company = 
               <div style={{ position: "absolute", top: -30, right: -30, width: "200px", height: "200px", background: "radial-gradient(circle, rgba(139,92,246,0.2) 0%, transparent 70%)", pointerEvents: "none" }} />
               <div style={{ fontSize: "56px", marginBottom: "16px" }}>🎯</div>
               <h3 style={{ fontSize: "22px", fontWeight: 900, margin: "0 0 12px" }}>
-                {aboutData.promiseTitle || "The Promise"}
+                {tr.promiseTitle || aboutData.promiseTitle || "The Promise"}
               </h3>
               <p style={{ fontSize: "15px", color: "rgba(255,255,255,0.55)", lineHeight: 1.7, fontWeight: 500, margin: 0 }}>
-                {aboutData.promiseDescription || "Every coupon you see on Couponchy has been verified by our automated system. If it stopped working — it's already gone."}
+                {tr.promiseDescription || aboutData.promiseDescription || "Every coupon you see on Couponchy has been verified by our automated system. If it stopped working — it's already gone."}
               </p>
               <div style={{ marginTop: "32px", display: "flex", flexDirection: "column", gap: "14px" }}>
                 {[
-                  aboutData.promiseBullet1 || "Real-time code verification",
-                  aboutData.promiseBullet2 || "Auto-removal of expired deals",
-                  aboutData.promiseBullet3 || "Zero fake or misleading discounts"
+                  tr.promiseBullet1 || aboutData.promiseBullet1 || "Real-time code verification",
+                  tr.promiseBullet2 || aboutData.promiseBullet2 || "Auto-removal of expired deals",
+                  tr.promiseBullet3 || aboutData.promiseBullet3 || "Zero fake or misleading discounts"
                 ].map((item) => (
                   <div key={item} style={{ display: "flex", alignItems: "center", gap: "12px", fontSize: "14px", fontWeight: 600, color: "rgba(255,255,255,0.7)" }}>
                     <span style={{ width: "20px", height: "20px", borderRadius: "50%", background: "rgba(139,92,246,0.15)", border: "1px solid rgba(139,92,246,0.3)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: "var(--color-primary)", fontSize: "11px", fontWeight: 900 }}>✓</span>
@@ -230,15 +248,15 @@ export default function AboutPage({ totalStores = 0, totalOffers = 0, company = 
       <section style={{ padding: "0 24px 120px", maxWidth: "1240px", margin: "0 auto" }}>
         <div style={{ textAlign: "center", marginBottom: "64px" }}>
           <div style={{ fontSize: "11px", fontWeight: 800, letterSpacing: "0.2em", textTransform: "uppercase", color: "var(--color-primary)", marginBottom: "16px", display: "flex", alignItems: "center", gap: "10px", justifyContent: "center" }}>
-            <span style={{ height: "2px", width: "24px", background: "var(--color-primary)", display: "inline-block" }} /> How It Works
+            <span style={{ height: "2px", width: "24px", background: "var(--color-primary)", display: "inline-block" }} /> {tr.howItWorksLabel || "How It Works"}
           </div>
           <h2 style={{ fontSize: "clamp(32px, 4vw, 52px)", fontWeight: 900, letterSpacing: "-0.03em", margin: 0 }}>
-            From raw code to<br /><span style={{ color: "var(--color-primary)" }}>verified savings</span>
+            {tr.howItWorksTitleLine1 || "From raw code to"}<br /><span style={{ color: "var(--color-primary)" }}>{tr.howItWorksTitleAccent || "verified savings"}</span>
           </h2>
         </div>
 
         <div style={{ display: "grid", gap: "20px" }} className="about-steps-grid">
-          {STEPS.map((step, i) => {
+          {STEPS_T.map((step, i) => {
             const isHovered = hoveredStep === i;
             return (
               <div key={step.num}
@@ -260,14 +278,14 @@ export default function AboutPage({ totalStores = 0, totalOffers = 0, company = 
       <section style={{ padding: "0 24px 120px", maxWidth: "1240px", margin: "0 auto" }}>
         <div style={{ textAlign: "center", marginBottom: "64px" }}>
           <div style={{ fontSize: "11px", fontWeight: 800, letterSpacing: "0.2em", textTransform: "uppercase", color: "var(--color-primary)", marginBottom: "16px", display: "flex", alignItems: "center", gap: "10px", justifyContent: "center" }}>
-            <span style={{ height: "2px", width: "24px", background: "var(--color-primary)", display: "inline-block" }} /> What We Stand For
+            <span style={{ height: "2px", width: "24px", background: "var(--color-primary)", display: "inline-block" }} /> {tr.valuesLabel || "What We Stand For"}
           </div>
           <h2 style={{ fontSize: "clamp(32px, 4vw, 52px)", fontWeight: 900, letterSpacing: "-0.03em", margin: 0 }}>
-            Our <span style={{ color: "var(--color-primary)" }}>core values</span>
+            {tr.valuesTitleLine1 || "Our"} <span style={{ color: "var(--color-primary)" }}>{tr.valuesTitleAccent || "core values"}</span>
           </h2>
         </div>
         <div style={{ display: "grid", gap: "20px" }} className="about-values-grid">
-          {VALUES.map((v, i) => {
+          {VALUES_T.map((v, i) => {
             const isHovered = hoveredVal === i;
             return (
               <div key={v.title}
@@ -291,19 +309,19 @@ export default function AboutPage({ totalStores = 0, totalOffers = 0, company = 
           <div style={{ position: "absolute", top: "-60px", left: "50%", transform: "translateX(-50%)", width: "600px", height: "300px", background: "radial-gradient(ellipse, rgba(139,92,246,0.12) 0%, transparent 70%)", pointerEvents: "none" }} />
           <div style={{ position: "relative", zIndex: 1 }}>
             <div style={{ fontSize: "11px", fontWeight: 800, letterSpacing: "0.2em", textTransform: "uppercase", color: "var(--color-primary)", marginBottom: "20px" }}>
-              {aboutData.ctaEyebrow || "Start Saving Today"}
+              {tr.ctaEyebrow || aboutData.ctaEyebrow || "Start Saving Today"}
             </div>
             <h2 style={{ fontSize: "clamp(32px, 5vw, 60px)", fontWeight: 900, letterSpacing: "-0.03em", margin: "0 0 20px" }}>
-              {aboutData.ctaTitleLine1 || "Every code. Verified."}<br /><span style={{ color: "var(--color-primary)" }}>{aboutData.ctaTitleAccent || "Every time."}</span>
+              {tr.ctaTitleLine1 || aboutData.ctaTitleLine1 || "Every code. Verified."}<br /><span style={{ color: "var(--color-primary)" }}>{tr.ctaTitleAccent || aboutData.ctaTitleAccent || "Every time."}</span>
             </h2>
             <p style={{ fontSize: "17px", color: "rgba(255,255,255,0.5)", maxWidth: "500px", margin: "0 auto 40px", lineHeight: 1.7, fontWeight: 500 }}>
-              {aboutData.ctaDescription || `Browse ${formatCount(totalStores)} verified stores and start saving on every order — with codes that actually work.`}
+              {tr.ctaDescription || aboutData.ctaDescription || `Browse ${formatCount(totalStores)} verified stores and start saving on every order — with codes that actually work.`}
             </p>
             <Link href="/stores"
               style={{ display: "inline-flex", alignItems: "center", gap: "10px", background: "var(--color-primary)", color: "#000", fontWeight: 900, fontSize: "15px", padding: "16px 36px", borderRadius: "16px", textDecoration: "none", transition: "all 0.2s", boxShadow: "0 0 32px rgba(139,92,246,0.4)" }}
               onMouseEnter={e => { e.currentTarget.style.background = "var(--color-primary-hover)"; e.currentTarget.style.transform = "translateY(-2px) scale(1.02)"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "var(--color-primary)"; e.currentTarget.style.transform = "translateY(0) scale(1)"; }}>
-              Browse All Stores →
+              {tr.browseAllStoresButton || "Browse All Stores →"}
             </Link>
           </div>
         </div>

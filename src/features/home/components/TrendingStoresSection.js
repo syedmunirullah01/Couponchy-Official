@@ -17,6 +17,7 @@ export default function TrendingStoresSection({
   countryCode = DEFAULT_COUNTRY_CODE,
   initialCategories = [],
   totalStoresCount = 0,
+  t: propT,
 }) {
   const categories = initialCategories;
   const [selectedCategorySlug, setSelectedCategorySlug] = useState("popular");
@@ -24,6 +25,24 @@ export default function TrendingStoresSection({
   const [logoErrors, setLogoErrors] = useState({});
   const [isMobile, setIsMobile] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+
+  // Resolve active locale dictionary
+  const t = propT || {
+    storeDirectory: "STORE DIRECTORY",
+    everyCodeVerified: "Every code verified.",
+    browseAllStores: "Browse all stores →",
+    browseByCategory: "Browse by category →",
+    popular: "Popular",
+    verified: "Verified",
+    active: "Active",
+    verifiedCode: "verified code",
+    verifiedCodes: "verified codes",
+    health: "health",
+    noMerchants: "No merchants in this category yet",
+    selectAnotherCategory: "Select another category or view all stores above.",
+    exploreMoreStores: "Explore {count} more stores",
+    storesPlural: "stores",
+  };
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -50,6 +69,13 @@ export default function TrendingStoresSection({
   const limit = isMobile && !isExpanded ? MOBILE_INITIAL : filtered.length;
   const visibleFiltered = filtered.slice(0, limit);
   const remainingCount = filtered.length - MOBILE_INITIAL;
+
+  // Build localized stores count text
+  const storesWord = t.storesPlural || "stores";
+  const verifiedWord = t.everyCodeVerified || "Every code verified.";
+  const storesCountText = totalStoresCount > 0
+    ? `${totalStoresCount.toLocaleString()}+ ${storesWord}.`
+    : `612,473+ ${storesWord}.`;
 
   return (
     <section style={{ position: "relative", width: "100%", paddingTop: "8px" }}>
@@ -79,7 +105,7 @@ export default function TrendingStoresSection({
               marginBottom: "12px",
             }}
           >
-            <span style={{ color: "var(--color-primary)", textShadow: "0 0 10px rgba(139, 92, 246,0.4)" }}>♦</span> STORE DIRECTORY
+            <span style={{ color: "var(--color-primary)", textShadow: "0 0 10px rgba(139, 92, 246,0.4)" }}>♦</span> {t.storeDirectory}
           </div>
           {/* Main heading */}
           <h2
@@ -92,9 +118,7 @@ export default function TrendingStoresSection({
               margin: 0,
             }}
           >
-            {totalStoresCount > 0
-              ? `${totalStoresCount.toLocaleString()}+ stores.`
-              : "612,473+ stores."}<br />Every code verified.
+            {storesCountText}<br />{verifiedWord}
           </h2>
         </div>
 
@@ -112,7 +136,7 @@ export default function TrendingStoresSection({
             onMouseEnter={(e) => e.currentTarget.style.opacity = 0.8}
             onMouseLeave={(e) => e.currentTarget.style.opacity = 1}
           >
-            Browse all stores →
+            {t.browseAllStores}
           </Link>
           <Link
             href={buildCountryPath("/categories", countryCode)}
@@ -126,7 +150,7 @@ export default function TrendingStoresSection({
             onMouseEnter={(e) => e.currentTarget.style.opacity = 0.8}
             onMouseLeave={(e) => e.currentTarget.style.opacity = 1}
           >
-            Browse by category →
+            {t.browseByCategory}
           </Link>
         </div>
       </div>
@@ -162,7 +186,7 @@ export default function TrendingStoresSection({
           }}
           className={selectedCategorySlug !== "popular" ? "category-tab-btn" : ""}
         >
-          Popular
+          {t.popular}
         </button>
         {categories.map((cat) => {
           const isActive = selectedCategorySlug === cat.slug;
@@ -206,6 +230,13 @@ export default function TrendingStoresSection({
           const hasLogoError = logoErrors[store.slug];
           const showImage = store.logoImage && !hasLogoError;
           const healthPercent = getStoreHealth(store);
+
+          // Localize trust status text
+          const localizedTrustStatus = store.trustStatus === "Verified"
+            ? t.verified
+            : store.trustStatus === "Active"
+              ? t.active
+              : store.trustStatus;
 
           return (
             <Link
@@ -258,7 +289,7 @@ export default function TrendingStoresSection({
                       : "1px solid rgba(255, 255, 255, 0.08)",
                   }}
                 >
-                  {store.trustStatus}
+                  {localizedTrustStatus}
                 </span>
               )}
               {/* Top row with logo & name */}
@@ -347,7 +378,9 @@ export default function TrendingStoresSection({
                     animation: "pulse 2s infinite",
                   }}
                 />
-                <span>{store.offersCount || 0} verified {store.offersCount === 1 ? "code" : "codes"}</span>
+                <span>
+                  {store.offersCount || 0} {store.offersCount === 1 ? t.verifiedCode : t.verifiedCodes}
+                </span>
               </div>
 
               {/* Progress Health bar */}
@@ -386,7 +419,7 @@ export default function TrendingStoresSection({
                   transition: "color 0.3s ease",
                 }}
               >
-                {healthPercent}% health
+                {healthPercent}% {t.health}
               </div>
             </Link>
           );
@@ -404,10 +437,10 @@ export default function TrendingStoresSection({
             }}
           >
             <p style={{ color: "rgba(255, 255, 255, 0.6)", fontSize: "15px", fontWeight: 600, margin: 0 }}>
-              No merchants in this category yet
+              {t.noMerchants}
             </p>
             <p style={{ color: "var(--color-muted)", fontSize: "13px", marginTop: "6px", margin: 0 }}>
-              Select another category or view all stores above.
+              {t.selectAnotherCategory}
             </p>
           </div>
         )}
@@ -432,7 +465,7 @@ export default function TrendingStoresSection({
             }}
             className="explore-more-btn"
           >
-            Explore {remainingCount} more stores
+            {t.exploreMoreStores.replace("{count}", remainingCount)}
           </button>
         </div>
       )}

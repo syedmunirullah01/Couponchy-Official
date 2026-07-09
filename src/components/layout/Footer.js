@@ -3,6 +3,7 @@ import { getPublicSiteSettings } from "@/server/services/settings-service";
 import { resolveRequestCountryCode } from "@/server/resolve-request-country";
 import { buildCountryPath } from "@/lib/countries";
 import { getAllStores } from "@/server/repositories/stores-repository";
+import { COUNTRY_TO_LANG, getTranslatedFooter } from "@/server/services/translation-service";
 import NewsletterForm from "./NewsletterForm";
 
 const topCategories = ["Fashion", "Food", "Footwear", "Travel", "Beauty", "Furniture", "Home & Garden", "E-Bike"];
@@ -101,6 +102,22 @@ function YouTubeIcon() {
   );
 }
 
+function DiscordIcon() {
+  return (
+    <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.873-.894.077.077 0 0 1-.008-.128c.126-.093.252-.19.372-.287a.075.075 0 0 1 .077-.011c3.92 1.793 8.18 1.793 12.061 0a.073.073 0 0 1 .078.009c.12.099.246.195.373.289a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.894.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.156-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.156 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.156-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.156 2.418z" />
+    </svg>
+  );
+}
+
+function PinterestIcon() {
+  return (
+    <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path fillRule="evenodd" d="M12.002 2C6.479 2 2 6.479 2 12.002c0 4.232 2.628 7.842 6.338 9.39-.086-.79-.163-2.003.034-2.868.178-.78.147-3.376.147-3.376s-.29-.58-.29-1.439c0-1.348.782-2.355 1.756-2.355.828 0 1.228.621 1.228 1.366 0 .832-.53 2.077-.803 3.23-.229.967.487 1.756 1.44 1.756 1.729 0 3.058-1.822 3.058-4.453 0-2.328-1.673-3.956-4.062-3.956-2.768 0-4.393 2.077-4.393 4.223 0 .836.322 1.733.724 2.221.08.097.09.183.067.28-.073.305-.236.962-.268 1.097-.043.178-.141.216-.327.13-1.228-.57-1.996-2.362-1.996-3.8 0-3.097 2.25-5.942 6.488-5.942 3.407 0 6.054 2.428 6.054 5.672 0 3.385-2.134 6.108-5.097 6.108-.996 0-1.933-.518-2.253-1.13l-.613 2.333c-.221.85-.82 1.916-1.222 2.572 1.127.348 2.32.535 3.559.535 5.523 0 10-4.477 10-12.002C22.002 6.479 17.525 2 12.002 2z" clipRule="evenodd" />
+    </svg>
+  );
+}
+
 const verifyItems = [
   {
     title: "Automatic Discovery",
@@ -185,7 +202,44 @@ export default async function Footer() {
     { label: "X (twitter)", href: getSocialHref("X", settings.social?.x), icon: <XIcon /> },
     { label: "Tiktok", href: getSocialHref("TikTok", settings.social?.tiktok), icon: <TikTokIcon /> },
     { label: "Youtube", href: getSocialHref("YouTube", settings.social?.youtube), icon: <YouTubeIcon /> },
+    { label: "Discord", href: getSocialHref("Discord", settings.social?.discord), icon: <DiscordIcon /> },
+    { label: "Pinterest", href: getSocialHref("Pinterest", settings.social?.pinterest), icon: <PinterestIcon /> },
   ];
+
+  const lang = COUNTRY_TO_LANG[activeCountry] || "en";
+  const t = await getTranslatedFooter(lang);
+
+  const localVerifyItems = [
+    { title: t.verify_title_0, desc: t.verify_desc_0, icon: verifyItems[0].icon },
+    { title: t.verify_title_1, desc: t.verify_desc_1, icon: verifyItems[1].icon },
+    { title: t.verify_title_2, desc: t.verify_desc_2, icon: verifyItems[2].icon },
+    { title: t.verify_title_3, desc: t.verify_desc_3, icon: verifyItems[3].icon },
+  ];
+
+  const joinEliteText = t.joinElite || "Join The Elite";
+  const match = joinEliteText.match(/(elite|élite|elity|النخبة)/i);
+  let eliteElement;
+  if (match) {
+    const matchedWord = match[0];
+    const index = joinEliteText.indexOf(matchedWord);
+    const prefix = joinEliteText.slice(0, index);
+    const suffix = joinEliteText.slice(index + matchedWord.length);
+    eliteElement = (
+      <>
+        {prefix}
+        <span className="text-[var(--color-primary)]">{matchedWord}</span>
+        {suffix || null}
+      </>
+    );
+  } else {
+    eliteElement = (
+      <>
+        Join The <span className="text-[var(--color-primary)]">Elite</span>
+      </>
+    );
+  }
+
+
 
   return (
     <footer className="relative mt-32 overflow-hidden bg-[#030305] border-t border-white/5 pt-24 pb-12">
@@ -226,10 +280,10 @@ export default async function Footer() {
           <div className="flex flex-col gap-6">
             <h4 className="flex items-center gap-2.5 text-[11px] font-black uppercase tracking-[0.25em] text-[var(--color-primary)]">
               <span className="h-[2px] w-4 bg-[var(--color-primary)]" />
-              HOW WE VERIFY
+              {t.howWeVerify}
             </h4>
             <div className="flex flex-col gap-4">
-              {verifyItems.map((item, idx) => (
+              {localVerifyItems.map((item, idx) => (
                 <div
                   key={idx}
                   className="group/card flex items-start gap-4 rounded-2xl border border-white/5 bg-[#09090c]/90 p-4 transition-all duration-300 hover:border-[var(--color-primary)]/20 hover:bg-white/[0.02]"
@@ -254,7 +308,7 @@ export default async function Footer() {
           <div className="flex flex-col gap-6 sm:pl-4">
             <h4 className="flex items-center gap-2.5 text-[11px] font-black uppercase tracking-[0.25em] text-[var(--color-primary)]">
               <span className="h-[2px] w-4 bg-[var(--color-primary)]" />
-              TOP STORES
+              {t.topStores}
             </h4>
             <nav className="flex flex-col gap-4">
               {storesList.map((store) => (
@@ -274,7 +328,7 @@ export default async function Footer() {
           <div className="flex flex-col gap-6 sm:pl-4">
             <h4 className="flex items-center gap-2.5 text-[11px] font-black uppercase tracking-[0.25em] text-[var(--color-primary)]">
               <span className="h-[2px] w-4 bg-[var(--color-primary)]" />
-              COMPANY
+              {t.company}
             </h4>
             <nav className="flex flex-col gap-4">
               {usefulLinks.map((link) => (
@@ -284,7 +338,7 @@ export default async function Footer() {
                   className="group flex items-center gap-1.5 text-sm font-bold text-white/50 transition-colors hover:text-white/90"
                 >
                   <span className="text-[var(--color-primary)] text-[10px] select-none transition-transform duration-300 group-hover:scale-125 mr-1">♦</span>
-                  {link}
+                  {t[link] || link}
                 </Link>
               ))}
             </nav>
@@ -294,14 +348,14 @@ export default async function Footer() {
           <div className="flex flex-col gap-6">
             <h4 className="flex items-center gap-2.5 text-[11px] font-black uppercase tracking-[0.25em] text-[var(--color-primary)]">
               <span className="h-[2px] w-4 bg-[var(--color-primary)]" />
-              STAY IN THE LOOP
+              {t.stayInLoop}
             </h4>
             <div className="rounded-[28px] border border-[var(--color-primary)]/10 bg-[#09090c] p-8">
               <h3 className="text-[22px] font-bold tracking-tight text-white/90">
-                Join The <span className="text-[var(--color-primary)]">Elite</span>
+                {eliteElement}
               </h3>
               <p className="mt-4 text-[13px] leading-[1.6] text-white/45 font-medium">
-                Subscribe For Updates, Featured Drops, And Store Highlights. Never Miss A Deal.
+                {t.subscribeDesc}
               </p>
               <NewsletterForm />
             </div>
@@ -314,10 +368,10 @@ export default async function Footer() {
           <div className="flex items-center text-[var(--color-primary)] font-black">
             <ShieldIcon />
             <span className="text-white/50 cursor-default hover:text-white transition-colors">
-              All Coupons Verified By Our Automated System
+              {t.allVerified}
             </span>
           </div>
-          <p className="text-white/40">{`© 2026 ${settings.siteName || "Couponchy"}. All Rights Reserved.`}</p>
+          <p className="text-white/40">{`© 2026 ${settings.siteName || "Couponchy"}. ${t.allRightsReserved}`}</p>
           <p className="text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] transition-colors">
             <a href={`mailto:${settings.supportEmail || "contact@couponchy.com"}`}>
               {settings.supportEmail || "Contact@couponchy.com"}

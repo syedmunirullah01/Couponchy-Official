@@ -3,27 +3,30 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 
-// ─── FAQ Items ────────────────────────────────────────────────────────────────
-const FAQS = [
-  {
-    question: "How do I submit a new coupon code?",
-    answer: "You can submit a coupon directly using this contact form! Just select 'Submit a Coupon' as the subject, fill in the store name and the code details in the message, and our automated validation agents will verify and list it within a few hours.",
-  },
-  {
-    question: "Are all coupon codes on Couponchy free to use?",
-    answer: "Absolutely! Couponchy is 100% free for everyone. We do not require any registration, sign-ups, or subscriptions. Just copy the code and save instantly at checkout.",
-  },
-  {
-    question: "How does the automated verification system work?",
-    answer: "We deploy headless Playwright browser agents that automatically simulate checkouts for each merchant. If a coupon successfully reduces the price in our test environment, it is marked as verified and prioritized in our lists.",
-  },
-  {
-    question: "Do you offer advertising or partnership options?",
-    answer: "Yes, we collaborate with top-tier brands and affiliate networks. If you want to promote your store or showcase a featured offer, select 'Partnership / Advertising' in the contact form, and our partnerships lead will reach out to you.",
-  },
-];
+export default function ContactPage({ settings = {}, company = null, t = null }) {
+  // Helper: returns translated string if available, else English fallback
+  const tr = (key, fallback) => (t && t[key]) ? t[key] : fallback;
 
-export default function ContactPage({ settings = {} }) {
+  // ─── Dynamic FAQ items (translated if t is available) ──────────────────────
+  const FAQS = [
+    {
+      question: tr("faq1Question", "How do I submit a new coupon code?"),
+      answer: tr("faq1Answer", "You can submit a coupon directly using this contact form! Just select 'Submit a Coupon' as the subject, fill in the store name and the code details in the message, and our automated validation agents will verify and list it within a few hours."),
+    },
+    {
+      question: tr("faq2Question", "Are all coupon codes on Couponchy free to use?"),
+      answer: tr("faq2Answer", "Absolutely! Couponchy is 100% free for everyone. We do not require any registration, sign-ups, or subscriptions. Just copy the code and save instantly at checkout."),
+    },
+    {
+      question: tr("faq3Question", "How does the automated verification system work?"),
+      answer: tr("faq3Answer", "We deploy headless Playwright browser agents that automatically simulate checkouts for each merchant. If a coupon successfully reduces the price in our test environment, it is marked as verified and prioritized in our lists."),
+    },
+    {
+      question: tr("faq4Question", "Do you offer advertising or partnership options?"),
+      answer: tr("faq4Answer", "Yes, we collaborate with top-tier brands and affiliate networks. If you want to promote your store or showcase a featured offer, select 'Partnership / Advertising' in the contact form, and our partnerships lead will reach out to you."),
+    },
+  ];
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -124,19 +127,19 @@ export default function ContactPage({ settings = {} }) {
   // Form Validation
   const validateForm = () => {
     const tempErrors = {};
-    if (!formData.name.trim()) tempErrors.name = "Name is required";
+    if (!formData.name.trim()) tempErrors.name = tr("nameRequired", "Name is required");
     if (!formData.email.trim()) {
-      tempErrors.email = "Email is required";
+      tempErrors.email = tr("emailRequired", "Email is required");
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      tempErrors.email = "Please enter a valid email address";
+      tempErrors.email = tr("emailInvalid", "Please enter a valid email address");
     }
-    if (!formData.message.trim()) tempErrors.message = "Message is required";
-    else if (formData.message.trim().length < 10) tempErrors.message = "Message must be at least 10 characters";
+    if (!formData.message.trim()) tempErrors.message = tr("messageRequired", "Message is required");
+    else if (formData.message.trim().length < 10) tempErrors.message = tr("messageTooShort", "Message must be at least 10 characters");
 
     if (!captchaInput.trim()) {
-      tempErrors.captcha = "Verification code is required";
+      tempErrors.captcha = tr("captchaRequired", "Verification code is required");
     } else if (captchaInput.trim().toLowerCase() !== captchaCode.toLowerCase()) {
-      tempErrors.captcha = "Incorrect verification code";
+      tempErrors.captcha = tr("captchaIncorrect", "Incorrect verification code");
       generateCaptcha();
     }
 
@@ -169,17 +172,25 @@ export default function ContactPage({ settings = {} }) {
         generateCaptcha();
       } else {
         const data = await res.json();
-        setErrors({ submit: data.error || "Failed to submit message." });
+        setErrors({ submit: data.error || tr("submitError", "Failed to submit message.") });
       }
     } catch (err) {
       console.error("Submission error:", err);
-      setErrors({ submit: "Something went wrong. Please try again." });
+      setErrors({ submit: tr("submitError", "Something went wrong. Please try again.") });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const supportEmail = settings.supportEmail || "contact@couponchy.com";
+  const supportEmail = settings.supportEmail || company?.contactUs?.email || "contact@couponchy.com";
+
+  // Subject chips with translated labels
+  const subjectChips = [
+    { id: "support", label: tr("subjectSupport", "Support") },
+    { id: "coupon", label: tr("subjectCoupon", "Submit a Coupon") },
+    { id: "partnership", label: tr("subjectPartnership", "Partnership") },
+    { id: "other", label: tr("subjectOther", "Other") },
+  ];
 
   return (
     <div style={{ color: "#fff", fontFamily: "inherit", overflow: "hidden" }}>
@@ -195,13 +206,15 @@ export default function ContactPage({ settings = {} }) {
         <div style={{ textAlign: "center", marginBottom: "72px" }}>
           <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: "rgba(139,92,246,0.08)", border: "1px solid rgba(139,92,246,0.2)", borderRadius: "999px", padding: "6px 18px", marginBottom: "24px" }}>
             <span style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--color-primary)", boxShadow: "0 0 10px var(--color-primary)", display: "inline-block" }} />
-            <span style={{ fontSize: "11px", fontWeight: 800, letterSpacing: "0.2em", textTransform: "uppercase", color: "var(--color-primary)" }}>Get In Touch</span>
+            <span style={{ fontSize: "11px", fontWeight: 800, letterSpacing: "0.2em", textTransform: "uppercase", color: "var(--color-primary)" }}>
+              {tr("getInTouchBadge", "Get In Touch")}
+            </span>
           </div>
           <h1 style={{ fontSize: "clamp(38px, 5vw, 64px)", fontWeight: 900, lineHeight: 0.95, letterSpacing: "-0.04em", margin: "0 0 20px" }}>
-            Connect with <span style={{ color: "var(--color-primary)" }}>Couponchy</span>
+            {tr("headerTitle", "Connect with")} <span style={{ color: "var(--color-primary)" }}>Couponchy</span>
           </h1>
           <p style={{ fontSize: "16px", color: "rgba(255,255,255,0.5)", maxWidth: "520px", margin: "0 auto", lineHeight: 1.6, fontWeight: 500 }}>
-            Have a question, want to submit a coupon, or looking to partner? Reach out and we'll respond within 24 hours.
+            {tr("headerSubtitle", "Have a question, want to submit a coupon, or looking to partner? Reach out and we'll respond within 24 hours.")}
           </p>
         </div>
 
@@ -214,13 +227,15 @@ export default function ContactPage({ settings = {} }) {
             <div style={{ background: "rgba(15,15,20,0.6)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "24px", padding: "32px", backdropFilter: "blur(12px)", position: "relative", overflow: "hidden" }}>
               <div style={{ position: "absolute", top: -20, right: -20, width: "120px", height: "120px", background: "radial-gradient(circle, rgba(139,92,246,0.06) 0%, transparent 70%)" }} />
               <div style={{ display: "flex", gap: "20px", alignItems: "center" }}>
-                <div style={{ width: "48px", height: "48px", borderRadius: "14px", background: "rgba(139,92,246,0.08)", border: "1px solid rgba(139,92,246,0.15)", display: "flex", alignItems: "center", justifyCenter: "center", justifyContent: "center", color: "var(--color-primary)" }}>
+                <div style={{ width: "48px", height: "48px", borderRadius: "14px", background: "rgba(139,92,246,0.08)", border: "1px solid rgba(139,92,246,0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--color-primary)" }}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 22, height: 22 }}>
                     <rect width="20" height="16" x="2" y="4" rx="2" /><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
                   </svg>
                 </div>
                 <div>
-                  <h3 style={{ fontSize: "14px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", margin: "0 0 4px" }}>Email Us</h3>
+                  <h3 style={{ fontSize: "14px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", margin: "0 0 4px" }}>
+                    {tr("emailUsLabel", "Email Us")}
+                  </h3>
                   <a href={`mailto:${supportEmail}`} style={{ fontSize: "18px", fontWeight: 800, color: "#fff", textDecoration: "none", transition: "color 0.2s" }} onMouseEnter={e => e.currentTarget.style.color = "var(--color-primary)"} onMouseLeave={e => e.currentTarget.style.color = "#fff"}>
                     {supportEmail}
                   </a>
@@ -238,7 +253,9 @@ export default function ContactPage({ settings = {} }) {
                   </svg>
                 </div>
                 <div>
-                  <h3 style={{ fontSize: "14px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", margin: "0 0 4px" }}>Partnerships</h3>
+                  <h3 style={{ fontSize: "14px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", margin: "0 0 4px" }}>
+                    {tr("partnershipsLabel", "Partnerships")}
+                  </h3>
                   <p style={{ fontSize: "16px", fontWeight: 700, margin: 0, color: "rgba(255,255,255,0.85)" }}>
                     partners@couponchy.com
                   </p>
@@ -248,7 +265,9 @@ export default function ContactPage({ settings = {} }) {
 
             {/* Social Channels Card */}
             <div style={{ background: "rgba(15,15,20,0.6)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "24px", padding: "32px", backdropFilter: "blur(12px)" }}>
-              <h3 style={{ fontSize: "12px", fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.15em", color: "rgba(255,255,255,0.35)", margin: "0 0 18px" }}>Follow Our Updates</h3>
+              <h3 style={{ fontSize: "12px", fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.15em", color: "rgba(255,255,255,0.35)", margin: "0 0 18px" }}>
+                {tr("followUpdatesLabel", "Follow Our Updates")}
+              </h3>
               <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
                 {["Instagram", "Facebook", "TikTok", "YouTube"].map((platform) => (
                   <Link
@@ -280,8 +299,12 @@ export default function ContactPage({ settings = {} }) {
               <div style={{ position: "relative", zIndex: 1, display: "flex", gap: "10px", alignItems: "center", background: "rgba(9,9,12,0.9)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "14px", padding: "12px 18px", width: "100%", backdropFilter: "blur(8px)" }}>
                 <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#10b981", boxShadow: "0 0 10px #10b981" }} />
                 <div>
-                  <h4 style={{ fontSize: "12px", fontWeight: 800, margin: 0 }}>Global Automated Network</h4>
-                  <p style={{ fontSize: "10px", color: "rgba(255,255,255,0.4)", margin: "2px 0 0" }}>Playwright validation running across 10 regions</p>
+                  <h4 style={{ fontSize: "12px", fontWeight: 800, margin: 0 }}>
+                    {tr("globalNetworkTitle", "Global Automated Network")}
+                  </h4>
+                  <p style={{ fontSize: "10px", color: "rgba(255,255,255,0.4)", margin: "2px 0 0" }}>
+                    {tr("globalNetworkSubtitle", "Playwright validation running across 10 regions")}
+                  </p>
                 </div>
               </div>
             </div>
@@ -298,9 +321,11 @@ export default function ContactPage({ settings = {} }) {
                     <polyline points="20 6 9 17 4 12" />
                   </svg>
                 </div>
-                <h2 style={{ fontSize: "28px", fontWeight: 900, margin: "0 0 12px", letterSpacing: "-0.02em" }}>Message Received!</h2>
+                <h2 style={{ fontSize: "28px", fontWeight: 900, margin: "0 0 12px", letterSpacing: "-0.02em" }}>
+                  {tr("successTitle", "Message Received!")}
+                </h2>
                 <p style={{ fontSize: "15px", color: "rgba(255,255,255,0.55)", lineHeight: 1.6, maxWidth: "340px", margin: "0 auto 36px", fontWeight: 500 }}>
-                  Thank you for reaching out to us. Our support crew will review your request and get back to you shortly.
+                  {tr("successSubtitle", "Thank you for reaching out to us. Our support crew will review your request and get back to you shortly.")}
                 </p>
                 <button
                   onClick={() => setIsSuccess(false)}
@@ -308,7 +333,7 @@ export default function ContactPage({ settings = {} }) {
                   onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.08)"}
                   onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.04)"}
                 >
-                  Send another message
+                  {tr("sendAnotherMessage", "Send another message")}
                 </button>
               </div>
             ) : (
@@ -318,20 +343,24 @@ export default function ContactPage({ settings = {} }) {
                 {/* Row: Name and Email */}
                 <div style={{ display: "grid", gap: "20px", gridTemplateColumns: "1fr" }} className="form-row-2col">
                   <div>
-                    <label style={{ display: "block", fontSize: "11px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.5)", marginBottom: "8px" }}>Your Name</label>
+                    <label style={{ display: "block", fontSize: "11px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.5)", marginBottom: "8px" }}>
+                      {tr("yourNameLabel", "Your Name")}
+                    </label>
                     <input
                       type="text"
                       name="name"
                       value={formData.name}
                       onChange={handleChange}
                       placeholder="Alex Mercer"
-                      style={{ width: "100%", height: "50px", background: "rgba(5,5,7,0.8)", border: errors.name ? "1px solid #ef4444" : "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", px: "16px", paddingLeft: "16px", paddingRight: "16px", color: "#fff", fontSize: "14px", outline: "none", transition: "all 0.2s" }}
+                      style={{ width: "100%", height: "50px", background: "rgba(5,5,7,0.8)", border: errors.name ? "1px solid #ef4444" : "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", paddingLeft: "16px", paddingRight: "16px", color: "#fff", fontSize: "14px", outline: "none", transition: "all 0.2s" }}
                       className="focus:border-[var(--color-primary)]/40 focus:ring-2 focus:ring-[rgba(139,92,246,0.1)]"
                     />
                     {errors.name && <span style={{ fontSize: "12px", color: "#ef4444", fontWeight: 700, marginTop: "4px", display: "block" }}>{errors.name}</span>}
                   </div>
                   <div>
-                    <label style={{ display: "block", fontSize: "11px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.5)", marginBottom: "8px" }}>Email Address</label>
+                    <label style={{ display: "block", fontSize: "11px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.5)", marginBottom: "8px" }}>
+                      {tr("emailAddressLabel", "Email Address")}
+                    </label>
                     <input
                       type="email"
                       name="email"
@@ -347,14 +376,11 @@ export default function ContactPage({ settings = {} }) {
 
                 {/* Subject Selector Chips */}
                 <div>
-                  <label style={{ display: "block", fontSize: "11px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.5)", marginBottom: "12px" }}>Subject</label>
+                  <label style={{ display: "block", fontSize: "11px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.5)", marginBottom: "12px" }}>
+                    {tr("subjectLabel", "Subject")}
+                  </label>
                   <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-                    {[
-                      { id: "support", label: "Support" },
-                      { id: "coupon", label: "Submit a Coupon" },
-                      { id: "partnership", label: "Partnership" },
-                      { id: "other", label: "Other" },
-                    ].map((subject) => {
+                    {subjectChips.map((subject) => {
                       const isSelected = formData.subject === subject.id;
                       return (
                         <button
@@ -394,13 +420,15 @@ export default function ContactPage({ settings = {} }) {
 
                 {/* Message Box */}
                 <div>
-                  <label style={{ display: "block", fontSize: "11px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.5)", marginBottom: "8px" }}>Message</label>
+                  <label style={{ display: "block", fontSize: "11px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.5)", marginBottom: "8px" }}>
+                    {tr("messageLabel", "Message")}
+                  </label>
                   <textarea
                     name="message"
                     value={formData.message}
                     onChange={handleChange}
                     rows="6"
-                    placeholder="Describe your request in detail..."
+                    placeholder={tr("messagePlaceholder", "Describe your request in detail...")}
                     style={{ width: "100%", background: "rgba(5,5,7,0.8)", border: errors.message ? "1px solid #ef4444" : "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", padding: "16px", color: "#fff", fontSize: "14px", outline: "none", transition: "all 0.2s", resize: "vertical", fontFamily: "inherit" }}
                     className="focus:border-[var(--color-primary)]/40 focus:ring-2 focus:ring-[rgba(139,92,246,0.1)]"
                   />
@@ -410,7 +438,7 @@ export default function ContactPage({ settings = {} }) {
                 {/* Graphical Captcha Verification */}
                 <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                   <label style={{ display: "block", fontSize: "11px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.5)" }}>
-                    Security Verification
+                    {tr("securityVerificationLabel", "Security Verification")}
                   </label>
                   
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "16px", alignItems: "center" }}>
@@ -425,7 +453,7 @@ export default function ContactPage({ settings = {} }) {
                         type="button"
                         onClick={generateCaptcha}
                         title="Get a new code"
-                        style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "10px", width: "38px", height: "38px", display: "flex", alignItems: "center", justifyCenter: "center", justifyContent: "center", cursor: "pointer", color: "var(--color-primary)", transition: "all 0.2s" }}
+                        style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "10px", width: "38px", height: "38px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--color-primary)", transition: "all 0.2s" }}
                         onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.06)"}
                         onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.03)"}
                       >
@@ -446,7 +474,7 @@ export default function ContactPage({ settings = {} }) {
                             setErrors((prev) => ({ ...prev, captcha: "" }));
                           }
                         }}
-                        placeholder="Enter code"
+                        placeholder={tr("captchaPlaceholder", "Enter code")}
                         style={{ width: "100%", height: "46px", background: "rgba(5,5,7,0.8)", border: errors.captcha ? "1px solid #ef4444" : "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", paddingLeft: "16px", paddingRight: "16px", color: "#fff", fontSize: "14px", outline: "none", transition: "all 0.2s" }}
                         className="focus:border-[var(--color-primary)]/40 focus:ring-2 focus:ring-[rgba(139,92,246,0.1)]"
                       />
@@ -474,7 +502,7 @@ export default function ContactPage({ settings = {} }) {
                 >
                   <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/35 to-transparent transition-transform duration-1000 group-hover/btn:translate-x-full" />
                   <span className="relative z-10 flex items-center gap-2">
-                    {isSubmitting ? "Processing..." : "Send Message →"}
+                    {isSubmitting ? tr("processing", "Processing...") : tr("sendMessage", "Send Message →")}
                   </span>
                 </button>
               </form>
@@ -485,8 +513,12 @@ export default function ContactPage({ settings = {} }) {
         {/* ── FAQ SECTION ────────────────────────────────────────────── */}
         <div style={{ borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: "80px" }}>
           <div style={{ textAlign: "center", marginBottom: "48px" }}>
-            <h2 style={{ fontSize: "36px", fontWeight: 900, letterSpacing: "-0.03em", margin: "0 0 10px" }}>Frequently Asked Questions</h2>
-            <p style={{ fontSize: "15px", color: "rgba(255,255,255,0.45)" }}>Quick answers to general inquiries about submissions, ads, and support.</p>
+            <h2 style={{ fontSize: "36px", fontWeight: 900, letterSpacing: "-0.03em", margin: "0 0 10px" }}>
+              {tr("faqTitle", "Frequently Asked Questions")}
+            </h2>
+            <p style={{ fontSize: "15px", color: "rgba(255,255,255,0.45)" }}>
+              {tr("faqSubtitle", "Quick answers to general inquiries about submissions, ads, and support.")}
+            </p>
           </div>
 
           <div style={{ maxWidth: "800px", margin: "0 auto", display: "flex", flexDirection: "column", gap: "16px" }}>

@@ -46,6 +46,7 @@ async function normalizeProduct(input) {
     image: input.image?.trim() || "",
     price: normalizePrice(input.price),
     originalPrice: input.originalPrice === "" || input.originalPrice == null ? null : normalizePrice(input.originalPrice),
+    currency: input.currency?.trim() || "$",
     ctaLabel: input.ctaLabel?.trim() || "View Product",
     productUrl: input.productUrl?.trim() || defaultUrl,
     status: input.status?.trim() || "Active",

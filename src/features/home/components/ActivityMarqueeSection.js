@@ -7,7 +7,24 @@ const statusToneClasses = {
   muted: "bg-[var(--muted)]",
 };
 
-function ActivityMarqueeTrack({ items }) {
+function ActivityMarqueeTrack({ items, t }) {
+  const getActionText = (action) => {
+    if (action === "Code verified") return t.codeVerified || action;
+    if (action === "Code submitted") return t.codeSubmitted || action;
+    if (action === "Deal activated") return t.dealActivated || action;
+    if (action === "Coupon updated") return t.couponUpdated || action;
+    return action;
+  };
+
+  const getStatusText = (statusLabel) => {
+    if (statusLabel === "Verified") return t.verified || statusLabel;
+    if (statusLabel === "New code") return t.newCode || statusLabel;
+    if (statusLabel === "Pending review") return t.pendingReview || statusLabel;
+    if (statusLabel === "Live deal") return t.liveDeal || statusLabel;
+    if (statusLabel === "Fresh update") return t.freshUpdate || statusLabel;
+    return statusLabel;
+  };
+
   return (
     <div className="flex min-w-max shrink-0 animate-[activityMarquee_28s_linear_infinite] items-center">
       {items.map((item, index) => (
@@ -16,7 +33,7 @@ function ActivityMarqueeTrack({ items }) {
           className="flex items-center gap-4 border-r border-[var(--border)] px-8 py-5 text-[13px] uppercase tracking-[0.16em] text-[var(--muted)]"
         >
           <span className="font-bold text-[var(--text)]">[{item.store}]</span>
-          <span>{item.action}:</span>
+          <span>{getActionText(item.action)}:</span>
           <span className="font-bold text-[var(--text)]">{item.code}</span>
           <span className="flex items-center gap-2 font-bold">
             <span className={cn("h-2 w-2 rounded-full", statusToneClasses[item.statusTone])} />
@@ -27,7 +44,7 @@ function ActivityMarqueeTrack({ items }) {
                 item.statusTone === "muted" && "text-[var(--muted)]"
               )}
             >
-              {item.statusLabel}
+              {getStatusText(item.statusLabel)}
             </span>
           </span>
           <span>{item.actor}</span>
@@ -37,8 +54,20 @@ function ActivityMarqueeTrack({ items }) {
   );
 }
 
-export default function ActivityMarqueeSection() {
+export default function ActivityMarqueeSection({ t: propT }) {
   const marqueeItems = [...activityMarqueeItems, ...activityMarqueeItems];
+
+  const t = propT || {
+    codeVerified: "Code verified",
+    codeSubmitted: "Code submitted",
+    dealActivated: "Deal activated",
+    couponUpdated: "Coupon updated",
+    verified: "Verified",
+    newCode: "New code",
+    pendingReview: "Pending review",
+    liveDeal: "Live deal",
+    freshUpdate: "Fresh update",
+  };
 
   return (
     <section className="overflow-hidden border-y border-[var(--border)] bg-[var(--surface)]/72">
@@ -47,8 +76,8 @@ export default function ActivityMarqueeSection() {
         <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-20 bg-[linear-gradient(270deg,var(--page-bg),transparent)]" />
 
         <div className="flex overflow-hidden">
-          <ActivityMarqueeTrack items={marqueeItems} />
-          <ActivityMarqueeTrack items={marqueeItems} />
+          <ActivityMarqueeTrack items={marqueeItems} t={t} />
+          <ActivityMarqueeTrack items={marqueeItems} t={t} />
         </div>
       </div>
     </section>

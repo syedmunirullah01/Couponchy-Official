@@ -4,6 +4,7 @@ import { getStoreBySlug, syncStoreOfferCount } from "@/server/repositories/store
 import { validateOfferPayload } from "@/lib/validators";
 import { requirePermission } from "@/server/auth";
 import { revalidatePath } from "next/cache";
+import { translateOfferOnSave } from "@/server/services/translation-service";
 
 export async function GET(_request, { params }) {
   const { id } = await params;
@@ -54,12 +55,16 @@ export async function PUT(request, { params }) {
       await syncStoreOfferCount(existingOffer.storeSlug, previousStoreCount);
     }
 
+    translateOfferOnSave(offer).catch((err) =>
+      console.error("[PUT /api/offers/[id]] Auto translation failed:", err)
+    );
     revalidatePath("/", "layout");
     return NextResponse.json({ data: offer });
   } catch (error) {
     return NextResponse.json({ error: error.message || "Unable to update offer." }, { status: 400 });
   }
 }
+
 
 export async function DELETE(_request, { params }) {
   const access = await requirePermission("offers");

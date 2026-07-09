@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requirePermission } from "@/server/auth";
 import { createEvent, getAllEvents } from "@/server/repositories/events-repository";
 import { validateEventPayload } from "@/lib/validators";
+import { translateEventOnSave } from "@/server/services/translation-service";
 
 export async function GET() {
   const access = await requirePermission("events");
@@ -28,8 +29,12 @@ export async function POST(request) {
     }
 
     const event = await createEvent(payload);
+    translateEventOnSave(event).catch((err) =>
+      console.error("[POST /api/events] Auto translation failed:", err)
+    );
     return NextResponse.json({ data: event }, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: error.message || "Unable to create event." }, { status: 400 });
   }
 }
+

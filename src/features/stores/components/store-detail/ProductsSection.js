@@ -30,9 +30,9 @@ export default function ProductsSection({ products }) {
                 <p className="text-sm leading-6 text-[var(--muted)]">{product.description}</p>
               </div>
               <div className="flex items-end gap-3">
-                <span className="text-xl font-black text-[var(--text)]">${product.price}</span>
+                <span className="text-xl font-black text-[var(--text)]">{product.currency || "$"}{product.price}</span>
                 {product.originalPrice ? (
-                  <span className="text-sm text-[var(--muted)] line-through">${product.originalPrice}</span>
+                  <span className="text-sm text-[var(--muted)] line-through">{product.currency || "$"}{product.originalPrice}</span>
                 ) : null}
               </div>
               <Button asChild variant="outline" className="w-full rounded-lg">

@@ -81,7 +81,54 @@ const getSeededStats = (offerId, offerTitle) => {
   return { lastUsedNum, unit, usesTodayNum };
 };
 
-export default function OfferCard({ offer, store, isFirst }) {
+export default function OfferCard({ offer, store, isFirst, t }) {
+  const getCopyLabels = () => {
+    const lang = t.verifiedCodes === "Zweryfikowane kody" ? "pl" : t.verifiedCodes === "Verifizierte Codes" ? "de" : t.verifiedCodes === "Codes Vérifiés" ? "fr" : t.verifiedCodes === "Geverifieerde Codes" ? "nl" : t.verifiedCodes === "Codici Verificati" ? "it" : t.verifiedCodes === "Códigos Verificados" ? "es" : "en";
+    const map = {
+      pl: { copy: "Kopiuj", copied: "Skopiowano!" },
+      de: { copy: "Kopieren", copied: "Kopiert!" },
+      fr: { copy: "Copier", copied: "Copié !" },
+      nl: { copy: "Kopiëren", copied: "Gekopieerd!" },
+      it: { copy: "Copia", copied: "Copiato!" },
+      es: { copy: "Copiar", copied: "¡Copiado!" },
+      en: { copy: "Copy", copied: "Copied!" }
+    };
+    return map[lang] || map.en;
+  };
+  const copyLabels = getCopyLabels();
+
+  const formatLastUsed = (num, u) => {
+    const lang = t.verifiedCodes === "Zweryfikowane kody" ? "pl" : t.verifiedCodes === "Verifizierte Codes" ? "de" : t.verifiedCodes === "Codes Vérifiés" ? "fr" : t.verifiedCodes === "Geverifieerde Codes" ? "nl" : t.verifiedCodes === "Codici Verificati" ? "it" : t.verifiedCodes === "Códigos Verificados" ? "es" : "en";
+    if (lang === "pl") return `${num}${u === "m" ? " min" : " godz."} temu`;
+    if (lang === "de") return `vor ${num}${u === "m" ? " Min." : " Std."}`;
+    if (lang === "fr") return `il y a ${num}${u === "m" ? " min" : " h"}`;
+    if (lang === "nl") return `${num}${u === "m" ? " min." : " uur"} geleden`;
+    if (lang === "it") return `${num}${u === "m" ? " min" : " ore"} fa`;
+    if (lang === "es") return `hace ${num}${u === "m" ? " min" : " horas"}`;
+    return `${num}${u} ago`;
+  };
+
+  const formatExpiry = (dateStr) => {
+    if (!dateStr) return null;
+    const d = new Date(dateStr);
+    if (isNaN(d)) return null;
+    const now = new Date();
+    const diffDays = Math.ceil((d - now) / (1000 * 60 * 60 * 24));
+    if (diffDays < 0) return t.expired || "Expired";
+    if (diffDays === 0) return t.expiresToday || "Expires today";
+    if (diffDays <= 7) {
+      if (t.expiresInDays) return t.expiresInDays.replace("{days}", diffDays);
+      return `Expires in ${diffDays}d`;
+    }
+    const country = String(store.countryCode || "").toUpperCase();
+    const monthLocaleMap = {
+      PL: "pl-PL", DE: "de-DE", NL: "nl-NL", IT: "it-IT", FR: "fr-FR", ES: "es-ES"
+    };
+    const monthLocale = monthLocaleMap[country] || "en-US";
+    const dateFormatted = d.toLocaleDateString(monthLocale, { month: "short", day: "numeric" });
+    if (t.expiresShort) return t.expiresShort.replace("{date}", dateFormatted);
+    return `Expires ${dateFormatted}`;
+  };
   const [copied, setCopied] = useState(false);
   const [revealed, setRevealed] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -129,6 +176,21 @@ export default function OfferCard({ offer, store, isFirst }) {
           setTimeout(() => setLinkCopied(false), 2000);
         }
       });
+    }
+  };
+
+  const handleSocialClick = async (platform) => {
+    try {
+      await fetch("/api/notifications/social-click", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          storeName: store.name,
+          platform: platform,
+        }),
+      });
+    } catch (err) {
+      console.error("Failed to send social click notification:", err);
     }
   };
 
@@ -257,7 +319,7 @@ export default function OfferCard({ offer, store, isFirst }) {
       >
         {isFirst && (
           <div className="absolute top-0 left-0 rounded-br-xl bg-[var(--color-primary)] px-3 py-1 text-[10px] font-black text-black select-none z-10 shadow-[0_2px_10px_rgba(139,92,246,0.2)]">
-            Top pick
+            {t.topPick}
           </div>
         )}
         {/* Subtle top glow on hover */}
@@ -270,7 +332,11 @@ export default function OfferCard({ offer, store, isFirst }) {
               {offerValue}
             </p>
             <p className="mt-1.5 text-[10px] font-black uppercase tracking-[0.22em] text-white/30">
-              {isCoupon && offerValue !== "Code" ? "code" : offer.type}
+              {isCoupon && offerValue !== "Code"
+                ? (t.verifiedCodes === "Zweryfikowane kody" ? "kod" : "code")
+                : (offer.type === "Coupon"
+                    ? (t.verifiedCodes === "Zweryfikowane kody" ? "KUPON" : "COUPON")
+                    : (t.verifiedCodes === "Zweryfikowane kody" ? "OFERTA" : "DEAL")).toLowerCase()}
             </p>
           </div>
 
@@ -279,10 +345,12 @@ export default function OfferCard({ offer, store, isFirst }) {
             {/* Badges */}
             <div className="flex flex-wrap items-center gap-2">
               <span className="rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-[0.18em] bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 text-[var(--color-primary)]">
-                {offer.type}
+                {offer.type === "Coupon"
+                  ? (t.verifiedCodes === "Zweryfikowane kody" ? "Kupon" : "Coupon")
+                  : (t.verifiedCodes === "Zweryfikowane kody" ? "Oferta" : "Deal")}
               </span>
               <span className="rounded-full bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-[0.18em] text-[var(--color-primary)]">
-                ✓ Verified
+                ✓ {t.verified}
               </span>
               {offer.status && offer.status !== "Active" && (
                 <span className="rounded-full bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-[0.18em] text-[var(--color-primary)]">
@@ -310,25 +378,25 @@ export default function OfferCard({ offer, store, isFirst }) {
                   <svg className="h-4 w-4 text-white/30" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                   </svg>
-                  <span className="text-[10px] font-bold uppercase tracking-wider">Expires in:</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider">{t.expiresIn}</span>
                 </div>
 
                 <div className="flex items-center gap-1.5">
                   <div className="flex flex-col items-center justify-center h-10 w-10 rounded-xl bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 text-[var(--color-primary)] shadow-[0_0_10px_rgba(139,92,246,0.1)]">
                     <span className="text-xs font-bold leading-none">{timeLeft.days}</span>
-                    <span className="text-[7px] font-extrabold tracking-wider leading-none mt-0.5 opacity-80 text-white/55">DAYS</span>
+                    <span className="text-[7px] font-extrabold tracking-wider leading-none mt-0.5 opacity-80 text-white/55">{t.days}</span>
                   </div>
                   <div className="flex flex-col items-center justify-center h-10 w-10 rounded-xl bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 text-[var(--color-primary)] shadow-[0_0_10px_rgba(139,92,246,0.1)]">
                     <span className="text-xs font-bold leading-none">{timeLeft.hours}</span>
-                    <span className="text-[7px] font-extrabold tracking-wider leading-none mt-0.5 opacity-80 text-white/55">HRS</span>
+                    <span className="text-[7px] font-extrabold tracking-wider leading-none mt-0.5 opacity-80 text-white/55">{t.hrs}</span>
                   </div>
                   <div className="flex flex-col items-center justify-center h-10 w-10 rounded-xl bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 text-[var(--color-primary)] shadow-[0_0_10px_rgba(139,92,246,0.1)]">
                     <span className="text-xs font-bold leading-none">{timeLeft.minutes}</span>
-                    <span className="text-[7px] font-extrabold tracking-wider leading-none mt-0.5 opacity-80 text-white/55">MIN</span>
+                    <span className="text-[7px] font-extrabold tracking-wider leading-none mt-0.5 opacity-80 text-white/55">{t.min}</span>
                   </div>
                   <div className="flex flex-col items-center justify-center h-10 w-10 rounded-xl bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 text-[var(--color-primary)] shadow-[0_0_10px_rgba(139,92,246,0.1)]">
                     <span className="text-xs font-bold leading-none">{timeLeft.seconds}</span>
-                    <span className="text-[7px] font-extrabold tracking-wider leading-none mt-0.5 opacity-80 text-white/55">SEC</span>
+                    <span className="text-[7px] font-extrabold tracking-wider leading-none mt-0.5 opacity-80 text-white/55">{t.sec}</span>
                   </div>
                 </div>
               </div>
@@ -340,19 +408,19 @@ export default function OfferCard({ offer, store, isFirst }) {
                 <svg className="h-3.5 w-3.5 text-white/20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                 </svg>
-                <span>Last used: <strong className="text-white/60 font-bold">{lastUsedNum != null ? `${lastUsedNum}${unit} ago` : "—"}</strong></span>
+                <span>{t.lastUsed} <strong className="text-white/60 font-bold">{lastUsedNum != null ? formatLastUsed(lastUsedNum, unit) : "—"}</strong></span>
               </div>
               <div className="flex items-center gap-1.5">
                 <svg className="h-3.5 w-3.5 text-white/20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.109A11.386 11.386 0 0 1 10.025 20a11.38 11.38 0 0 1-4.99-.94v-.11c0-2.28 1.85-4.13 4.13-4.13h1.696c.484 0 .942.083 1.37.234m0 0a3.001 3.001 0 1 0 0-3.006A4.125 4.125 0 0 0 9 12.75a4.125 4.125 0 0 0-4.125 4.125v1.442" />
                 </svg>
-                <span>Uses today: <strong className="text-[var(--color-primary)] font-black">{usesTodayNum ?? "—"}</strong></span>
+                <span>{t.usesToday} <strong className="text-[var(--color-primary)] font-black">{usesTodayNum ?? "—"}</strong></span>
               </div>
             </div>
           </div>
 
           {/* Right: CTA */}
-          <div className="flex w-full md:w-[200px] shrink-0 items-center justify-center border-t border-white/[0.04] px-4 py-4 md:border-t-0 md:border-l">
+          <div className="flex w-full md:w-[210px] shrink-0 items-center justify-center border-t border-white/[0.04] px-3 py-4 md:border-t-0 md:border-l">
             {isCoupon && offer.code ? (
               <div className="flex w-full flex-col items-center gap-2">
                 {revealed ? (
@@ -365,22 +433,19 @@ export default function OfferCard({ offer, store, isFirst }) {
                         }
                       });
                     }}
-                    className="flex w-full items-center justify-between rounded-xl border border-[var(--color-primary)]/30 bg-[var(--color-primary)]/10 px-4 py-3 cursor-pointer hover:bg-[var(--color-primary)]/15 transition-all duration-200"
+                    className="flex w-full items-center justify-center rounded-xl border border-[var(--color-primary)]/30 bg-[var(--color-primary)]/10 px-3 py-3 cursor-pointer hover:bg-[var(--color-primary)]/15 transition-all duration-200 min-h-[46px]"
                   >
-                    <span className="font-mono text-sm font-black tracking-widest text-[var(--color-primary)]">
-                      {offer.code}
-                    </span>
-                    <span className="text-xs font-bold text-[var(--color-primary)]">
-                      {copied ? "Copied!" : "Copy"}
+                    <span className="font-mono text-sm font-black tracking-widest text-[var(--color-primary)] text-center whitespace-nowrap">
+                      {copied ? copyLabels.copied : offer.code}
                     </span>
                   </button>
                 ) : (
                   <button
                     onClick={handleReveal}
-                    className="group/cta relative flex w-full items-center justify-center overflow-hidden rounded-xl bg-[var(--color-primary)] px-4 py-3 text-[12.5px] font-black uppercase tracking-[0.14em] text-black transition-all duration-300 hover:shadow-[0_0_20px_rgba(139,92,246,0.4)] hover:scale-[1.02] active:scale-[0.98] cursor-pointer whitespace-nowrap"
+                    className="group/cta relative flex w-full items-center justify-center overflow-hidden rounded-xl bg-[var(--color-primary)] px-3 py-3 text-xs font-black uppercase tracking-[0.06em] text-black transition-all duration-300 hover:shadow-[0_0_20px_rgba(139,92,246,0.4)] hover:scale-[1.02] active:scale-[0.98] cursor-pointer whitespace-nowrap"
                   >
                     <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover/cta:translate-x-full" />
-                    <span className="relative">Reveal Code</span>
+                    <span className="relative">{t.revealCode}</span>
                   </button>
                 )}
                 <a
@@ -389,16 +454,16 @@ export default function OfferCard({ offer, store, isFirst }) {
                   rel={isExternal ? "noreferrer" : undefined}
                   className="text-[10px] font-semibold text-white/25 underline-offset-2 hover:text-white/50 hover:underline transition-colors"
                 >
-                  Go to store →
+                  {t.goToStore}
                 </a>
               </div>
             ) : (
               <button
                 onClick={handleGetDeal}
-                className="group/cta relative flex w-full items-center justify-center overflow-hidden rounded-xl bg-[var(--color-primary)] px-4 py-3 text-[12.5px] font-black uppercase tracking-[0.14em] text-black transition-all duration-300 hover:shadow-[0_0_20px_rgba(139,92,246,0.4)] hover:scale-[1.02] active:scale-[0.98] cursor-pointer whitespace-nowrap"
+                className="group/cta relative flex w-full items-center justify-center overflow-hidden rounded-xl bg-[var(--color-primary)] px-3 py-3 text-xs font-black uppercase tracking-[0.06em] text-black transition-all duration-300 hover:shadow-[0_0_20px_rgba(139,92,246,0.4)] hover:scale-[1.02] active:scale-[0.98] cursor-pointer whitespace-nowrap"
               >
                 <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-700 group-hover/cta:translate-x-full" />
-                <span className="relative">Get Deal</span>
+                <span className="relative">{t.getDeal}</span>
               </button>
             )}
           </div>
@@ -427,12 +492,12 @@ export default function OfferCard({ offer, store, isFirst }) {
               <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
                 {/* Type Badge */}
                 <span className="rounded-md bg-white/10 px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wider text-white">
-                  {isCoupon ? "CODE" : "DEAL"}
+                  {isCoupon ? (t.verifiedCodes === "Zweryfikowane kody" ? "KOD" : "CODE") : (t.verifiedCodes === "Zweryfikowane kody" ? "OFERTA" : "DEAL")}
                 </span>
                 {/* Verified Badge */}
                 <span className="flex items-center gap-1 text-[9.5px] font-bold text-[var(--color-primary)]">
                   <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-primary)] animate-pulse" />
-                  Verified
+                  {t.verified}
                 </span>
               </div>
             </div>
@@ -449,14 +514,14 @@ export default function OfferCard({ offer, store, isFirst }) {
                       : "bg-[var(--color-primary)] text-black"
                   )}
                 >
-                  {revealed ? offer.code : "Get Code"}
+                  {revealed ? (copied ? copyLabels.copied : offer.code) : t.getCode}
                 </button>
               ) : (
                 <button
                   onClick={handleGetDeal}
                   className="flex h-8 items-center justify-center rounded-lg bg-[var(--color-primary)] text-black px-3 text-[10px] font-black uppercase tracking-wider transition-all duration-300 active:scale-[0.96] shadow-md shadow-violet-500/5"
                 >
-                  Get Deal
+                  {t.getDeal}
                 </button>
               )}
             </div>
@@ -474,25 +539,25 @@ export default function OfferCard({ offer, store, isFirst }) {
                 <svg className="h-4 w-4 text-[var(--color-primary)] animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                 </svg>
-                <span className="text-[10px] font-black uppercase tracking-wider text-white/35">Expires in:</span>
+                <span className="text-[10px] font-black uppercase tracking-wider text-white/35">{t.expiresIn}</span>
               </div>
 
               <div className="flex items-center gap-1">
                 <div className="flex flex-col items-center justify-center h-9 w-9 rounded-lg bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 text-[var(--color-primary)] shadow-[0_0_8px_rgba(139,92,246,0.08)]">
                   <span className="text-[11px] font-black leading-none">{timeLeft.days}</span>
-                  <span className="text-[6px] font-black tracking-wider leading-none mt-0.5 text-white/50">DAYS</span>
+                  <span className="text-[6px] font-black tracking-wider leading-none mt-0.5 text-white/50">{t.days}</span>
                 </div>
                 <div className="flex flex-col items-center justify-center h-9 w-9 rounded-lg bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 text-[var(--color-primary)] shadow-[0_0_8px_rgba(139,92,246,0.08)]">
                   <span className="text-[11px] font-black leading-none">{timeLeft.hours}</span>
-                  <span className="text-[6px] font-black tracking-wider leading-none mt-0.5 text-white/50">HRS</span>
+                  <span className="text-[6px] font-black tracking-wider leading-none mt-0.5 text-white/50">{t.hrs}</span>
                 </div>
                 <div className="flex flex-col items-center justify-center h-9 w-9 rounded-lg bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 text-[var(--color-primary)] shadow-[0_0_8px_rgba(139,92,246,0.08)]">
                   <span className="text-[11px] font-black leading-none">{timeLeft.minutes}</span>
-                  <span className="text-[6px] font-black tracking-wider leading-none mt-0.5 text-white/50">MIN</span>
+                  <span className="text-[6px] font-black tracking-wider leading-none mt-0.5 text-white/50">{t.min}</span>
                 </div>
                 <div className="flex flex-col items-center justify-center h-9 w-9 rounded-lg bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 text-[var(--color-primary)] shadow-[0_0_8px_rgba(139,92,246,0.08)]">
                   <span className="text-[11px] font-black leading-none">{timeLeft.seconds}</span>
-                  <span className="text-[6px] font-black tracking-wider leading-none mt-0.5 text-white/50">SEC</span>
+                  <span className="text-[6px] font-black tracking-wider leading-none mt-0.5 text-white/50">{t.sec}</span>
                 </div>
               </div>
             </div>
@@ -505,14 +570,14 @@ export default function OfferCard({ offer, store, isFirst }) {
                 <svg className="h-3.5 w-3.5 text-white/20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                 </svg>
-                <span>Last used: <strong className="text-white/60 font-bold">{lastUsedNum != null ? `${lastUsedNum}${unit} ago` : "—"}</strong></span>
+                <span>{t.lastUsed} <strong className="text-white/60 font-bold">{lastUsedNum != null ? formatLastUsed(lastUsedNum, unit) : "—"}</strong></span>
               </div>
               <span className="text-white/10 select-none">•</span>
               <div className="flex items-center gap-1">
                 <svg className="h-3.5 w-3.5 text-white/20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.109A11.386 11.386 0 0 1 10.025 20a11.38 11.38 0 0 1-4.99-.94v-.11c0-2.28 1.85-4.13 4.13-4.13h1.696c.484 0 .942.083 1.37.234m0 0a3.001 3.001 0 1 0 0-3.006A4.125 4.125 0 0 0 9 12.75a4.125 4.125 0 0 0-4.125 4.125v1.442" />
                 </svg>
-                <span>Uses today: <strong className="text-[var(--color-primary)] font-black">{usesTodayNum ?? "—"}</strong></span>
+                <span>{t.usesToday} <strong className="text-[var(--color-primary)] font-black">{usesTodayNum ?? "—"}</strong></span>
               </div>
             </div>
 
@@ -521,7 +586,7 @@ export default function OfferCard({ offer, store, isFirst }) {
               <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="3">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
               </svg>
-              <span className="text-[10px] font-extrabold uppercase tracking-wider">Health: 100%</span>
+              <span className="text-[10px] font-extrabold uppercase tracking-wider">{t.health} 100%</span>
             </div>
           </div>
         </div>
@@ -594,7 +659,7 @@ export default function OfferCard({ offer, store, isFirst }) {
             {isCoupon && offer.code ? (
               <>
                 <p className="text-[11px] font-medium text-white/45 mb-4">
-                  Copy the code below and paste it at checkout.
+                  {t.copyCodeBelow}
                 </p>
 
                 {/* Code Box */}
@@ -613,12 +678,12 @@ export default function OfferCard({ offer, store, isFirst }) {
                     }}
                     className="flex items-center gap-1.5 rounded-lg bg-[var(--color-primary)] px-5 py-2.5 text-xs font-black uppercase tracking-wider text-black transition-all hover:bg-opacity-90 active:scale-[0.97]"
                   >
-                    {copied ? "Copied!" : (
+                    {copied ? copyLabels.copied : (
                       <>
                         <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.5">
                           <rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
                         </svg>
-                        Copy
+                        {copyLabels.copy}
                       </>
                     )}
                   </button>
@@ -626,7 +691,7 @@ export default function OfferCard({ offer, store, isFirst }) {
               </>
             ) : (
               <p className="text-[11px] font-medium text-white/45 mb-5">
-                No code required. Just click the button below to claim this deal!
+                {t.noCodeRequired}
               </p>
             )}
 
@@ -639,14 +704,14 @@ export default function OfferCard({ offer, store, isFirst }) {
             >
               <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover/btn:translate-x-full" />
               <span className="relative flex items-center gap-2">
-                Go to {store.name} Store
+                {t.goToBrandStore.replace("{name}", store.name)}
                 <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 transition-transform duration-300 group-hover/btn:translate-x-0.5" fill="none" stroke="currentColor" strokeWidth="3">
                   <path d="M5 12h14" /><path d="m13 6 6 6-6 6" />
                 </svg>
               </span>
             </Link>
             <p className="mt-2.5 text-[8.5px] font-black uppercase tracking-wider text-white/25">
-              Store opened in a new tab!
+              {t.storeOpenedTab}
             </p>
 
             {/* Divider */}
@@ -654,7 +719,7 @@ export default function OfferCard({ offer, store, isFirst }) {
 
             {/* Feedback */}
             <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/25 mb-3">
-              Did this {isCoupon ? "coupon" : "deal"} work?
+              {t.didThisWork.replace("{type}", isCoupon ? (t.verifiedCodes === "Zweryfikowane kody" ? "kupon" : "coupon") : (t.verifiedCodes === "Zweryfikowane kody" ? "oferta" : "deal"))}
             </p>
             {feedback === null ? (
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -662,13 +727,13 @@ export default function OfferCard({ offer, store, isFirst }) {
                   onClick={() => submitFeedback("yes")}
                   className="flex items-center justify-center gap-1.5 rounded-xl border border-white/5 bg-white/[0.02] px-4 py-2.5 text-xs font-bold text-white/60 hover:bg-white/10 hover:text-white transition-colors duration-200 cursor-pointer active:scale-95 w-full sm:w-auto"
                 >
-                  👍 Yes, it worked!
+                  {t.yesWorked}
                 </button>
                 <button
                   onClick={() => submitFeedback("no")}
                   className="flex items-center justify-center gap-1.5 rounded-xl border border-white/5 bg-white/[0.02] px-4 py-2.5 text-xs font-bold text-white/60 hover:bg-white/10 hover:text-white transition-colors duration-200 cursor-pointer active:scale-95 w-full sm:w-auto"
                 >
-                  👎 Didn't work
+                  {t.didntWork}
                 </button>
               </div>
             ) : feedback === "yes" ? (
@@ -676,7 +741,7 @@ export default function OfferCard({ offer, store, isFirst }) {
                 <svg viewBox="0 0 24 24" className="h-4 w-4 stroke-current" fill="none" strokeWidth="3">
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
-                Thank you! We've marked this coupon as working.
+                {t.thankYouWorked}
               </div>
             ) : (
               <div className="text-xs font-bold text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-2.5 inline-flex items-center gap-1.5 animate-fadeIn">
@@ -685,7 +750,7 @@ export default function OfferCard({ offer, store, isFirst }) {
                   <line x1="12" y1="8" x2="12" y2="12" />
                   <line x1="12" y1="16" x2="12.01" y2="16" />
                 </svg>
-                Thanks for letting us know. We will verify this shortly.
+                {t.thankYouVerify}
               </div>
             )}
 
@@ -694,7 +759,7 @@ export default function OfferCard({ offer, store, isFirst }) {
 
             {/* Follow */}
             <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/25 mb-3">
-              Follow us for more deals
+              {t.followUs}
             </p>
             <div className="flex gap-2.5 justify-center">
               {/* Facebook */}
@@ -702,6 +767,7 @@ export default function OfferCard({ offer, store, isFirst }) {
                 href="https://facebook.com"
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => handleSocialClick("Facebook")}
                 className="h-8 w-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-[#1877F2] hover:border-[#1877F2] text-white/60 hover:text-white transition-all duration-200"
                 title="Follow on Facebook"
               >
@@ -714,6 +780,7 @@ export default function OfferCard({ offer, store, isFirst }) {
                 href="https://instagram.com"
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => handleSocialClick("Instagram")}
                 className="h-8 w-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-gradient-to-tr hover:from-[#f9ce34] hover:via-[#ee2a7b] hover:to-[#6228d7] hover:border-transparent text-white/60 hover:text-white transition-all duration-200"
                 title="Follow on Instagram"
               >
@@ -726,6 +793,7 @@ export default function OfferCard({ offer, store, isFirst }) {
                 href="https://tiktok.com"
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => handleSocialClick("TikTok")}
                 className="h-8 w-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-black hover:border-white/10 text-white/60 hover:text-white transition-all duration-200"
                 title="Follow on TikTok"
               >
@@ -738,23 +806,12 @@ export default function OfferCard({ offer, store, isFirst }) {
                 href="https://pinterest.com"
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => handleSocialClick("Pinterest")}
                 className="h-8 w-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-[#BD081C] hover:border-[#BD081C] text-white/60 hover:text-white transition-all duration-200"
                 title="Follow on Pinterest"
               >
                 <svg viewBox="0 0 24 24" className="h-4.5 w-4.5" fill="currentColor">
                   <path d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 5.079 3.158 9.417 7.618 11.162-.105-.949-.199-2.403.041-3.439.219-.937 1.406-5.966 1.406-5.966s-.359-.719-.359-1.782c0-1.668.967-2.914 2.171-2.914 1.023 0 1.518.769 1.518 1.69 0 1.029-.655 2.568-.994 3.995-.283 1.194.599 2.169 1.777 2.169 2.133 0 3.772-2.249 3.772-5.495 0-2.873-2.064-4.882-5.012-4.882-3.414 0-5.418 2.561-5.418 5.207 0 1.031.397 2.138.893 2.738.098.119.112.224.083.345l-.333 1.36c-.053.22-.174.267-.402.161-1.499-.698-2.436-2.889-2.436-4.649 0-3.785 2.75-7.262 7.929-7.262 4.163 0 7.398 2.967 7.398 6.931 0 4.136-2.607 7.464-6.227 7.464-1.216 0-2.359-.631-2.75-1.378l-.748 2.853c-.271 1.043-1.002 2.35-1.492 3.146C9.57 23.812 10.763 24 12.017 24c6.62 0 11.988-5.367 11.988-11.987C24.005 5.367 18.636 0 12.017 0z" />
-                </svg>
-              </a>
-              {/* Discord */}
-              <a
-                href="https://discord.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="h-8 w-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-[#5865F2] hover:border-[#5865F2] text-white/60 hover:text-white transition-all duration-200"
-                title="Join our Discord"
-              >
-                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
-                  <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.094 13.094 0 0 1-1.873-.894.077.077 0 0 1-.008-.128c.126-.093.252-.19.372-.287a.075.075 0 0 1 .077-.011c3.92 1.793 8.18 1.793 12.061 0a.073.073 0 0 1 .078.009c.12.099.246.195.373.289a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.894.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.156-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.156 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.156-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.156 2.418z" />
                 </svg>
               </a>
             </div>
@@ -764,7 +821,7 @@ export default function OfferCard({ offer, store, isFirst }) {
 
             {/* Share */}
             <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/25 mb-3">
-              Share this coupon
+              {t.shareCoupon}
             </p>
             <div className="flex gap-2.5 justify-center">
               {/* Copy Link */}

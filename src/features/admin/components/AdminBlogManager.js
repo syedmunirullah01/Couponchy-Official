@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -28,6 +28,7 @@ const blogPostSchema = z.object({
   thumbnailType: z.string().trim().min(1, "Thumbnail graphic type is required."),
   content: z.string().trim().min(1, "Content body is required."),
   featured: z.boolean().default(false),
+  countryCode: z.string().trim().min(1, "Country target is required."),
 });
 
 const defaultValues = {
@@ -40,6 +41,7 @@ const defaultValues = {
   thumbnailType: "wave",
   content: "",
   featured: false,
+  countryCode: "GLOBAL",
 };
 
 function RefreshIcon() {
@@ -113,6 +115,8 @@ function parseMarkdownToHTML(text) {
 
 export default function AdminBlogManager() {
   const [posts, setPosts] = useState([]);
+  const [countries, setCountries] = useState([]);
+  const [selectedCountryFilter, setSelectedCountryFilter] = useState("all");
   const [isHydrating, setIsHydrating] = useState(false);
   const [open, setOpen] = useState(false);
   const [editingPost, setEditingPost] = useState(null);
@@ -270,6 +274,14 @@ export default function AdminBlogManager() {
   const watchedExcerpt = watch("excerpt");
   const watchedContent = watch("content");
   const watchedFeatured = watch("featured");
+  const watchedCountryCode = watch("countryCode");
+
+  const filteredPosts = useMemo(() => {
+    if (selectedCountryFilter === "all") {
+      return posts;
+    }
+    return posts.filter((post) => (post.countryCode || "GLOBAL") === selectedCountryFilter);
+  }, [posts, selectedCountryFilter]);
 
   async function loadData(showRefreshState = false) {
     if (showRefreshState) {
@@ -279,9 +291,16 @@ export default function AdminBlogManager() {
     }
 
     try {
-      const response = await fetch("/api/blog", { cache: "no-store" });
-      const payload = await response.json();
-      setPosts(payload.data || []);
+      const [blogRes, countriesRes] = await Promise.all([
+        fetch("/api/blog", { cache: "no-store" }),
+        fetch("/api/public/countries", { cache: "no-store" }),
+      ]);
+      const [blogPayload, countriesPayload] = await Promise.all([
+        blogRes.json(),
+        countriesRes.json(),
+      ]);
+      setPosts(blogPayload.data || []);
+      setCountries(countriesPayload.data || []);
     } catch {
       toast.error("Unable to load blog posts.");
     } finally {
@@ -320,6 +339,7 @@ export default function AdminBlogManager() {
       thumbnailType: post.thumbnailType || "wave",
       content: post.content,
       featured: Boolean(post.featured),
+      countryCode: post.countryCode || "GLOBAL",
     });
     setOpen(true);
   }
@@ -381,6 +401,19 @@ export default function AdminBlogManager() {
             <CardDescription className="text-xs text-[var(--muted)] mt-0.5">Publish, edit, and manage articles on the public insights platform.</CardDescription>
           </div>
           <div className="flex flex-shrink-0 items-center gap-2">
+            <select
+              value={selectedCountryFilter}
+              onChange={(event) => setSelectedCountryFilter(event.target.value)}
+              className="h-10 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 text-xs font-bold text-[var(--text)] outline-none cursor-pointer focus:border-[var(--color-primary)]"
+            >
+              <option value="all">All Countries</option>
+              <option value="GLOBAL">Global Only</option>
+              {countries.map((c) => (
+                <option key={c.code} value={c.code}>
+                  {c.code} - {c.name}
+                </option>
+              ))}
+            </select>
             <Button
               type="button"
               variant="ghost"
@@ -402,13 +435,14 @@ export default function AdminBlogManager() {
           </div>
         </CardHeader>
         <CardContent className="p-6">
-          {posts.length ? (
+          {filteredPosts.length ? (
             <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
               <Table>
                 <TableHeader className="bg-[var(--surface-soft)]/50">
                   <TableRow className="border-b border-[var(--border)] hover:bg-transparent">
                     <TableHead className="h-10 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] px-4">Title</TableHead>
                     <TableHead className="h-10 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] px-3">Category</TableHead>
+                    <TableHead className="h-10 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] px-3">Country</TableHead>
                     <TableHead className="h-10 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] px-3">Author</TableHead>
                     <TableHead className="h-10 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] px-3">Date</TableHead>
                     <TableHead className="h-10 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] px-3">Status</TableHead>
@@ -416,7 +450,7 @@ export default function AdminBlogManager() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {posts.map((post) => (
+                  {filteredPosts.map((post) => (
                     <TableRow key={post.slug} className="border-b border-[var(--border)]/60 last:border-0 hover:bg-[var(--surface-soft)]/30 transition-colors duration-150">
                       {/* Title + Slug */}
                       <TableCell className="px-4 py-3 max-w-[280px]">
@@ -427,6 +461,17 @@ export default function AdminBlogManager() {
                       <TableCell className="px-3 py-3">
                         <span className="inline-flex items-center rounded-full border border-[var(--border)] bg-[var(--surface-soft)] px-2.5 py-0.5 text-[10px] font-bold text-[var(--muted)]">
                           {post.category}
+                        </span>
+                      </TableCell>
+                      {/* Country badge */}
+                      <TableCell className="px-3 py-3">
+                        <span className={cn(
+                          "inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-bold tracking-wide",
+                          (post.countryCode || "GLOBAL") === "GLOBAL"
+                            ? "border-purple-500/20 bg-purple-500/10 text-purple-400"
+                            : "border-blue-500/20 bg-blue-500/10 text-blue-400"
+                        )}>
+                          {(post.countryCode || "GLOBAL") === "GLOBAL" ? "Global" : post.countryCode}
                         </span>
                       </TableCell>
                       {/* Author */}
@@ -488,7 +533,7 @@ export default function AdminBlogManager() {
             </div>
           ) : null}
 
-          {!posts.length && !isHydrating ? (
+          {!filteredPosts.length && !isHydrating ? (
             <div className="rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface-soft)] px-6 py-10 text-center">
               <h3 className="text-sm font-bold text-[var(--text)]">No blog posts yet</h3>
               <p className="mt-2 text-xs text-[var(--muted)]">Publish your first article to display on the public blog.</p>
@@ -523,13 +568,16 @@ export default function AdminBlogManager() {
                 <div className="space-y-2.5">
                   <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--muted)]">Live Preview</span>
                   <div className="relative rounded-2xl border border-[var(--border)]/70 bg-[var(--surface)] p-5 shadow-md overflow-hidden">
-                    {/* Category tag */}
-                    <div className="flex items-center justify-between mb-3">
+                    {/* Category & Country tag */}
+                    <div className="flex flex-wrap items-center gap-2 mb-3">
                       <span className="inline-flex items-center rounded-full bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[var(--color-primary)]">
                         {watchedCategory || "Category"}
                       </span>
+                      <span className="inline-flex items-center rounded-full bg-blue-500/10 border border-blue-500/20 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-blue-400">
+                        {(watchedCountryCode || "GLOBAL") === "GLOBAL" ? "Global" : watchedCountryCode}
+                      </span>
                       {watchedFeatured && (
-                        <span className="inline-flex items-center rounded-full border border-[var(--color-primary)]/30 bg-[var(--color-primary)]/10 px-2 py-0.5 text-[8px] font-black text-[var(--color-primary)]">
+                        <span className="inline-flex items-center rounded-full border border-[var(--color-primary)]/30 bg-[var(--color-primary)]/10 px-2.5 py-0.5 text-[8px] font-black text-[var(--color-primary)] ml-auto">
                           ★ FEATURED
                         </span>
                       )}
@@ -606,8 +654,8 @@ export default function AdminBlogManager() {
                     </label>
                   </div>
 
-                  {/* Category + Thumbnail */}
-                  <div className="grid gap-4 sm:grid-cols-2">
+                  {/* Category + Thumbnail + Country Target */}
+                  <div className="grid gap-4 sm:grid-cols-3">
                     <label className="grid gap-2">
                       <span className="text-xs font-bold uppercase tracking-wider text-[var(--text)]">Category</span>
                       <select
@@ -638,6 +686,22 @@ export default function AdminBlogManager() {
                         <option value="78m">78.8M users (Metric)</option>
                       </select>
                       {errors.thumbnailType ? <span className="text-xs text-red-500">{errors.thumbnailType.message}</span> : null}
+                    </label>
+
+                    <label className="grid gap-2">
+                      <span className="text-xs font-bold uppercase tracking-wider text-[var(--text)]">Country Target</span>
+                      <select
+                        className="h-11 w-full rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 text-sm text-[var(--text)] outline-none transition focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/10"
+                        {...register("countryCode")}
+                      >
+                        <option value="GLOBAL">Global (All Countries)</option>
+                        {countries.map((c) => (
+                          <option key={c.code} value={c.code}>
+                            {c.name} ({c.code})
+                          </option>
+                        ))}
+                      </select>
+                      {errors.countryCode ? <span className="text-xs text-red-500">{errors.countryCode.message}</span> : null}
                     </label>
                   </div>
 

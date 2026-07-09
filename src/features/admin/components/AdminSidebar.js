@@ -124,7 +124,7 @@ export default function AdminSidebar() {
   const userRole = session?.user?.role || "admin";
 
   return (
-    <aside className="w-full border-b border-[var(--border)] bg-[var(--surface)] lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto lg:w-72 lg:border-r lg:border-b-0 shadow-[4px_0_24px_rgba(0,0,0,0.015)]">
+    <aside className="w-full border-b border-[var(--border)] bg-[var(--surface)] lg:fixed lg:left-0 lg:top-0 lg:bottom-0 lg:h-screen lg:overflow-y-auto lg:w-72 lg:border-r lg:border-b-0 shadow-[4px_0_24px_rgba(0,0,0,0.015)] lg:z-50">
       <div className="flex h-full flex-col px-4 py-6 sm:px-6">
         <div className="mb-8 flex flex-col gap-4">
           <Link href="/" className="inline-flex items-center gap-2" aria-label="Go to homepage" target="_blank" rel="noopener noreferrer">

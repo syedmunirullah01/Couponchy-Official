@@ -70,6 +70,45 @@ export default function AdminOffersManager() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [selectedOfferIds, setSelectedOfferIds] = useState([]);
   const [error, setError] = useState("");
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 15;
+
+  const totalPages = Math.ceil(filteredOffers.length / pageSize);
+
+  const paginatedOffers = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    return filteredOffers.slice(startIndex, startIndex + pageSize);
+  }, [filteredOffers, currentPage, pageSize]);
+
+  // Reset page when search query changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisible = 5;
+    if (totalPages <= maxVisible) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (currentPage > 3) {
+        pages.push("...");
+      }
+      const start = Math.max(2, currentPage - 1);
+      const end = Math.min(totalPages - 1, currentPage + 1);
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
+      if (currentPage < totalPages - 2) {
+        pages.push("...");
+      }
+      pages.push(totalPages);
+    }
+    return pages;
+  };
   const affiliateEditedRef = useRef(false);
 
   async function loadData() {
@@ -197,7 +236,15 @@ export default function AdminOffersManager() {
   }
 
   function toggleSelectAll() {
-    setSelectedOfferIds((current) => (current.length === filteredOffers.length ? [] : filteredOffers.map((offer) => offer.id)));
+    const visibleIds = paginatedOffers.map((o) => o.id);
+    const allVisibleSelected = visibleIds.every((id) => selectedOfferIds.includes(id));
+    setSelectedOfferIds((current) => {
+      if (allVisibleSelected) {
+        return current.filter((id) => !visibleIds.includes(id));
+      } else {
+        return [...new Set([...current, ...visibleIds])];
+      }
+    });
   }
 
   async function handleDeleteConfirmed() {
@@ -269,9 +316,9 @@ export default function AdminOffersManager() {
                       <input
                         type="checkbox"
                         className="h-4 w-4 appearance-none rounded-full border-2 border-[var(--muted)]/60 bg-[var(--surface-soft)] checked:bg-[var(--color-primary)] checked:border-[var(--color-primary)] focus:outline-none transition-all cursor-pointer relative after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:w-1.5 after:h-1.5 after:rounded-full after:bg-transparent checked:after:bg-white"
-                        checked={filteredOffers.length > 0 && selectedOfferIds.length === filteredOffers.length}
+                        checked={paginatedOffers.length > 0 && paginatedOffers.every((offer) => selectedOfferIds.includes(offer.id))}
                         onChange={toggleSelectAll}
-                        aria-label="Select all offers"
+                        aria-label="Select all visible offers"
                       />
                     </label>
                   </TableHead>
@@ -285,7 +332,7 @@ export default function AdminOffersManager() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredOffers.map((offer) => (
+                {paginatedOffers.map((offer) => (
                   <TableRow key={offer.id} className="border-b border-[var(--border)]/60 last:border-0 hover:bg-[var(--surface-soft)]/30 transition-colors duration-150">
                     <TableCell className="w-14 h-10 px-4 text-center">
                       <label className="flex items-center justify-center cursor-pointer">
@@ -352,6 +399,62 @@ export default function AdminOffersManager() {
               </TableBody>
             </Table>
           </div>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 ? (
+            <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <span className="text-xs text-[var(--muted)]">
+                Showing {Math.min((currentPage - 1) * pageSize + 1, filteredOffers.length)} to{" "}
+                {Math.min(currentPage * pageSize, filteredOffers.length)} of {filteredOffers.length} offers
+              </span>
+              <div className="flex items-center gap-1.5 self-end sm:self-auto">
+                <button
+                  type="button"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  className="inline-flex h-8 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--surface-soft)] px-3 text-xs font-bold text-[var(--text)] transition hover:bg-[var(--surface)] hover:text-[var(--color-primary)] disabled:opacity-40 disabled:hover:text-inherit disabled:hover:bg-[var(--surface-soft)] cursor-pointer disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                
+                {getPageNumbers().map((pageNum, idx) => {
+                  if (pageNum === "...") {
+                    return (
+                      <span key={`dots-${idx}`} className="px-1 text-xs text-[var(--muted)]">
+                        ...
+                      </span>
+                    );
+                  }
+                  
+                  const isCurrent = currentPage === pageNum;
+                  return (
+                    <button
+                      key={pageNum}
+                      type="button"
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={cn(
+                        "inline-flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold transition cursor-pointer",
+                        isCurrent
+                          ? "bg-[var(--color-primary)] text-white shadow-sm"
+                          : "border border-[var(--border)] bg-[var(--surface-soft)] text-[var(--text)] hover:bg-[var(--surface)] hover:text-[var(--color-primary)]"
+                      )}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+
+                <button
+                  type="button"
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  className="inline-flex h-8 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--surface-soft)] px-3 text-xs font-bold text-[var(--text)] transition hover:bg-[var(--surface)] hover:text-[var(--color-primary)] disabled:opacity-40 disabled:hover:text-inherit disabled:hover:bg-[var(--surface-soft)] cursor-pointer disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          ) : null}
         </CardContent>
       </Card>
 

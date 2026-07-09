@@ -30,6 +30,8 @@ export const defaultSettings = {
     x: "",
     tiktok: "",
     youtube: "",
+    discord: "",
+    pinterest: "",
     defaultShareText: "Verified coupons and deals from Couponchy.",
   },
   seo: {

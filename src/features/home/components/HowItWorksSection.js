@@ -3,10 +3,38 @@
 import { useEffect, useState } from "react";
 import SectionHeader from "@/components/shared/SectionHeader";
 
-export default function HowItWorksSection() {
+export default function HowItWorksSection({ t: propT }) {
   const [scanStep, setScanStep] = useState(0);
   const [testStatus, setTestStatus] = useState("loading");
   const [copyStep, setCopyStep] = useState(0);
+
+  // Fallback default translations
+  const t = propT || {
+    sectionTitle: "How Couponchy Works",
+    step1Title: "1. Scan & Discover",
+    step1Desc: "Our automated crawlers scan thousands of retail brands every minute to discover new coupons, promo codes, and special clearance events.",
+    liveDiscoveryFeed: "Live Discovery Feed",
+    logNike: "Scanning API endpoints...",
+    logSephoraAction: "Checking checkout DOM...",
+    logSephoraRes: "Found coupon field",
+    logAdidasAction: "Found code 'ADISAVE'...",
+    logAdidasRes: "Staged for verification",
+    logAsosAction: "Extracting discount metadata...",
+    logAsosRes: "Success",
+    step2Title: "2. Test & Verify",
+    step2Desc: "We simulate checkout carts on headless Chrome browsers, applying discount codes automatically. If a code fails or is expired, we throw it out instantly.",
+    cartSimulation: "Cart Simulation",
+    runningBot: "Running Bot...",
+    validatingBasket: "Validating checkout basket...",
+    verifiedActive: "Verified: 25% Off Active!",
+    rejectedExpired: "Rejected: Code Expired",
+    step3Title: "3. Copy & Save",
+    step3Desc: "Only the working, highest-saving codes are published to the vaults. One click copies the code and routes you to the store for instant checkout savings.",
+    verifiedCoupon: "Verified Coupon",
+    getCode: "GET CODE",
+    copied: "✓ COPIED!",
+    redirecting: "REDIRECTING...",
+  };
 
   // Crawler Simulation (Step 1)
   useEffect(() => {
@@ -37,10 +65,10 @@ export default function HowItWorksSection() {
   }, []);
 
   const crawlerLogs = [
-    { store: "nike.com", action: "Scanning API endpoints...", res: "200 OK" },
-    { store: "sephora.com", action: "Checking checkout DOM...", res: "Found coupon field" },
-    { store: "adidas.com", action: "Found code 'ADISAVE'...", res: "Staged for verification" },
-    { store: "asos.com", action: "Extracting discount metadata...", res: "Success" }
+    { store: "nike.com", action: t.logNike || "Scanning API endpoints...", res: "200 OK" },
+    { store: "sephora.com", action: t.logSephoraAction || "Checking checkout DOM...", res: t.logSephoraRes || "Found coupon field" },
+    { store: "adidas.com", action: t.logAdidasAction || "Found code 'ADISAVE'...", res: t.logAdidasRes || "Staged for verification" },
+    { store: "asos.com", action: t.logAsosAction || "Extracting discount metadata...", res: t.logAsosRes || "Success" }
   ];
 
   return (
@@ -49,7 +77,7 @@ export default function HowItWorksSection() {
       <div className="pointer-events-none absolute left-1/4 top-1/2 h-[350px] w-[350px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--color-primary)]/5 blur-[120px]" />
       <div className="pointer-events-none absolute right-1/4 top-1/3 h-[300px] w-[300px] translate-x-1/2 -translate-y-1/2 rounded-full bg-[#d946ef]/5 blur-[100px]" />
 
-      <SectionHeader title="How Couponchy Works" centered={true} />
+      <SectionHeader title={t.sectionTitle} centered={true} />
 
       <div className="grid gap-8 grid-cols-1 md:grid-cols-3">
         
@@ -66,10 +94,10 @@ export default function HowItWorksSection() {
           </div>
 
           <h3 className="text-[18px] font-black text-white tracking-tight mt-6">
-            1. Scan & Discover
+            {t.step1Title}
           </h3>
           <p className="mt-2 text-xs leading-relaxed text-white/60 font-medium">
-            Our automated crawlers scan thousands of retail brands every minute to discover new coupons, promo codes, and special clearance events.
+            {t.step1Desc}
           </p>
 
           {/* Crawler Visual Mockup */}
@@ -78,7 +106,7 @@ export default function HowItWorksSection() {
             
             <div className="flex items-center gap-2 border-b border-white/5 pb-2 mb-3">
               <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-primary)] animate-pulse" />
-              <span className="text-[9px] font-bold text-white/60 uppercase tracking-widest">Live Discovery Feed</span>
+              <span className="text-[9px] font-bold text-white/60 uppercase tracking-widest">{t.liveDiscoveryFeed}</span>
             </div>
 
             <div className="flex flex-col gap-2 relative">
@@ -119,17 +147,17 @@ export default function HowItWorksSection() {
           </div>
 
           <h3 className="text-[18px] font-black text-white tracking-tight mt-6">
-            2. Test & Verify
+            {t.step2Title}
           </h3>
           <p className="mt-2 text-xs leading-relaxed text-white/60 font-medium">
-            We simulate checkout carts on headless Chrome browsers, applying discount codes automatically. If a code fails or is expired, we throw it out instantly.
+            {t.step2Desc}
           </p>
 
           {/* Test & Verification Visual Mockup */}
           <div className="relative mt-6 rounded-2xl border border-white/5 bg-black/60 p-4 h-[160px] flex flex-col justify-between overflow-hidden">
             <div className="flex items-center justify-between border-b border-white/5 pb-2">
-              <span className="text-[9px] font-bold text-white/60 uppercase tracking-widest">Cart Simulation</span>
-              <span className="text-[8px] font-mono text-[#d946ef] bg-[#d946ef]/10 border border-[#d946ef]/20 rounded-full px-2 py-0.5 animate-pulse">Running Bot...</span>
+              <span className="text-[9px] font-bold text-white/60 uppercase tracking-widest">{t.cartSimulation}</span>
+              <span className="text-[8px] font-mono text-[#d946ef] bg-[#d946ef]/10 border border-[#d946ef]/20 rounded-full px-2 py-0.5 animate-pulse">{t.runningBot}</span>
             </div>
 
             <div className="flex-1 flex flex-col justify-center items-center gap-3">
@@ -160,17 +188,17 @@ export default function HowItWorksSection() {
               {/* Status Display banner */}
               <div className="h-6">
                 {testStatus === "loading" && (
-                  <span className="text-[10px] text-white/30 font-semibold">Validating checkout basket...</span>
+                  <span className="text-[10px] text-white/30 font-semibold">{t.validatingBasket}</span>
                 )}
                 {testStatus === "success" && (
                   <span className="text-[10px] text-emerald-400 font-extrabold uppercase tracking-wide flex items-center gap-1.5">
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />
-                    Verified: 25% Off Active!
+                    {t.verifiedActive}
                   </span>
                 )}
                 {testStatus === "failed" && (
                   <span className="text-[10px] text-rose-400 font-extrabold uppercase tracking-wide">
-                    Rejected: Code Expired
+                    {t.rejectedExpired}
                   </span>
                 )}
               </div>
@@ -191,10 +219,10 @@ export default function HowItWorksSection() {
           </div>
 
           <h3 className="text-[18px] font-black text-white tracking-tight mt-6">
-            3. Copy & Save
+            {t.step3Title}
           </h3>
           <p className="mt-2 text-xs leading-relaxed text-white/60 font-medium">
-            Only the working, highest-saving codes are published to the vaults. One click copies the code and routes you to the store for instant checkout savings.
+            {t.step3Desc}
           </p>
 
           {/* Copy and Save Visual Mockup */}
@@ -205,7 +233,7 @@ export default function HowItWorksSection() {
             <div className="relative w-full max-w-[190px] rounded-xl border border-[#60a5fa]/20 bg-[#60a5fa]/5 px-3.5 py-3 shadow-[0_0_15px_rgba(96,165,250,0.1)] flex items-center justify-between">
               <div className="text-left">
                 <p className="text-[14px] font-black text-white leading-none">NIKE STORE</p>
-                <p className="text-[7px] font-extrabold tracking-wider leading-none mt-0.5 text-white/70">Verified Coupon</p>
+                <p className="text-[7px] font-extrabold tracking-wider leading-none mt-0.5 text-white/70">{t.verifiedCoupon}</p>
               </div>
               <span className="text-[11px] font-black text-[#60a5fa]">25% OFF</span>
             </div>
@@ -213,9 +241,9 @@ export default function HowItWorksSection() {
             {/* Copy CTA button simulator */}
             <div className="w-full max-w-[190px] rounded-xl border border-white/10 bg-white/5 py-2.5 text-center transition-all duration-300">
               <span className="font-mono text-[9px] font-black uppercase tracking-[0.12em] text-white">
-                {copyStep === 0 && "GET CODE"}
-                {copyStep === 1 && "✓ COPIED!"}
-                {copyStep === 2 && "REDIRECTING..."}
+                {copyStep === 0 && (t.getCode || "GET CODE")}
+                {copyStep === 1 && (t.copied || "✓ COPIED!")}
+                {copyStep === 2 && (t.redirecting || "REDIRECTING...")}
               </span>
             </div>
           </div>

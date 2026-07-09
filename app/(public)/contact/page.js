@@ -1,6 +1,8 @@
 import ContactPage from "@/features/contact/components/ContactPage";
 import { getPublicSiteSettings } from "@/server/services/settings-service";
 import { getCompanyContent } from "@/server/repositories/company-repository";
+import { resolveRequestCountryCode } from "@/server/resolve-request-country";
+import { COUNTRY_TO_LANG, getTranslatedContact } from "@/server/services/translation-service";
 
 export const dynamic = "force-dynamic";
 
@@ -20,9 +22,27 @@ export async function generateMetadata() {
 }
 
 export default async function Page() {
-  const [settings, company] = await Promise.all([
-    getPublicSiteSettings().catch(() => ({})),
-    getCompanyContent().catch(() => null),
-  ]);
-  return <ContactPage settings={settings} company={company} />;
+  let settings = {};
+  let company = null;
+  let t = null;
+
+  try {
+    const countryCode = await resolveRequestCountryCode();
+    const lang = COUNTRY_TO_LANG[String(countryCode || "").toUpperCase()] || "en";
+
+    [settings, company] = await Promise.all([
+      getPublicSiteSettings().catch(() => ({})),
+      getCompanyContent().catch(() => null),
+    ]);
+
+    t = await getTranslatedContact(lang, company?.contactUs || {});
+  } catch {
+    // fallback silently
+    [settings, company] = await Promise.all([
+      getPublicSiteSettings().catch(() => ({})),
+      getCompanyContent().catch(() => null),
+    ]);
+  }
+
+  return <ContactPage settings={settings} company={company} t={t} />;
 }

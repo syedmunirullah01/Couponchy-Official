@@ -1,4 +1,7 @@
 @import "tailwindcss";
+@source not "../.next";
+@source not "../scratch";
+@source not "../scripts";
 
 :root {
   --color-primary: #8b5cf6;
@@ -39,6 +42,8 @@
 @theme {
   --color-background: var(--page-bg);
   --color-foreground: var(--text);
+  --color-muted-fg: var(--muted);
+  --color-accent-fg: var(--accent);
   --font-sans: var(--font-outfit), system-ui, -apple-system, sans-serif;
 }
 
@@ -48,12 +53,16 @@
 
 html {
   scroll-behavior: smooth;
-  -ms-overflow-style: none !important;  /* IE and Edge */
-  scrollbar-width: none !important;  /* Firefox */
+  overflow-x: hidden;
+  -ms-overflow-style: none !important;
+  /* IE and Edge */
+  scrollbar-width: none !important;
+  /* Firefox */
 }
 
 body {
   margin: 0;
+  overflow-x: hidden;
   background: var(--body-bg);
   color: var(--text);
   font-family: var(--font-outfit), system-ui, -apple-system, sans-serif;
@@ -106,9 +115,15 @@ input {
 .font-black {
   font-weight: 800 !important;
 }
+
 .font-extrabold {
   font-weight: 700 !important;
 }
+
 .font-bold {
   font-weight: 600 !important;
+}
+
+.bg-ambient-glow {
+  background-image: radial-gradient(circle at top left, rgba(139, 92, 246, 0.08), transparent 25%), radial-gradient(circle at top right, rgba(217, 70, 239, 0.08), transparent 28%);
 }

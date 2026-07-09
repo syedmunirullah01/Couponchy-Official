@@ -13,6 +13,6 @@ export default async function Page({ searchParams }) {
   const resolvedSearchParams = await searchParams;
   const countryCode = await resolveRequestCountryCode();
   const directoryData = await getStoreDirectoryData(resolvedSearchParams?.search || "", countryCode);
-  return <StorePage {...directoryData} />;
+  return <StorePage {...directoryData} countryCode={countryCode} />;
 }
 

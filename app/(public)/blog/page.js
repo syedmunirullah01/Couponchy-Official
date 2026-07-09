@@ -109,11 +109,47 @@ function ThumbnailGraphic({ type }) {
   );
 }
 
+const defaultUI = {
+  ourJournal: "OUR JOURNAL",
+  shoppingDecoded: "Shopping, Decoded.",
+  journalSub: "Find our latest insights, data analyses, and shopping guides from the world of e-commerce, coupons, and retail trends.",
+  searchPlaceholder: "Search articles...",
+  loadMore: "Load More Articles",
+  noArticlesFound: "No articles found",
+  noArticlesDesc: "Try searching for other terms or selecting a different category.",
+  stayUpdated: "STAY UPDATED",
+  findOutWhenWePublish: "Find out when we publish.",
+  subscribeDesc: "Subscribe to our newsletter to receive the latest e-commerce insights, discount code trends, and data reports directly in your inbox.",
+  subscribePlaceholder: "Enter your email address...",
+  subscribeButton: "SUBSCRIBE",
+  insideOurPlatform: "INSIDE OUR PLATFORM",
+  understandTheEngine: "Understand the engine.",
+  validationSystem: "Validation System",
+  howItWorks: "How It Works",
+  validationDesc: "Our validation crawler runs 24/7 matching codes with simulated cart responses. We automatically test code stackability and record success rates to save you time.",
+  goHome: "Go to Homepage →",
+  couponAnatomy: "Coupon Anatomy",
+  anatomyOfVoucher: "Anatomy of a Voucher",
+  anatomyDesc: "Understanding discount logic is crucial. From sitewide tags to category exclusions and minimum spend values, we break down code parameters for transparency.",
+  viewExclusiveDeals: "View Exclusive Deals →",
+  successSub: "✓ Subscription Successful!",
+  successSubDesc: "Thank you for subscribing. We will keep you updated.",
+  readArticle: "Read article",
+  read: "READ",
+  by: "By",
+  catAll: "All",
+  catLatestData: "Latest Data",
+  catStoreGuides: "Store Guides",
+  catBestLists: "Best Lists",
+  catDeepDives: "Deep Dives",
+};
+
 export default function BlogPage() {
   const pathname = usePathname();
   const countryCode = getCountryCodeFromPathname(pathname) || "US";
 
   const [posts, setPosts] = useState([]);
+  const [ui, setUi] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
@@ -121,7 +157,16 @@ export default function BlogPage() {
   const [subscribed, setSubscribed] = useState(false);
   const [visibleCount, setVisibleCount] = useState(6);
 
+  const t = ui || defaultUI;
+
   const categories = ["All", "Latest Data", "Store Guides", "Best Lists", "Deep Dives"];
+  const categoryLabels = {
+    "All": t.catAll,
+    "Latest Data": t.catLatestData,
+    "Store Guides": t.catStoreGuides,
+    "Best Lists": t.catBestLists,
+    "Deep Dives": t.catDeepDives
+  };
 
   // Fetch posts from API
   useEffect(() => {
@@ -131,6 +176,7 @@ export default function BlogPage() {
         if (!res.ok) throw new Error();
         const payload = await res.json();
         setPosts(payload.data || []);
+        setUi(payload.ui || null);
       } catch {
         // Keep empty array
       } finally {
@@ -140,8 +186,14 @@ export default function BlogPage() {
     loadPosts();
   }, []);
 
+  const currentCountry = String(countryCode || "US").toUpperCase();
+  const countryScopedPosts = posts.filter(post => {
+    const postCountry = String(post.countryCode || "GLOBAL").toUpperCase();
+    return postCountry === "GLOBAL" || postCountry === currentCountry;
+  });
+
   // Filtering logic
-  const filteredPosts = posts.filter(post => {
+  const filteredPosts = countryScopedPosts.filter(post => {
     const matchesCategory = selectedCategory === "All" || post.category === selectedCategory;
     const matchesSearch = post.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           post.excerpt.toLowerCase().includes(searchQuery.toLowerCase());
@@ -164,13 +216,13 @@ export default function BlogPage() {
         <div className="absolute -right-20 -top-20 h-80 w-80 rounded-full bg-[var(--color-primary)]/5 blur-[120px] pointer-events-none" />
         <div className="max-w-2xl relative z-10">
           <span className="rounded-full bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 px-3 py-1 text-[10px] font-black uppercase tracking-[0.24em] text-[var(--color-primary)]">
-            OUR JOURNAL
+            {t.ourJournal}
           </span>
           <h1 className="mt-6 text-5xl font-black tracking-[-0.05em] text-white leading-tight sm:text-6xl">
-            Shopping, Decoded.
+            {t.shoppingDecoded}
           </h1>
           <p className="mt-4 text-base leading-7 text-white/50 sm:text-lg">
-            Find our latest insights, data analyses, and shopping guides from the world of e-commerce, coupons, and retail trends.
+            {t.journalSub}
           </p>
 
           {/* Search bar inside header */}
@@ -180,7 +232,7 @@ export default function BlogPage() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search articles..."
+                placeholder={t.searchPlaceholder}
                 className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 pl-11 text-sm text-white placeholder-white/30 focus:border-[var(--color-primary)]/50 focus:outline-none"
               />
               <svg className="absolute left-4 top-3.5 h-4.5 w-4.5 text-white/30" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
@@ -201,9 +253,9 @@ export default function BlogPage() {
       ) : (
         <>
           {/* Featured / Hero Section (2 Columns) */}
-          {searchQuery === "" && selectedCategory === "All" && posts.some(p => p.featured) && (
+          {searchQuery === "" && selectedCategory === "All" && countryScopedPosts.some(p => p.featured) && (
             <section className="grid gap-6 md:grid-cols-2 animate-fade-in">
-              {posts.filter(p => p.featured).slice(0, 2).map((post) => (
+              {countryScopedPosts.filter(p => p.featured).slice(0, 2).map((post) => (
                 <Link 
                   href={buildCountryPath("/blog/" + post.slug, countryCode)} 
                   key={post.id} 
@@ -216,7 +268,7 @@ export default function BlogPage() {
                     
                     <div className="mt-6 flex items-center gap-3">
                       <span className="text-[10px] font-black uppercase tracking-wider text-[var(--color-primary)] bg-[var(--color-primary)]/5 border border-[var(--color-primary)]/10 px-2.5 py-0.5 rounded-md">
-                        {post.category}
+                        {categoryLabels[post.category] || post.category}
                       </span>
                       <span className="text-[11px] font-medium text-white/30">{post.date}</span>
                       <span className="text-[11px] font-medium text-white/30">• {post.readTime}</span>
@@ -230,9 +282,9 @@ export default function BlogPage() {
                     </p>
 
                     <div className="mt-6 pt-5 border-t border-white/[0.04] flex items-center justify-between">
-                      <span className="text-xs font-bold text-white/60">By {post.author}</span>
+                      <span className="text-xs font-bold text-white/60">{t.by} {post.author}</span>
                       <span className="text-xs font-bold text-[var(--color-primary)] inline-flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                        Read article <span className="text-sm">→</span>
+                        {t.readArticle} <span className="text-sm">→</span>
                       </span>
                     </div>
                   </article>
@@ -257,7 +309,7 @@ export default function BlogPage() {
                     : "border-white/10 bg-white/[0.02] text-white/60 hover:border-white/20 hover:text-white"
                 )}
               >
-                {cat}
+                {categoryLabels[cat] || cat}
               </button>
             ))}
           </section>
@@ -269,7 +321,7 @@ export default function BlogPage() {
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                   {filteredPosts.slice(0, visibleCount).map((post) => (
                     <Link 
-                      href={buildCountryPath("/blog/" + post.slug, countryCode)} 
+                       href={buildCountryPath("/blog/" + post.slug, countryCode)} 
                       key={post.id} 
                       className="group flex flex-col hover:no-underline"
                     >
@@ -280,7 +332,7 @@ export default function BlogPage() {
                         
                         <div className="mt-5 flex items-center gap-3">
                           <span className="text-[9px] font-black uppercase tracking-wider text-[var(--color-primary)]">
-                            {post.category}
+                            {categoryLabels[post.category] || post.category}
                           </span>
                           <span className="text-[10px] text-white/30 font-medium">{post.date}</span>
                           <span className="text-[10px] text-white/30 font-medium">• {post.readTime}</span>
@@ -294,9 +346,9 @@ export default function BlogPage() {
                         </p>
 
                         <div className="mt-auto pt-5 flex items-center justify-between">
-                          <span className="text-[11px] font-bold text-white/40">By {post.author}</span>
+                          <span className="text-[11px] font-bold text-white/40">{t.by} {post.author}</span>
                           <span className="text-[11px] font-black text-[var(--color-primary)] group-hover:translate-x-1 transition-transform flex items-center gap-0.5">
-                            READ <span className="text-sm">→</span>
+                            {t.read} <span className="text-sm">→</span>
                           </span>
                         </div>
                       </article>
@@ -311,7 +363,7 @@ export default function BlogPage() {
                       onClick={() => setVisibleCount(prev => prev + 3)}
                       className="rounded-full border border-white/10 bg-white/[0.02] px-8 py-3 text-xs font-black uppercase tracking-wider text-white transition hover:bg-white/[0.06] hover:border-white/20 cursor-pointer"
                     >
-                      Load More Articles
+                      {t.loadMore}
                     </button>
                   </div>
                 )}
@@ -321,8 +373,8 @@ export default function BlogPage() {
                 <svg className="mx-auto h-12 w-12 text-white/20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 0 1-2.25 2.25M16.5 7.5V18a2.25 2.25 0 0 0 2.25 2.25M16.5 7.5V4.875c0-.621-.504-1.125-1.125-1.125H4.125C3.504 3.75 3 4.254 3 4.875V18a2.25 2.25 0 0 0 2.25 2.25h13.5M6 7.5h3v3H6v-3Z" />
                 </svg>
-                <h3 className="mt-4 text-base font-bold text-white">No articles found</h3>
-                <p className="mt-2 text-xs text-white/40">Try searching for other terms or selecting a different category.</p>
+                <h3 className="mt-4 text-base font-bold text-white">{t.noArticlesFound}</h3>
+                <p className="mt-2 text-xs text-white/40">{t.noArticlesDesc}</p>
               </div>
             )}
           </section>
@@ -333,20 +385,20 @@ export default function BlogPage() {
       <section className="rounded-[32px] border border-white/5 bg-gradient-to-br from-[#0c0c0f] to-[#07070a] p-8 sm:p-12 flex flex-col md:flex-row md:items-center justify-between gap-8 relative overflow-hidden">
         <div className="absolute right-0 bottom-0 h-64 w-64 rounded-full bg-[var(--color-primary)]/3 blur-[100px] pointer-events-none" />
         <div className="max-w-md relative z-10">
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-primary)]">STAY UPDATED</span>
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-primary)]">{t.stayUpdated}</span>
           <h2 className="mt-3 text-3xl font-black tracking-tight text-white uppercase">
-            Find out when we publish.
+            {t.findOutWhenWePublish}
           </h2>
           <p className="mt-2.5 text-xs leading-relaxed text-white/50">
-            Subscribe to our newsletter to receive the latest e-commerce insights, discount code trends, and data reports directly in your inbox.
+            {t.subscribeDesc}
           </p>
         </div>
 
         <div className="w-full max-w-sm relative z-10 shrink-0">
           {subscribed ? (
             <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-5 text-center">
-              <p className="text-sm font-bold text-emerald-400">✓ Subscription Successful!</p>
-              <p className="mt-1 text-xs text-white/50">Thank you for subscribing. We will keep you updated.</p>
+              <p className="text-sm font-bold text-emerald-400">{t.successSub}</p>
+              <p className="mt-1 text-xs text-white/50">{t.successSubDesc}</p>
             </div>
           ) : (
             <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-2">
@@ -355,14 +407,14 @@ export default function BlogPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your email address..."
+                placeholder={t.subscribePlaceholder}
                 className="flex-1 rounded-xl border border-white/10 bg-black/50 px-4 py-3 text-xs text-white placeholder-white/30 focus:border-[var(--color-primary)]/50 focus:outline-none"
               />
               <button
                 type="submit"
                 className="rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] px-6 py-3 text-xs font-black uppercase tracking-wider text-black transition duration-200 cursor-pointer shadow-[0_0_15px_rgba(139,92,246,0.2)]"
               >
-                SUBSCRIBE
+                {t.subscribeButton}
               </button>
             </form>
           )}
@@ -371,31 +423,31 @@ export default function BlogPage() {
 
       {/* Understand the Engine Section */}
       <section className="pt-6 border-t border-white/[0.05]">
-        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/35">INSIDE OUR PLATFORM</span>
+        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/35">{t.insideOurPlatform}</span>
         <h2 className="mt-2 text-3xl font-black tracking-tight text-white uppercase">
-          Understand the engine.
+          {t.understandTheEngine}
         </h2>
 
         <div className="mt-8 grid gap-6 md:grid-cols-2">
           <div className="rounded-3xl border border-white/5 bg-[#0e0e11] p-6 hover:border-white/10 transition-colors">
-            <span className="text-[9px] font-black uppercase tracking-wider text-[var(--color-primary)]">Validation System</span>
-            <h3 className="mt-3 text-lg font-bold text-white">How It Works</h3>
+            <span className="text-[9px] font-black uppercase tracking-wider text-[var(--color-primary)]">{t.validationSystem}</span>
+            <h3 className="mt-3 text-lg font-bold text-white">{t.howItWorks}</h3>
             <p className="mt-2 text-xs leading-relaxed text-white/50">
-              Our validation crawler runs 24/7 matching codes with simulated cart responses. We automatically test code stackability and record success rates to save you time.
+              {t.validationDesc}
             </p>
             <Link href="/" className="mt-4 inline-flex items-center gap-1 text-xs font-bold text-[var(--color-primary)] hover:underline">
-              Go to Homepage →
+              {t.goHome}
             </Link>
           </div>
 
           <div className="rounded-3xl border border-white/5 bg-[#0e0e11] p-6 hover:border-white/10 transition-colors">
-            <span className="text-[9px] font-black uppercase tracking-wider text-[var(--color-primary)]">Coupon Anatomy</span>
-            <h3 className="mt-3 text-lg font-bold text-white">Anatomy of a Voucher</h3>
+            <span className="text-[9px] font-black uppercase tracking-wider text-[var(--color-primary)]">{t.couponAnatomy}</span>
+            <h3 className="mt-3 text-lg font-bold text-white">{t.anatomyOfVoucher}</h3>
             <p className="mt-2 text-xs leading-relaxed text-white/50">
-              Understanding discount logic is crucial. From sitewide tags to category exclusions and minimum spend values, we break down code parameters for transparency.
+              {t.anatomyDesc}
             </p>
             <Link href="/exclusive" className="mt-4 inline-flex items-center gap-1 text-xs font-bold text-[var(--color-primary)] hover:underline">
-              View Exclusive Deals →
+              {t.viewExclusiveDeals}
             </Link>
           </div>
         </div>

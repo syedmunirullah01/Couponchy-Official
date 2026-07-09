@@ -1,15 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { buildCountryPath } from "@/lib/countries";
-import { generateStoreAboutDescription } from "@/lib/store-seo-templates";
-
-export default function StoreSidebar({ singleStore, relatedStores, offers = [] }) {
+export default function StoreSidebar({ singleStore, relatedStores, offers = [], aboutText: propAboutText, t }) {
   const storeWebsite = singleStore.affiliateLink || singleStore.website || "#";
   const storeDisplayUrl = singleStore.website
     ? singleStore.website.replace(/^https?:\/\//, "").replace(/\/$/, "")
     : `${singleStore.name?.toLowerCase().replace(/\s+/g, "")}.com`;
 
-  const aboutText = generateStoreAboutDescription(singleStore, offers);
+  const aboutText = propAboutText || generateStoreAboutDescription(singleStore, offers);
 
   return (
     <aside className="w-full space-y-4 lg:w-[300px] lg:shrink-0">
@@ -20,7 +18,7 @@ export default function StoreSidebar({ singleStore, relatedStores, offers = [] }
           <div className="flex h-5 w-5 items-center justify-center rounded-full border border-white/15 text-white/40 text-xs">
             i
           </div>
-          <p className="text-sm font-black text-white/80">About {singleStore.name}</p>
+          <p className="text-sm font-black text-white/80">{t.aboutBrand.replace("{name}", singleStore.name)}</p>
         </div>
         <p className="text-xs leading-5 text-white/45">
           {aboutText}
@@ -30,7 +28,7 @@ export default function StoreSidebar({ singleStore, relatedStores, offers = [] }
       {/* Related Stores */}
       {relatedStores?.length > 0 && (
         <div className="rounded-[22px] border border-white/[0.06] bg-[#0c0c11] p-5">
-          <p className="mb-4 text-[10px] font-black uppercase tracking-[0.2em] text-white/30">Related Stores</p>
+          <p className="mb-4 text-[10px] font-black uppercase tracking-[0.2em] text-white/30">{t.relatedStores}</p>
           <div className="grid grid-cols-3 gap-3">
             {relatedStores.slice(0, 6).map((store) => (
               <Link

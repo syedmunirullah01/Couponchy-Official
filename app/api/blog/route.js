@@ -2,10 +2,20 @@ import { NextResponse } from "next/server";
 import { createBlogPost, getAllBlogPosts } from "@/server/repositories/blog-repository";
 import { validateBlogPostPayload } from "@/lib/validators";
 import { requirePermission } from "@/server/auth";
+import { translateBlogOnSave, getTranslatedBlogs, getTranslatedBlogUI, COUNTRY_TO_LANG } from "@/server/services/translation-service";
+import { resolveRequestCountryCode } from "@/server/resolve-request-country";
 
 export async function GET() {
-  const posts = await getAllBlogPosts();
-  return NextResponse.json({ data: posts });
+  const [posts, countryCode] = await Promise.all([
+    getAllBlogPosts(),
+    resolveRequestCountryCode()
+  ]);
+  const lang = COUNTRY_TO_LANG[String(countryCode || "").toUpperCase()] || "en";
+  const [translatedPosts, translatedUI] = await Promise.all([
+    getTranslatedBlogs(posts, lang),
+    getTranslatedBlogUI(lang)
+  ]);
+  return NextResponse.json({ data: translatedPosts, ui: translatedUI });
 }
 
 export async function POST(request) {
@@ -23,8 +33,12 @@ export async function POST(request) {
     }
 
     const post = await createBlogPost(payload);
+    translateBlogOnSave(post).catch((err) =>
+      console.error("[POST /api/blog] Auto translation failed:", err)
+    );
     return NextResponse.json({ data: post }, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: error.message || "Unable to create blog post." }, { status: 400 });
   }
 }
+

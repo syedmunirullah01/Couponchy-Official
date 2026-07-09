@@ -168,16 +168,21 @@ function formatOfferAge(dateString) {
   return `${diffMonths} mo ago`;
 }
 
-function formatOfferUsage(totalOffers) {
+function formatOfferUsage(totalOffers, navbarT) {
   if (!totalOffers) {
-    return "Used recently";
+    return navbarT?.usedRecently || "Used recently";
   }
 
   if (totalOffers >= 1000) {
-    return `Used ${(totalOffers / 1000).toFixed(1)}K times`;
+    const kTimes = (totalOffers / 1000).toFixed(1) + "K";
+    if (navbarT?.usedKTimes) {
+      return navbarT.usedKTimes.replace("K", kTimes);
+    }
+    return `Used ${kTimes} times`;
   }
 
-  return `Used ${Math.max(1, totalOffers * 11)} times`;
+  const times = Math.max(1, totalOffers * 11);
+  return `${navbarT?.usedLabel || "Used"} ${times} ${navbarT?.timesLabel || "times"}`;
 }
 
 function isExactStoreMatch(store, query) {
@@ -190,10 +195,50 @@ export default function Navbar({
   initialOffers = [],
   initialEvents = [],
   initialCountries = SUPPORTED_COUNTRIES,
+  initialCountryCode,
+  t,
 }) {
   const pathname = usePathname();
   const pathWithoutCountry = removeCountryPrefix(pathname);
   const router = useRouter();
+
+  const navbarT = useMemo(() => {
+    return t || {
+      findMerchants: "Find Merchants",
+      events: "Events",
+      exclusive: "Exclusive",
+      blog: "Blog",
+      countryLabel: "Country",
+      searchPlaceholder: "Search stores, coupons, deals",
+      allCategories: "All Categories",
+      browseCatalog: "Browse the full catalog",
+      allLabel: "All",
+      storesLabel: "stores",
+      noStoresAvailable: "No stores available yet.",
+      noStoresInCategory: "No stores in this category yet.",
+      noOffersYet: "No offers yet.",
+      noPostsYet: "No posts yet.",
+      seeMore: "See More",
+      usedLabel: "Used",
+      timesLabel: "times",
+      codesLabel: "Codes",
+      codeLabel: "Code",
+      offersLabel: "offers",
+      newLabel: "New",
+      exploreStoreLabel: "Explore",
+      searchMerchantsPlaceholder: "Search Merchants..."
+    };
+  }, [t]);
+
+  const navItems = useMemo(() => {
+    return [
+      { label: navbarT.findMerchants, href: "/stores", kind: "mega" },
+      { label: navbarT.events, href: "#", kind: "events" },
+      { label: navbarT.exclusive, href: "/exclusive", kind: "exclusive" },
+      { label: navbarT.blog, href: "/blog", kind: "blog" },
+    ];
+  }, [navbarT]);
+
   const menuRef = useRef(null);
   const countryDropdownRef = useRef(null);
   const mobileCountryDropdownRef = useRef(null);
@@ -240,7 +285,7 @@ export default function Navbar({
   }, []);
 
   const [selectedCountryCode, setSelectedCountryCode] = useState(() => {
-    return getCountryCodeFromPathname(pathname) || DEFAULT_COUNTRY_CODE;
+    return initialCountryCode || getCountryCodeFromPathname(pathname) || DEFAULT_COUNTRY_CODE;
   });
   const selectedCountry = getCountryByCode(selectedCountryCode, countries);
 
@@ -534,7 +579,6 @@ export default function Navbar({
   }));
 
   const showMegaMenu = megaOpen && displayCategories.length > 0;
-  const navItems = PRIMARY_NAV;
   return (
     <header className="sticky top-0 z-50 border-b border-white/8 bg-[rgba(0,0,0,0.96)]">
       <div
@@ -697,8 +741,8 @@ export default function Navbar({
                                 )}
                               >
                                 <span className="flex flex-col">
-                                  <span>All categories</span>
-                                  <span className="mt-0.5 text-[10px] font-medium text-white/40">Browse the full catalog</span>
+                                  <span>{navbarT.allCategories}</span>
+                                  <span className="mt-0.5 text-[10px] font-medium text-white/40">{navbarT.browseCatalog}</span>
                                 </span>
                                 <ChevronRightIcon className="h-3.5 w-3.5" />
                               </Link>
@@ -709,7 +753,7 @@ export default function Navbar({
                                 {visibleStores.map((store, index) => (
                                   <Link
                                     key={store.id || store.slug}
-                                    href={getStoreHref(store)}
+                                    href={getStoreHref(store, selectedCountryCode)}
                                     onMouseEnter={() => setActiveStoreSlug(store.slug)}
                                     onFocus={() => setActiveStoreSlug(store.slug)}
                                     className={cn(
@@ -729,7 +773,7 @@ export default function Navbar({
 
                               {!visibleStores.length ? (
                                 <div className="px-3 py-4 text-[0.82rem] text-white/45">
-                                  {allCategoriesMode ? "No stores available yet." : "No stores in this category yet."}
+                                  {allCategoriesMode ? navbarT.noStoresAvailable : navbarT.noStoresInCategory}
                                 </div>
                               ) : null}
 
@@ -743,7 +787,7 @@ export default function Navbar({
                                 onFocus={() => setActiveStoreSlug("")}
                                 className="mt-2.5 flex items-center justify-between px-3 py-1.5 text-[0.88rem] font-semibold text-[var(--accent)] transition-all hover:translate-x-0.5"
                               >
-                                <span>All {activeCategory ? formatCategoryLabel(activeCategory.name) : "stores"}</span>
+                                <span>{navbarT.allLabel} {activeCategory ? formatCategoryLabel(activeCategory.name) : navbarT.storesLabel}</span>
                                 <ChevronRightIcon className="h-3.5 w-3.5" />
                               </Link>
                             </div>
@@ -790,12 +834,12 @@ export default function Navbar({
 
                                       <div className="mt-3 flex items-center gap-1.5 text-[10px] text-white/40 font-semibold uppercase tracking-wider">
                                         <span className="inline-flex h-4.5 w-4.5 items-center justify-center rounded-full border border-white/10 text-[9px]">◷</span>
-                                        <span>{formatOfferAge(offer.createdAt)}</span>
+                                        <span suppressHydrationWarning>{formatOfferAge(offer.createdAt)}</span>
                                       </div>
 
                                       <div className="mt-auto pt-4">
                                         <div className="flex items-center justify-center rounded-xl border border-[var(--accent)]/10 bg-[var(--accent)]/5 px-3 py-2 text-[10px] font-extrabold uppercase tracking-wider text-[var(--accent)]">
-                                          <span>{formatOfferUsage(totalOffers)}</span>
+                                          <span>{formatOfferUsage(totalOffers, navbarT)}</span>
                                         </div>
                                       </div>
                                     </Link>
@@ -826,7 +870,7 @@ export default function Navbar({
                                         </div>
                                         <div className="text-right">
                                           <p className="text-[1.35rem] font-black leading-none text-[var(--accent)] group-hover:scale-105 transition-transform duration-300">
-                                            {store.offersCount ? `${store.offersCount}+ offers` : "New"}
+                                            {store.offersCount ? `${store.offersCount}+ ${navbarT.offersLabel}` : navbarT.newLabel}
                                           </p>
                                         </div>
                                       </div>
@@ -845,7 +889,7 @@ export default function Navbar({
 
                                       <div className="mt-auto pt-4">
                                         <div className="inline-flex items-center justify-center w-full rounded-xl bg-white/5 border border-white/10 px-3.5 py-2 text-[10px] font-bold uppercase tracking-wider text-white/70 transition-all duration-300 group-hover:bg-[var(--accent)] group-hover:border-[var(--accent)] group-hover:text-black">
-                                          Explore {store.name}
+                                          {navbarT.exploreStoreLabel} {store.name}
                                         </div>
                                       </div>
                                     </Link>
@@ -912,7 +956,7 @@ export default function Navbar({
                               })
                             ) : (
                               <div className="px-3.5 py-2.5 text-[0.82rem] text-white/45">
-                                No offers yet.
+                                {navbarT.noOffersYet}
                               </div>
                             )}
                             <div className="mt-1 border-t border-white/5 pt-1">
@@ -921,7 +965,7 @@ export default function Navbar({
                                 onClick={() => setExclusiveOpen(false)}
                                 className="flex items-center justify-between rounded-[10px] bg-white/5 px-3.5 py-2 text-center text-xs font-bold text-[var(--accent)] hover:bg-white/10 transition"
                               >
-                                <span>See More</span>
+                                <span>{navbarT.seeMore}</span>
                                 <span>→</span>
                               </Link>
                             </div>
@@ -973,7 +1017,7 @@ export default function Navbar({
                               ))
                             ) : (
                               <div className="px-3.5 py-2.5 text-[0.82rem] text-white/45">
-                                No posts yet.
+                                {navbarT.noPostsYet}
                               </div>
                             )}
                             <div className="mt-1 border-t border-white/5 pt-1">
@@ -982,7 +1026,7 @@ export default function Navbar({
                                 onClick={() => setBlogOpen(false)}
                                 className="flex items-center justify-between rounded-[10px] bg-white/5 px-3.5 py-2 text-center text-xs font-bold text-[var(--accent)] hover:bg-white/10 transition"
                               >
-                                <span>See More</span>
+                                <span>{navbarT.seeMore}</span>
                                 <span>→</span>
                               </Link>
                             </div>
@@ -1009,7 +1053,7 @@ export default function Navbar({
 
         <div className="relative flex items-center gap-3">
           <div className="relative hidden lg:flex items-center gap-2" ref={countryDropdownRef}>
-            <span className="text-xs font-semibold tracking-[0.08em] text-white/80">Country</span>
+            <span className="text-xs font-semibold tracking-[0.08em] text-white/80">{navbarT.countryLabel}</span>
             <div className="relative">
               <button
                 type="button"
@@ -1089,7 +1133,7 @@ export default function Navbar({
                     setSearchFocusedIndex(-1);
                   }}
                   onKeyDown={handleSearchKeyDown}
-                  placeholder="Search stores, coupons, deals"
+                  placeholder={navbarT.searchPlaceholder}
                   className="w-full border-0 bg-transparent text-[0.98rem] font-medium tracking-[0.01em] text-white outline-none placeholder:font-normal placeholder:text-white/38"
                 />
               </form>
@@ -1199,7 +1243,7 @@ export default function Navbar({
 
             <div className="mt-4 relative" ref={mobileCountryDropdownRef}>
               <div className="flex items-center justify-between gap-4 rounded-[14px] border border-white/10 bg-white/[0.025] px-4 py-3">
-                <span className="text-sm font-semibold tracking-[0.08em] text-white/80">Country</span>
+                <span className="text-sm font-semibold tracking-[0.08em] text-white/80">{navbarT.countryLabel}</span>
                 <div className="relative">
                   <button
                     type="button"
@@ -1218,7 +1262,7 @@ export default function Navbar({
 
                   {mobileCountryDropdownOpen && (
                     <div className="absolute right-0 top-full mt-2 z-50">
-                      <div className="w-[52px] overflow-hidden rounded-[16px] border border-white/10 bg-[#0c0c0c] p-1.5 shadow-[0_20px_50px_rgba(0,0,0,0.85)]">
+                      <div className="w-[52px] max-h-[280px] overflow-y-auto overflow-x-hidden rounded-[16px] border border-white/10 bg-[#0c0c0c] p-1.5 shadow-[0_20px_50px_rgba(0,0,0,0.85)]">
                         <div className="grid gap-1">
                           {countries.map((country) => (
                             <button
@@ -1272,7 +1316,7 @@ export default function Navbar({
                     setSearchFocusedIndex(-1);
                   }}
                   onKeyDown={handleSearchKeyDown}
-                  placeholder="Search stores, coupons, deals"
+                  placeholder={navbarT.searchPlaceholder}
                   className="w-full border-0 bg-transparent text-[0.98rem] font-medium text-white outline-none placeholder:font-normal placeholder:text-white/38"
                 />
               </form>
@@ -1346,7 +1390,7 @@ export default function Navbar({
               onClick={() => setMobileDealsOpen((current) => !current)}
               className="flex w-full items-center justify-between text-left font-sans text-[1.05rem] font-bold text-white"
             >
-              <span>Find Merchants</span>
+              <span>{navbarT.findMerchants}</span>
               <ChevronDownIcon className={cn("h-4 w-4 transition-transform", mobileDealsOpen ? "rotate-180" : "rotate-0")} />
             </button>
 
@@ -1389,18 +1433,18 @@ export default function Navbar({
                                 </Link>
                               ))
                             ) : (
-                              <p className="text-sm text-white/45">No stores in this category yet.</p>
+                              <p className="text-sm text-white/45">{navbarT.noStoresInCategory}</p>
                             )}
 
                             <Link
                               href={`${buildCountryPath("/stores", selectedCountryCode)}?category=${category.slug}`}
                               onClick={() => {
-                                setMobileOpen(false);
-                                setMobileDealsOpen(false);
+                                      setMobileOpen(false);
+                                      setMobileDealsOpen(false);
                               }}
                               className="text-[0.98rem] font-semibold text-[var(--accent)]"
                             >
-                              All {category.displayName} →
+                              {navbarT.allLabel} {category.displayName} →
                             </Link>
                           </div>
                         </div>
@@ -1419,7 +1463,7 @@ export default function Navbar({
               onClick={() => setMobileEventsOpen((current) => !current)}
               className="flex w-full items-center justify-between text-left font-sans text-[1.05rem] font-bold text-white"
             >
-              <span>Events</span>
+              <span>{navbarT.events}</span>
               <ChevronDownIcon className={cn("h-4 w-4 transition-transform", mobileEventsOpen ? "rotate-180" : "rotate-0")} />
             </button>
 
@@ -1445,13 +1489,13 @@ export default function Navbar({
 
           <div className="border-b border-white/8 py-5">
             <Link href={buildCountryPath("/exclusive", selectedCountryCode)} onClick={() => setMobileOpen(false)} className="block font-sans text-[1.05rem] font-bold text-white">
-              Exclusive
+              {navbarT.exclusive}
             </Link>
           </div>
 
           <div className="border-b border-white/8 py-5">
             <Link href={buildCountryPath("/blog", selectedCountryCode)} onClick={() => setMobileOpen(false)} className="block font-sans text-[1.05rem] font-bold text-white">
-              Blog
+              {navbarT.blog}
             </Link>
           </div>
         </div>

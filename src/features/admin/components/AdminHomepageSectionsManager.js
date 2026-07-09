@@ -293,23 +293,23 @@ function ProductSelectionList({ products, selectedProductIds, onToggle, searchVa
                 onChange={() => onToggle(product.id)}
                 className="h-4 w-4 shrink-0 appearance-none rounded-full border-2 border-[var(--muted)]/60 bg-[var(--surface-soft)] checked:bg-[var(--color-primary)] checked:border-[var(--color-primary)] focus:outline-none transition-all cursor-pointer relative after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:w-1.5 after:h-1.5 after:rounded-full after:bg-transparent checked:after:bg-white"
               />
-              <div className="min-w-0 flex-1 md:flex-none">
-                <div className="flex min-w-0 items-start justify-between gap-3 md:block">
-                  <div className="min-w-0">
-                    <p className="font-semibold text-[var(--text)] text-xs">{product.title}</p>
-                    <p className="mt-0.5 line-clamp-2 text-[11px] text-[var(--muted)] md:truncate">
-                      {product.description || product.status || "Product"}
-                    </p>
+                  <div className="min-w-0 flex-1 md:flex-none">
+                    <div className="flex min-w-0 items-start justify-between gap-3 md:block">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-[var(--text)] text-xs">{product.title}</p>
+                        <p className="mt-0.5 line-clamp-2 text-[11px] text-[var(--muted)] md:truncate">
+                          {product.description || product.status || "Product"}
+                        </p>
+                      </div>
+                      <p className="shrink-0 text-xs font-bold text-[var(--color-primary)] md:hidden">{product.currency || "$"}{product.price ?? 0}</p>
+                    </div>
                   </div>
-                  <p className="shrink-0 text-xs font-bold text-[var(--color-primary)] md:hidden">${product.price ?? 0}</p>
-                </div>
-              </div>
-              <p className="hidden truncate text-xs font-semibold text-[var(--text)]/80 capitalize md:block">{product.storeName || "-"}</p>
-              <div className="hidden md:block">
-                <span className="inline-flex items-center rounded px-2 py-0.5 text-xs font-bold text-emerald-600 bg-emerald-500/10 border border-emerald-500/20 dark:text-emerald-400">
-                  ${product.price ?? 0}
-                </span>
-              </div>
+                  <p className="hidden truncate text-xs font-semibold text-[var(--text)]/80 capitalize md:block">{product.storeName || "-"}</p>
+                  <div className="hidden md:block">
+                    <span className="inline-flex items-center rounded px-2 py-0.5 text-xs font-bold text-emerald-600 bg-emerald-500/10 border border-emerald-500/20 dark:text-emerald-400">
+                      {product.currency || "$"}{product.price ?? 0}
+                    </span>
+                  </div>
               <div className="hidden md:block text-right pr-4">
                 <span className="text-[var(--muted)] text-[10px] font-bold uppercase tracking-wider bg-[var(--surface-soft)] px-2 py-0.5 rounded border border-[var(--border)]">
                   {product.status || "Active"}

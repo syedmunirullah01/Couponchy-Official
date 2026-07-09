@@ -6,7 +6,22 @@ import { getSettings } from "@/server/repositories/settings-repository";
 import { getAllStores, getStoreBySlug } from "@/server/repositories/stores-repository";
 import { getAllCategories } from "@/server/repositories/categories-repository";
 import { normalizeCountryCode } from "@/lib/countries";
-import { generateStoreContent } from "@/lib/store-seo-templates";
+import { generateStoreContent, generateStoreAboutDescription } from "@/lib/store-seo-templates";
+import {
+  COUNTRY_TO_LANG,
+  getTranslatedSettings,
+  getTranslatedCategories,
+  getTranslatedOffers,
+  getTranslatedStore,
+  getTranslatedStoreDetail,
+  getTranslatedTrendingStores,
+  getTranslatedStoreDirectory,
+  getTranslatedHowItWorks,
+  getTranslatedFeaturedCoupons,
+  getTranslatedHero,
+  getTranslatedMarquee,
+} from "@/server/services/translation-service";
+
 
 function buildStoreDirectoryRecord(store) {
   const label = `${store.offersCount} ${store.offersCount === 1 ? "Active Offer" : "Active Offers"}`;
@@ -29,6 +44,7 @@ function buildStoreDetail(store, offers, allStores) {
   // ── Generate SEO content via 4-template engine ──────────────────────────
   // Admin-entered content always takes priority; generated content is fallback.
   const generated = generateStoreContent(store, offers);
+  const aboutText = generateStoreAboutDescription(store, offers);
 
   // Admin why-items (from textarea, one per line)
   const customWhyItems = String(store.contentWhyItemsText || "")
@@ -57,6 +73,7 @@ function buildStoreDetail(store, offers, allStores) {
     : generated.introParagraphs;
 
   return {
+    aboutText,
     singleStore: {
       ...store,
       title: `${store.name} Coupons, Deals & Promo Codes`,
@@ -208,6 +225,8 @@ export async function getStoreDirectoryData(search = "", countryCode) {
   const scopedStores = filterStoresByCountry(stores, countryCode);
   const allowedStoreSlugs = new Set(scopedStores.map((store) => store.slug));
   const scopedOffers = offers.filter((offer) => allowedStoreSlugs.has(offer.storeSlug));
+  const lang = COUNTRY_TO_LANG[String(countryCode || "").toUpperCase()] || "en";
+  const translatedStoreDirectory = await getTranslatedStoreDirectory(lang);
   const normalizedSearch = String(search || "").trim().toLowerCase();
   const matchingStoreSlugsFromOffers = normalizedSearch
     ? new Set(
@@ -235,6 +254,7 @@ export async function getStoreDirectoryData(search = "", countryCode) {
     categories,
     stores: filteredStores.map(buildStoreDirectoryRecord),
     searchValue: search,
+    t: translatedStoreDirectory,
   };
 }
 
@@ -246,12 +266,36 @@ export async function getHomePageData(countryCode) {
     getSettings(),
     getAllCategories(),
   ]);
+
+  const lang = COUNTRY_TO_LANG[String(countryCode || "").toUpperCase()] || "en";
+  const [
+    translatedSettings,
+    translatedCategories,
+    translatedTrendingStores,
+    translatedHowItWorks,
+    translatedFeaturedCoupons,
+    translatedHero,
+    translatedMarquee,
+  ] = await Promise.all([
+    getTranslatedSettings(settings, lang),
+    getTranslatedCategories(categories, lang),
+    getTranslatedTrendingStores(lang),
+    getTranslatedHowItWorks(lang),
+    getTranslatedFeaturedCoupons(lang),
+    getTranslatedHero(lang),
+    getTranslatedMarquee(lang),
+  ]);
+
   const scopedStores = filterStoresByCountry(stores, countryCode);
   const storeMap = new Map(scopedStores.map((store) => [store.slug, store]));
   const allowedStoreSlugs = new Set(scopedStores.map((store) => store.slug));
   const scopedOffers = offers.filter((offer) => allowedStoreSlugs.has(offer.storeSlug));
+
+  // Translate offers for the active language
+  const translatedOffers = await getTranslatedOffers(scopedOffers, lang);
+
   const scopedProducts = products.filter((product) => allowedStoreSlugs.has(product.storeSlug));
-  const homepageSections = settings.homepage.sections;
+  const homepageSections = translatedSettings.homepage.sections;
 
   const storesByCategory = scopedStores.reduce((acc, store) => {
     const key = store.categorySlug || "uncategorized";
@@ -266,8 +310,8 @@ export async function getHomePageData(countryCode) {
 
   const featuredOffersSource =
     homepageSections.featuredCoupons.selectedOfferIds?.length
-      ? orderItemsBySelection(scopedOffers, homepageSections.featuredCoupons.selectedOfferIds, (offer) => offer.id)
-      : scopedOffers;
+      ? orderItemsBySelection(translatedOffers, homepageSections.featuredCoupons.selectedOfferIds, (offer) => offer.id)
+      : translatedOffers;
 
   const featuredProductsSource =
     homepageSections.featuredProducts.selectedProductIds?.length
@@ -278,9 +322,14 @@ export async function getHomePageData(countryCode) {
   const categoriesTitle = rawTitle.toLowerCase().includes("store") ? "Browse Categories" : (rawTitle || "Browse Categories");
 
   return {
-    hero: settings.homepage.hero,
+    hero: translatedSettings.homepage.hero,
     categoriesTitle,
-    categories: categories.map((cat) => ({
+    heroStatsT: translatedHero,
+    marqueeT: translatedMarquee,
+    trendingStoresT: translatedTrendingStores,
+    howItWorksT: translatedHowItWorks,
+    featuredCouponsT: translatedFeaturedCoupons,
+    categories: translatedCategories.map((cat) => ({
       name: cat.name,
       slug: cat.slug,
       code: cat.name.slice(0, 1).toUpperCase(),
@@ -326,6 +375,7 @@ export async function getHomePageData(countryCode) {
       image: product.image,
       price: product.price,
       originalPrice: product.originalPrice,
+      currency: product.currency,
       ctaLabel: product.ctaLabel,
       productUrl: product.productUrl,
       storeName: product.storeName,
@@ -369,8 +419,17 @@ export async function getStorePageData(slug, countryCode) {
     (item) => normalizeCountryCode(item.countryCode) === normalizeCountryCode(store.countryCode)
   );
 
+  const lang = COUNTRY_TO_LANG[String(store.countryCode || "").toUpperCase()] || "en";
+  const [translatedStore, translatedOffers] = await Promise.all([
+    getTranslatedStore(store, lang),
+    getTranslatedOffers(offers, lang),
+  ]);
+
+  const detail = buildStoreDetail(translatedStore, translatedOffers, countryMatchedStores);
+  const translatedDetail = await getTranslatedStoreDetail(detail, lang);
+
   return {
-    ...buildStoreDetail(store, offers, countryMatchedStores),
+    ...translatedDetail,
     products: products.map((product) => ({
       ...product,
       productUrl: `/stores/${store.categorySlug}/${store.slug}/products/${product.slug}`,
@@ -392,8 +451,11 @@ export async function getProductPageData(storeSlug, productSlug, countryCode) {
     return null;
   }
 
+  const lang = COUNTRY_TO_LANG[String(store.countryCode || "").toUpperCase()] || "en";
+  const translatedStore = await getTranslatedStore(store, lang);
+
   return {
-    singleStore: store,
+    singleStore: translatedStore,
     productItem: {
       ...product,
       productUrl: `/stores/${store.categorySlug}/${store.slug}/products/${product.slug}`,

@@ -16,7 +16,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/Table";
 import BulkStoreImportDialog from "@/features/admin/components/BulkStoreImportDialog";
 import { cn } from "@/lib/utils";
-import { DEFAULT_COUNTRY_CODE, SUPPORTED_COUNTRIES, sanitizeCountryList } from "@/lib/countries";
+import { DEFAULT_COUNTRY_CODE, SUPPORTED_COUNTRIES, sanitizeCountryList, buildCountryPath } from "@/lib/countries";
 
 const MAX_LOGO_SIZE = 2 * 1024 * 1024;
 const ACCEPTED_LOGO_TYPES = ["image/png", "image/jpeg", "image/webp", "image/svg+xml"];
@@ -237,6 +237,45 @@ export default function AdminStoresManager() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [selectedStoreSlugs, setSelectedStoreSlugs] = useState([]);
   const [activeTab, setActiveTab] = useState("general");
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 15;
+
+  const totalPages = Math.ceil(filteredStores.length / pageSize);
+
+  const paginatedStores = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    return filteredStores.slice(startIndex, startIndex + pageSize);
+  }, [filteredStores, currentPage, pageSize]);
+
+  // Reset page when search query changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisible = 5;
+    if (totalPages <= maxVisible) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (currentPage > 3) {
+        pages.push("...");
+      }
+      const start = Math.max(2, currentPage - 1);
+      const end = Math.min(totalPages - 1, currentPage + 1);
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
+      if (currentPage < totalPages - 2) {
+        pages.push("...");
+      }
+      pages.push(totalPages);
+    }
+    return pages;
+  };
   const slugEditedRef = useRef(false);
   const logoTextEditedRef = useRef(false);
   const fileInputRef = useRef(null);
@@ -515,7 +554,16 @@ export default function AdminStoresManager() {
   }
 
   function toggleSelectAllStores() {
-    setSelectedStoreSlugs((current) => (current.length === filteredStores.length ? [] : filteredStores.map((store) => store.slug)));
+    const visibleSlugs = paginatedStores.map((store) => store.slug);
+    const allVisibleSelected = visibleSlugs.every((slug) => selectedStoreSlugs.includes(slug));
+
+    setSelectedStoreSlugs((current) => {
+      if (allVisibleSelected) {
+        return current.filter((slug) => !visibleSlugs.includes(slug));
+      } else {
+        return [...new Set([...current, ...visibleSlugs])];
+      }
+    });
   }
 
   async function handleDeleteConfirmed() {
@@ -587,9 +635,9 @@ export default function AdminStoresManager() {
                       <input
                         type="checkbox"
                         className="h-4 w-4 appearance-none rounded-full border-2 border-[var(--muted)]/60 bg-[var(--surface-soft)] checked:bg-[var(--color-primary)] checked:border-[var(--color-primary)] focus:outline-none transition-all cursor-pointer relative after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:w-1.5 after:h-1.5 after:rounded-full after:bg-transparent checked:after:bg-white"
-                        checked={filteredStores.length > 0 && selectedStoreSlugs.length === filteredStores.length}
+                        checked={paginatedStores.length > 0 && paginatedStores.every((store) => selectedStoreSlugs.includes(store.slug))}
                         onChange={toggleSelectAllStores}
-                        aria-label="Select all stores"
+                        aria-label="Select all visible stores"
                       />
                     </label>
                   </TableHead>
@@ -604,7 +652,7 @@ export default function AdminStoresManager() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredStores.map((store) => (
+                {paginatedStores.map((store) => (
                   <TableRow key={store.slug} className="border-b border-[var(--border)]/50 last:border-0 hover:bg-[var(--surface-soft)]/60 transition-colors duration-150">
                     <TableCell className="py-3 px-4">
                       <label className="flex items-center justify-center cursor-pointer">
@@ -646,23 +694,19 @@ export default function AdminStoresManager() {
                     <TableCell className="text-[var(--text)]/80 text-xs py-3 px-4 font-mono font-semibold">{store.countryCode || DEFAULT_COUNTRY_CODE}</TableCell>
                     <TableCell className="py-3 px-4 font-mono font-semibold text-xs text-[var(--text)]/80">{store.offersCount || 0}</TableCell>
                     <TableCell className="py-3 px-4 text-xs font-semibold">
-                      {store.affiliateLink ? (
-                        <a
-                          href={store.affiliateLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] transition-colors duration-150"
-                        >
-                          Visit
-                          <svg viewBox="0 0 24 24" className="h-3 w-3 stroke-current" fill="none" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                            <polyline points="15 3 21 3 21 9" />
-                            <line x1="10" y1="14" x2="21" y2="3" />
-                          </svg>
-                        </a>
-                      ) : (
-                        <span className="text-[var(--muted)]/50 italic font-normal">No Link</span>
-                      )}
+                      <a
+                        href={buildCountryPath(`/stores/${store.categorySlug || slugify(store.category)}/${store.slug}`, store.countryCode)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] transition-colors duration-150"
+                      >
+                        Visit
+                        <svg viewBox="0 0 24 24" className="h-3 w-3 stroke-current" fill="none" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                          <polyline points="15 3 21 3 21 9" />
+                          <line x1="10" y1="14" x2="21" y2="3" />
+                        </svg>
+                      </a>
                     </TableCell>
                     <TableCell className="py-3 px-4">
                       <span className={`inline-flex items-center rounded px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider border ${store.trustStatus === "Verified" || store.trustStatus === "Active"
@@ -710,6 +754,62 @@ export default function AdminStoresManager() {
               </TableBody>
             </Table>
           </div>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 ? (
+            <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <span className="text-xs text-[var(--muted)]">
+                Showing {Math.min((currentPage - 1) * pageSize + 1, filteredStores.length)} to{" "}
+                {Math.min(currentPage * pageSize, filteredStores.length)} of {filteredStores.length} stores
+              </span>
+              <div className="flex items-center gap-1.5 self-end sm:self-auto">
+                <button
+                  type="button"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  className="inline-flex h-8 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--surface-soft)] px-3 text-xs font-bold text-[var(--text)] transition hover:bg-[var(--surface)] hover:text-[var(--color-primary)] disabled:opacity-40 disabled:hover:text-inherit disabled:hover:bg-[var(--surface-soft)] cursor-pointer disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                
+                {getPageNumbers().map((pageNum, idx) => {
+                  if (pageNum === "...") {
+                    return (
+                      <span key={`dots-${idx}`} className="px-1 text-xs text-[var(--muted)]">
+                        ...
+                      </span>
+                    );
+                  }
+                  
+                  const isCurrent = currentPage === pageNum;
+                  return (
+                    <button
+                      key={pageNum}
+                      type="button"
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={cn(
+                        "inline-flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold transition cursor-pointer",
+                        isCurrent
+                          ? "bg-[var(--color-primary)] text-white shadow-sm"
+                          : "border border-[var(--border)] bg-[var(--surface-soft)] text-[var(--text)] hover:bg-[var(--surface)] hover:text-[var(--color-primary)]"
+                      )}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+
+                <button
+                  type="button"
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  className="inline-flex h-8 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--surface-soft)] px-3 text-xs font-bold text-[var(--text)] transition hover:bg-[var(--surface)] hover:text-[var(--color-primary)] disabled:opacity-40 disabled:hover:text-inherit disabled:hover:bg-[var(--surface-soft)] cursor-pointer disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          ) : null}
 
           {!filteredStores.length && !isHydrating ? (
             <div className="mt-6 rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface-soft)] px-5 py-6 text-sm text-[var(--muted)]">
@@ -991,7 +1091,7 @@ export default function AdminStoresManager() {
                               <polyline points="21 15 16 10 5 21" />
                             </svg>
                             <p className="text-[11px] font-bold text-[var(--text)]">Drag & drop logo file here</p>
-                            <p className="text-[10px] text-[var(--muted)] mt-0.5">Supports PNG, JPG, WEBP, SVG up to 2MB</p>
+                            <p className="text-[10px] text-[var(--muted)] mt-0.5">Supports PNG, JPG, WEBP, SVG up to 2MB (Recommended: Square 200x200 px)</p>
                             
                             <div className="flex gap-2 mt-3">
                               <Button type="button" variant="outline" className="rounded-lg h-7 text-[10px] px-3 bg-[var(--surface)] hover:bg-[var(--surface-soft)] cursor-pointer" onClick={() => fileInputRef.current?.click()}>

@@ -3,12 +3,30 @@ import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { copyToClipboard } from "@/lib/copyToClipboard";
 
-export default function FeaturedCouponCard({ coupon, index = 0 }) {
+export default function FeaturedCouponCard({ coupon, index = 0, t: propT }) {
   const [copied, setCopied] = useState(false);
   const [timeLeft, setTimeLeft] = useState({ days: "00", hours: "00", minutes: "00", seconds: "00" });
   const isHighlight = coupon.highlight;
 
   const isDeal = coupon.value === "GET DEAL" || coupon.value === "SAVE NOW";
+
+  // Fallback default translations
+  const t = propT || {
+    verified: "Verified",
+    active: "ACTIVE",
+    expiresIn: "Expires in:",
+    days: "DAYS",
+    hrs: "HRS",
+    min: "MIN",
+    sec: "SEC",
+    redirecting: "Redirecting...",
+    copied: "Copied!",
+    getDealNow: "Get Deal Now",
+    copyCode: "Copy Code",
+    deal: "DEAL",
+    code: "CODE",
+    exclusiveDeal: "EXCLUSIVE DEAL",
+  };
 
   const openAffiliateLink = () => {
     let url = coupon.affiliateLink;
@@ -141,13 +159,13 @@ export default function FeaturedCouponCard({ coupon, index = 0 }) {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--color-primary)] opacity-75"></span>
               <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[var(--color-primary)]"></span>
             </span>
-            <span className="text-[9px] font-black uppercase tracking-wider text-[var(--color-primary)]">Verified</span>
+            <span className="text-[9px] font-black uppercase tracking-wider text-[var(--color-primary)]">{t.verified}</span>
           </div>
         </div>
 
         <div className="mt-6 flex flex-col">
           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/55">
-            {coupon.tag || "EXCLUSIVE DEAL"}
+            {coupon.tag || t.exclusiveDeal}
           </p>
           <h3
             className={cn(
@@ -169,25 +187,25 @@ export default function FeaturedCouponCard({ coupon, index = 0 }) {
               <svg className="h-4 w-4 text-white/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
               </svg>
-              <span className="text-[10px] font-bold uppercase tracking-wider">Expires in:</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider">{t.expiresIn}</span>
             </div>
 
             <div className="flex items-center gap-1.5">
               <div className="flex flex-col items-center justify-center h-10 w-10 rounded-xl bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 text-[#d8b4fe] shadow-[0_0_10px_rgba(139,92,246,0.1)]">
                 <span className="text-xs font-bold leading-none">{timeLeft.days}</span>
-                <span className="text-[7px] font-extrabold tracking-wider leading-none mt-0.5 text-white/75">DAYS</span>
+                <span className="text-[7px] font-extrabold tracking-wider leading-none mt-0.5 text-white/75">{t.days}</span>
               </div>
               <div className="flex flex-col items-center justify-center h-10 w-10 rounded-xl bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 text-[#d8b4fe] shadow-[0_0_10px_rgba(139,92,246,0.1)]">
                 <span className="text-xs font-bold leading-none">{timeLeft.hours}</span>
-                <span className="text-[7px] font-extrabold tracking-wider leading-none mt-0.5 text-white/75">HRS</span>
+                <span className="text-[7px] font-extrabold tracking-wider leading-none mt-0.5 text-white/75">{t.hrs}</span>
               </div>
               <div className="flex flex-col items-center justify-center h-10 w-10 rounded-xl bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 text-[#d8b4fe] shadow-[0_0_10px_rgba(139,92,246,0.1)]">
                 <span className="text-xs font-bold leading-none">{timeLeft.minutes}</span>
-                <span className="text-[7px] font-extrabold tracking-wider leading-none mt-0.5 text-white/75">MIN</span>
+                <span className="text-[7px] font-extrabold tracking-wider leading-none mt-0.5 text-white/75">{t.min}</span>
               </div>
               <div className="flex flex-col items-center justify-center h-10 w-10 rounded-xl bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 text-[#d8b4fe] shadow-[0_0_10px_rgba(139,92,246,0.1)]">
                 <span className="text-xs font-bold leading-none">{timeLeft.seconds}</span>
-                <span className="text-[7px] font-extrabold tracking-wider leading-none mt-0.5 text-white/75">SEC</span>
+                <span className="text-[7px] font-extrabold tracking-wider leading-none mt-0.5 text-white/75">{t.sec}</span>
               </div>
             </div>
           </div>
@@ -228,7 +246,7 @@ export default function FeaturedCouponCard({ coupon, index = 0 }) {
           <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent transition-transform duration-1000 group-hover/btn:translate-x-full" />
 
           <div className="flex-1 py-4 px-4 text-center text-[11px] font-black uppercase tracking-[0.15em] transition-colors duration-300">
-            {copied ? (isDeal ? "Redirecting..." : "Copied!") : (isDeal ? "Get Deal Now" : "Copy Code")}
+            {copied ? (isDeal ? t.redirecting : t.copied) : (isDeal ? t.getDealNow : t.copyCode)}
           </div>
           <div className={cn(
             "relative flex h-full items-center justify-center px-4 py-4 border-l border-dashed",
@@ -237,7 +255,7 @@ export default function FeaturedCouponCard({ coupon, index = 0 }) {
               : "border-white/10 bg-white/5 group-hover/btn:border-black/20 group-hover/btn:bg-black/5"
           )}>
             <span className="text-[10px] font-black uppercase tracking-wider">
-              {isDeal ? "DEAL" : "CODE"}
+              {isDeal ? t.deal : t.code}
             </span>
           </div>
 

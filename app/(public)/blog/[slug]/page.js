@@ -110,12 +110,53 @@ function parseMarkdownToHTML(text) {
     .join("\n");
 }
 
+const defaultUI = {
+  ourJournal: "OUR JOURNAL",
+  shoppingDecoded: "Shopping, Decoded.",
+  searchPlaceholder: "Search articles...",
+  loadMore: "Load More Articles",
+  noArticlesFound: "No articles found",
+  noArticlesDesc: "Try searching for other terms or selecting a different category.",
+  stayUpdated: "STAY UPDATED",
+  findOutWhenWePublish: "Find out when we publish.",
+  subscribeDesc: "Subscribe to our newsletter to receive the latest e-commerce insights, discount code trends, and data reports directly in your inbox.",
+  subscribePlaceholder: "Enter your email address...",
+  subscribeButton: "SUBSCRIBE",
+  insideOurPlatform: "INSIDE OUR PLATFORM",
+  understandTheEngine: "Understand the engine.",
+  validationSystem: "Validation System",
+  howItWorks: "How It Works",
+  validationDesc: "Our validation crawler runs 24/7 matching codes with simulated cart responses. We automatically test code stackability and record success rates to save you time.",
+  goHome: "Go to Homepage →",
+  couponAnatomy: "Coupon Anatomy",
+  anatomyOfVoucher: "Anatomy of a Voucher",
+  anatomyDesc: "Understanding discount logic is crucial. From sitewide tags to category exclusions and minimum spend values, we break down code parameters for transparency.",
+  viewExclusiveDeals: "View Exclusive Deals →",
+  blogBreadcrumb: "BLOG",
+  tableOfContents: "Table of Contents",
+  shareThisArticle: "Share this article",
+  linkCopied: "Link Copied!",
+  moreFromOurJournal: "MORE FROM OUR JOURNAL",
+  relatedArticles: "Related Articles",
+  intro: "Introduction",
+  marketShift: "Market Insights",
+  detailedAnalysis: "Analysis Detail",
+  conclusion: "Conclusion",
+  readArticle: "Read article",
+  read: "READ",
+  by: "By",
+  journalSub: "Find our latest insights, data analyses, and shopping guides from the world of e-commerce, coupons, and retail trends.",
+  successSub: "✓ Subscription Successful!",
+  successSubDesc: "Thank you for subscribing. We will keep you updated.",
+};
+
 export default function BlogPostPage() {
   const { slug } = useParams();
   const pathname = usePathname();
   const countryCode = getCountryCodeFromPathname(pathname) || "US";
 
   const [article, setArticle] = useState(null);
+  const [ui, setUi] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -123,6 +164,8 @@ export default function BlogPostPage() {
   const [email, setEmail] = useState("");
   const [copiedLink, setCopiedLink] = useState(false);
   const [activeHeading, setActiveHeading] = useState("");
+
+  const t = ui || defaultUI;
 
   // Fetch article dynamically from API
   useEffect(() => {
@@ -134,6 +177,7 @@ export default function BlogPostPage() {
         }
         const payload = await res.json();
         setArticle(payload.data);
+        setUi(payload.ui || null);
       } catch (err) {
         setError(err.message || "Article not found.");
       } finally {
@@ -182,12 +226,12 @@ export default function BlogPostPage() {
   // Generate headings automatically from article content for table of contents
   const headings = article?.content
     ? [
-      { id: "introduction", label: "Introduction" },
+      { id: "introduction", label: t.intro },
       ...(article.content.includes("Shift") || article.content.includes("E-commerce")
-        ? [{ id: "market-shift", label: "Market Insights" }]
+        ? [{ id: "market-shift", label: t.marketShift }]
         : []),
-      { id: "detailed-analysis", label: "Analysis Detail" },
-      { id: "conclusion", label: "Conclusion" }
+      { id: "detailed-analysis", label: t.detailedAnalysis },
+      { id: "conclusion", label: t.conclusion }
     ]
     : [];
 
@@ -223,7 +267,7 @@ export default function BlogPostPage() {
       {/* Breadcrumbs */}
       <nav className="text-xs font-semibold uppercase tracking-wider text-white/40 flex items-center gap-2">
         <Link href={buildCountryPath("/blog", countryCode)} className="hover:text-[var(--color-primary)] transition-colors">
-          BLOG
+          {t.blogBreadcrumb}
         </Link>
         <span>/</span>
         <span className="text-white/60 truncate">{article.title}</span>
@@ -292,7 +336,7 @@ export default function BlogPostPage() {
           {/* Table of Contents */}
           {headings.length > 0 && (
             <div className="rounded-2xl border border-white/5 bg-[#0e0e11] p-5">
-              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/35">Table of Contents</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/35">{t.tableOfContents}</p>
               <nav className="mt-4 flex flex-col gap-3">
                 {headings.map((heading) => (
                   <a
@@ -314,7 +358,7 @@ export default function BlogPostPage() {
 
           {/* Share Block */}
           <div className="rounded-2xl border border-white/5 bg-[#0e0e11] p-5 text-center">
-            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/35">Share this article</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/35">{t.shareThisArticle}</p>
             <div className="mt-4 flex justify-center gap-3">
               <button
                 onClick={() => handleShareClick("whatsapp")}
@@ -343,7 +387,7 @@ export default function BlogPostPage() {
               </button>
             </div>
             {copiedLink && (
-              <p className="mt-2 text-[10px] text-emerald-400 font-bold uppercase tracking-wider leading-none">Link Copied!</p>
+              <p className="mt-2 text-[10px] text-emerald-400 font-bold uppercase tracking-wider leading-none">{t.linkCopied}</p>
             )}
           </div>
         </aside>
@@ -367,14 +411,14 @@ export default function BlogPostPage() {
 
       {/* Related Articles Banner */}
       <section className="pt-10 border-t border-white/[0.05]">
-        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/35">MORE FROM OUR JOURNAL</span>
+        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/35">{t.moreFromOurJournal}</span>
         <h2 className="mt-2 text-3xl font-black tracking-tight text-white uppercase">
-          Related Articles
+          {t.relatedArticles}
         </h2>
         <div className="mt-8 grid gap-6 sm:grid-cols-2">
           <Link href={buildCountryPath("/blog/state-of-coupon-codes-2026", countryCode)} className="group block">
             <div className="rounded-2xl border border-white/5 bg-[#0e0e11] p-5 hover:border-[var(--color-primary)]/30 transition-colors">
-              <span className="text-[9px] font-black uppercase tracking-wider text-[var(--color-primary)]">Latest Data</span>
+              <span className="text-[9px] font-black uppercase tracking-wider text-[var(--color-primary)]">{t.catLatestData}</span>
               <h3 className="mt-3 text-base font-bold text-white group-hover:text-[var(--color-primary)] transition-colors">
                 State of Coupon Codes in 2026: The E-commerce Shift
               </h3>
@@ -385,7 +429,7 @@ export default function BlogPostPage() {
           </Link>
           <Link href={buildCountryPath("/blog/coupon-statistics-2026", countryCode)} className="group block">
             <div className="rounded-2xl border border-white/5 bg-[#0e0e11] p-5 hover:border-[var(--color-primary)]/30 transition-colors">
-              <span className="text-[9px] font-black uppercase tracking-wider text-[var(--color-primary)]">Latest Data</span>
+              <span className="text-[9px] font-black uppercase tracking-wider text-[var(--color-primary)]">{t.catLatestData}</span>
               <h3 className="mt-3 text-base font-bold text-white group-hover:text-[var(--color-primary)] transition-colors">
                 Coupon Statistics 2026: The Ultimate Shopper Guide
               </h3>
@@ -401,20 +445,20 @@ export default function BlogPostPage() {
       <section className="rounded-[32px] border border-white/5 bg-gradient-to-br from-[#0c0c0f] to-[#07070a] p-8 sm:p-12 flex flex-col md:flex-row md:items-center justify-between gap-8 relative overflow-hidden">
         <div className="absolute right-0 bottom-0 h-64 w-64 rounded-full bg-[var(--color-primary)]/3 blur-[100px] pointer-events-none" />
         <div className="max-w-md relative z-10">
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-primary)]">STAY UPDATED</span>
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-primary)]">{t.stayUpdated}</span>
           <h2 className="mt-3 text-3xl font-black tracking-tight text-white uppercase">
-            Find out when we publish.
+            {t.findOutWhenWePublish}
           </h2>
           <p className="mt-2.5 text-xs leading-relaxed text-white/50">
-            Subscribe to our newsletter to receive the latest e-commerce insights, discount code trends, and data reports directly in your inbox.
+            {t.subscribeDesc}
           </p>
         </div>
 
         <div className="w-full max-w-sm relative z-10 shrink-0">
           {subscribed ? (
             <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-5 text-center">
-              <p className="text-sm font-bold text-emerald-400">✓ Subscription Successful!</p>
-              <p className="mt-1 text-xs text-white/50">Thank you for subscribing. We will keep you updated.</p>
+              <p className="text-sm font-bold text-emerald-400">{t.successSub}</p>
+              <p className="mt-1 text-xs text-white/50">{t.successSubDesc}</p>
             </div>
           ) : (
             <form onSubmit={(e) => { e.preventDefault(); setSubscribed(true); }} className="flex flex-col sm:flex-row gap-2">
@@ -423,14 +467,14 @@ export default function BlogPostPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your email address..."
+                placeholder={t.subscribePlaceholder}
                 className="flex-1 rounded-xl border border-white/10 bg-black/50 px-4 py-3 text-xs text-white placeholder-white/30 focus:border-[var(--color-primary)]/50 focus:outline-none"
               />
               <button
                 type="submit"
                 className="rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] px-6 py-3 text-xs font-black uppercase tracking-wider text-black transition duration-200 cursor-pointer shadow-[0_0_15px_rgba(139,92,246,0.2)]"
               >
-                SUBSCRIBE
+                {t.subscribeButton}
               </button>
             </form>
           )}

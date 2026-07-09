@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -27,6 +27,7 @@ const eventSchema = z.object({
   shortDescription: z.string().trim().optional().or(z.literal("")),
   longDescription: z.string().trim().optional().or(z.literal("")),
   status: z.enum(["enabled", "disabled"]),
+  countryCode: z.string().trim().min(1, "Country target is required."),
 });
 
 const defaultValues = {
@@ -38,6 +39,7 @@ const defaultValues = {
   shortDescription: "",
   longDescription: "",
   status: "enabled",
+  countryCode: "GLOBAL",
 };
 
 function slugify(value) {
@@ -68,6 +70,8 @@ function Spinner() {
 
 export default function AdminEventsManager() {
   const [events, setEvents] = useState([]);
+  const [countries, setCountries] = useState([]);
+  const [selectedCountryFilter, setSelectedCountryFilter] = useState("all");
   const [open, setOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -92,6 +96,14 @@ export default function AdminEventsManager() {
   const watchedSlug = watch("slug");
   const watchedKeyword = watch("keyword");
   const watchedStatus = watch("status");
+  const watchedCountryCode = watch("countryCode");
+
+  const filteredEvents = useMemo(() => {
+    if (selectedCountryFilter === "all") {
+      return events;
+    }
+    return events.filter((e) => (e.countryCode || "GLOBAL") === selectedCountryFilter);
+  }, [events, selectedCountryFilter]);
 
   async function loadEvents(showRefreshState = false) {
     if (showRefreshState) {
@@ -99,9 +111,16 @@ export default function AdminEventsManager() {
     }
 
     try {
-      const response = await fetch("/api/events", { cache: "no-store" });
-      const payload = await response.json();
-      setEvents(payload.data || []);
+      const [eventsRes, countriesRes] = await Promise.all([
+        fetch("/api/events", { cache: "no-store" }),
+        fetch("/api/public/countries", { cache: "no-store" }),
+      ]);
+      const [eventsPayload, countriesPayload] = await Promise.all([
+        eventsRes.json(),
+        countriesRes.json(),
+      ]);
+      setEvents(eventsPayload.data || []);
+      setCountries(countriesPayload.data || []);
     } finally {
       setIsRefreshing(false);
     }
@@ -136,6 +155,7 @@ export default function AdminEventsManager() {
       shortDescription: eventItem.shortDescription || "",
       longDescription: eventItem.longDescription || "",
       status: eventItem.status || "enabled",
+      countryCode: eventItem.countryCode || "GLOBAL",
     });
     setOpen(true);
   }
@@ -195,6 +215,19 @@ export default function AdminEventsManager() {
             <CardDescription className="text-xs text-[var(--muted)] mt-0.5">Manage seasonal or campaign landing pages that appear next to Exclusive in the public navbar.</CardDescription>
           </div>
           <div className="flex flex-shrink-0 items-center gap-2">
+            <select
+              value={selectedCountryFilter}
+              onChange={(event) => setSelectedCountryFilter(event.target.value)}
+              className="h-10 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 text-xs font-bold text-[var(--text)] outline-none cursor-pointer focus:border-[var(--color-primary)]"
+            >
+              <option value="all">All Countries</option>
+              <option value="GLOBAL">Global Only</option>
+              {countries.map((c) => (
+                <option key={c.code} value={c.code}>
+                  {c.code} - {c.name}
+                </option>
+              ))}
+            </select>
             <Button
               type="button"
               variant="ghost"
@@ -216,20 +249,21 @@ export default function AdminEventsManager() {
           </div>
         </CardHeader>
         <CardContent className="p-6">
-          {events.length ? (
+          {filteredEvents.length ? (
             <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
               <Table>
                 <TableHeader className="bg-[var(--surface-soft)]/50">
                   <TableRow className="border-b border-[var(--border)] hover:bg-transparent">
                     <TableHead className="h-10 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] px-3">Event Name</TableHead>
                     <TableHead className="h-10 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] px-3">Slug</TableHead>
+                    <TableHead className="h-10 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] px-3">Country</TableHead>
                     <TableHead className="h-10 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] px-3">Keyword</TableHead>
                     <TableHead className="h-10 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] px-3">Status</TableHead>
                     <TableHead className="h-10 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] px-3">Edit/Delete</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {events.map((eventItem) => (
+                  {filteredEvents.map((eventItem) => (
                     <TableRow key={eventItem.slug} className="border-b border-[var(--border)]/60 last:border-0 hover:bg-[var(--surface-soft)]/30 transition-colors duration-150">
                       {/* Event Name */}
                       <TableCell className="px-3 py-3">
@@ -238,6 +272,17 @@ export default function AdminEventsManager() {
                       {/* Slug */}
                       <TableCell className="px-3 py-3">
                         <span className="font-mono text-[11px] text-[var(--color-primary)]/70">/events/{eventItem.slug}</span>
+                      </TableCell>
+                      {/* Country badge */}
+                      <TableCell className="px-3 py-3">
+                        <span className={cn(
+                          "inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-bold tracking-wide",
+                          (eventItem.countryCode || "GLOBAL") === "GLOBAL"
+                            ? "border-purple-500/20 bg-purple-500/10 text-purple-400"
+                            : "border-blue-500/20 bg-blue-500/10 text-blue-400"
+                        )}>
+                          {(eventItem.countryCode || "GLOBAL") === "GLOBAL" ? "Global" : eventItem.countryCode}
+                        </span>
                       </TableCell>
                       {/* Keyword */}
                       <TableCell className="px-3 py-3">
@@ -305,108 +350,148 @@ export default function AdminEventsManager() {
         <DialogContent
           titleId={titleId}
           descriptionId={descriptionId}
-          className="max-w-5xl rounded-[30px] border border-[var(--border)] bg-[var(--surface)] p-0"
+          className="max-h-[calc(100vh-2rem)] max-w-5xl overflow-hidden rounded-[30px] border border-[var(--border)] bg-[var(--surface)] p-0 shadow-2xl sm:max-h-[calc(100vh-3rem)]"
         >
-          <div className="grid gap-0 lg:grid-cols-[0.9fr_1.1fr]">
-            <div className="border-b border-[var(--border)] bg-[linear-gradient(180deg,var(--surface-soft),var(--surface))] p-6 lg:border-r lg:border-b-0 lg:p-8">
-              <DialogHeader className="mb-6">
-                <Badge className="w-fit border border-[var(--color-primary)]/20 bg-[var(--surface)] px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-[var(--color-primary)]">
-                  Event editor
-                </Badge>
-                <DialogTitle id={titleId}>{editingEvent ? "Update Event" : "Add New Event"}</DialogTitle>
-                <DialogDescription id={descriptionId}>
-                  Create campaign pages that follow the Exclusive page structure while using event-specific naming and keyword matching.
-                </DialogDescription>
-              </DialogHeader>
+          <div className="grid gap-0 lg:grid-cols-[380px_1fr] h-[calc(100vh-2rem)] sm:h-[calc(100vh-3rem)] max-h-[820px] overflow-hidden">
+            {/* Left Column - Preview & Checklist */}
+            <div className="border-b border-[var(--border)] bg-[linear-gradient(180deg,var(--surface-soft),var(--surface))] p-6 lg:border-r lg:border-b-0 lg:p-8 flex flex-col justify-between overflow-y-auto">
+              <div>
+                <DialogHeader className="mb-6">
+                  <Badge className="w-fit border border-[var(--color-primary)]/20 bg-[var(--surface)] px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-[var(--color-primary)]">
+                    Event editor
+                  </Badge>
+                  <DialogTitle id={titleId} className="text-lg font-bold tracking-tight text-[var(--text)] mt-3">
+                    {editingEvent ? "Update Event" : "Add New Event"}
+                  </DialogTitle>
+                  <DialogDescription id={descriptionId} className="text-xs text-[var(--muted)] mt-1">
+                    Create campaign pages that follow the Exclusive page structure while using event-specific naming and keyword matching.
+                  </DialogDescription>
+                </DialogHeader>
 
-              <div className="space-y-4">
-                <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-primary)]">Preview</p>
-                  <p className="mt-4 text-lg font-semibold text-[var(--text)]">{watchedName || "Event name preview"}</p>
-                  <p className="mt-1 text-sm text-[var(--muted)]">/events/{watchedSlug || "event-slug"}</p>
-                  <p className="mt-4 text-sm text-[var(--muted)]">
-                    Keyword: <span className="text-[var(--text)]">{watchedKeyword || "event keyword"}</span>
-                  </p>
-                  <p className="mt-2 text-sm text-[var(--muted)]">
-                    Status: <span className="capitalize text-[var(--text)]">{watchedStatus}</span>
-                  </p>
-                </div>
+                <div className="space-y-4">
+                  <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-primary)]">Preview</p>
+                    <p className="mt-4 text-base font-bold text-[var(--text)]">{watchedName || "Event name preview"}</p>
+                    <p className="mt-1 text-xs text-[var(--muted)]">/events/{watchedSlug || "event-slug"}</p>
+                    <p className="mt-4 text-xs text-[var(--muted)]">
+                      Keyword: <span className="text-[var(--text)]">{watchedKeyword || "event keyword"}</span>
+                    </p>
+                    <p className="mt-2 text-xs text-[var(--muted)]">
+                      Status: <span className="capitalize text-[var(--text)]">{watchedStatus}</span>
+                    </p>
+                    <p className="mt-2 text-xs text-[var(--muted)]">
+                      Country Target: <span className="text-[var(--text)]">{(watchedCountryCode || "GLOBAL") === "GLOBAL" ? "Global" : watchedCountryCode}</span>
+                    </p>
+                  </div>
 
-                <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5">
-                  <p className="text-sm font-semibold text-[var(--text)]">How it works</p>
-                  <p className="mt-3 text-sm text-[var(--muted)]">
-                    The public page title comes from the event name, while the event keyword is used to find matching active offers.
-                  </p>
+                  <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5">
+                    <p className="text-xs font-bold text-[var(--text)] uppercase tracking-wider">How it works</p>
+                    <p className="mt-2.5 text-xs text-[var(--muted)] leading-relaxed">
+                      The public page title comes from the event name, while the event keyword is used to find matching active offers.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <form className="grid gap-5 bg-[var(--surface)] p-6 lg:p-8" onSubmit={handleSubmit(submitEvent)}>
-              <div className="grid gap-5 md:grid-cols-2">
-                <label className="grid gap-2 text-sm text-[var(--muted)]">
-                  <span className="font-medium text-[var(--text)]">Event Name</span>
-                  <Input placeholder="Christmas" className="rounded-lg bg-[var(--surface)]" {...register("name")} />
-                  {errors.name ? <span className="text-sm text-[var(--color-primary)]">{errors.name.message}</span> : null}
+            {/* Right Column - Scrollable Form */}
+            <form
+              className="flex flex-col justify-between h-full bg-[var(--surface)] overflow-hidden"
+              onSubmit={handleSubmit(submitEvent)}
+            >
+              {/* Scrollable Form Content */}
+              <div className="flex-1 p-6 lg:p-8 space-y-5 overflow-y-auto">
+                <div className="grid gap-5 md:grid-cols-2">
+                  <label className="grid gap-2 text-xs text-[var(--muted)]">
+                    <span className="font-bold uppercase tracking-wider text-[var(--text)]">Event Name</span>
+                    <Input placeholder="Christmas" className="rounded-xl bg-[var(--surface-soft)] h-11 px-4 text-sm" {...register("name")} />
+                    {errors.name ? <span className="text-xs text-red-500">{errors.name.message}</span> : null}
+                  </label>
+
+                  <label className="grid gap-2 text-xs text-[var(--muted)]">
+                    <span className="font-bold uppercase tracking-wider text-[var(--text)]">Slug</span>
+                    <Input
+                      placeholder="christmas"
+                      className="rounded-xl bg-[var(--surface-soft)] h-11 px-4 text-sm"
+                      {...register("slug", {
+                        onChange: () => {
+                          slugEditedRef.current = true;
+                        },
+                      })}
+                    />
+                    {errors.slug ? <span className="text-xs text-red-500">{errors.slug.message}</span> : null}
+                  </label>
+                </div>
+
+                <div className="grid gap-5 md:grid-cols-3">
+                  <label className="grid gap-2 text-xs text-[var(--muted)]">
+                    <span className="font-bold uppercase tracking-wider text-[var(--text)]">Event Keyword</span>
+                    <Input placeholder="christmas" className="rounded-xl bg-[var(--surface-soft)] h-11 px-4 text-sm" {...register("keyword")} />
+                    <span className="text-[10px] text-[var(--muted)] leading-tight">Used to find matching active offers on the event page.</span>
+                    {errors.keyword ? <span className="text-xs text-red-500">{errors.keyword.message}</span> : null}
+                  </label>
+
+                  <label className="grid gap-2 text-xs text-[var(--muted)]">
+                    <span className="font-bold uppercase tracking-wider text-[var(--text)]">Status</span>
+                    <select className="h-11 rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 text-sm text-[var(--text)] outline-none" {...register("status")}>
+                      <option value="enabled">Enabled</option>
+                      <option value="disabled">Disabled</option>
+                    </select>
+                  </label>
+
+                  <label className="grid gap-2 text-xs text-[var(--muted)]">
+                    <span className="font-bold uppercase tracking-wider text-[var(--text)]">Country Target</span>
+                    <select className="h-11 rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 text-sm text-[var(--text)] outline-none" {...register("countryCode")}>
+                      <option value="GLOBAL">Global (All Countries)</option>
+                      {countries.map((c) => (
+                        <option key={c.code} value={c.code}>
+                          {c.name} ({c.code})
+                        </option>
+                      ))}
+                    </select>
+                    {errors.countryCode ? <span className="text-xs text-red-500">{errors.countryCode.message}</span> : null}
+                  </label>
+                </div>
+
+                <label className="grid gap-2 text-xs text-[var(--muted)]">
+                  <span className="font-bold uppercase tracking-wider text-[var(--text)]">SEO Title</span>
+                  <Input placeholder="Best Christmas Discount Deals & Coupon Codes 2026" className="rounded-xl bg-[var(--surface-soft)] h-11 px-4 text-sm" {...register("seoTitle")} />
                 </label>
 
-                <label className="grid gap-2 text-sm text-[var(--muted)]">
-                  <span className="font-medium text-[var(--text)]">Slug</span>
-                  <Input
-                    placeholder="christmas"
-                    className="rounded-lg bg-[var(--surface)]"
-                    {...register("slug", {
-                      onChange: () => {
-                        slugEditedRef.current = true;
-                      },
-                    })}
-                  />
-                  {errors.slug ? <span className="text-sm text-[var(--color-primary)]">{errors.slug.message}</span> : null}
+                <label className="grid gap-2 text-xs text-[var(--muted)]">
+                  <span className="font-bold uppercase tracking-wider text-[var(--text)]">SEO Description</span>
+                  <textarea rows={3} className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3 text-sm text-[var(--text)] outline-none" {...register("seoDescription")} />
+                </label>
+
+                <label className="grid gap-2 text-xs text-[var(--muted)]">
+                  <span className="font-bold uppercase tracking-wider text-[var(--text)]">Short Description</span>
+                  <textarea rows={3} className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3 text-sm text-[var(--text)] outline-none" {...register("shortDescription")} />
+                </label>
+
+                <label className="grid gap-2 text-xs text-[var(--muted)]">
+                  <span className="font-bold uppercase tracking-wider text-[var(--text)]">Long Description</span>
+                  <textarea rows={4} className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3 text-sm text-[var(--text)] outline-none" {...register("longDescription")} />
                 </label>
               </div>
 
-              <div className="grid gap-5 md:grid-cols-2">
-                <label className="grid gap-2 text-sm text-[var(--muted)]">
-                  <span className="font-medium text-[var(--text)]">Event Keyword</span>
-                  <Input placeholder="christmas" className="rounded-lg bg-[var(--surface)]" {...register("keyword")} />
-                  <span className="text-xs text-[var(--muted)]">Used to find matching active offers on the event page.</span>
-                  {errors.keyword ? <span className="text-sm text-[var(--color-primary)]">{errors.keyword.message}</span> : null}
-                </label>
-
-                <label className="grid gap-2 text-sm text-[var(--muted)]">
-                  <span className="font-medium text-[var(--text)]">Status</span>
-                  <select className="h-11 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-4 text-sm text-[var(--text)] outline-none" {...register("status")}>
-                    <option value="enabled">Enabled</option>
-                    <option value="disabled">Disabled</option>
-                  </select>
-                </label>
-              </div>
-
-              <label className="grid gap-2 text-sm text-[var(--muted)]">
-                <span className="font-medium text-[var(--text)]">SEO Title</span>
-                <Input placeholder="Best Christmas Discount Deals & Coupon Codes 2026" className="rounded-lg bg-[var(--surface)]" {...register("seoTitle")} />
-              </label>
-
-              <label className="grid gap-2 text-sm text-[var(--muted)]">
-                <span className="font-medium text-[var(--text)]">SEO Description</span>
-                <textarea rows={3} className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--text)] outline-none" {...register("seoDescription")} />
-              </label>
-
-              <label className="grid gap-2 text-sm text-[var(--muted)]">
-                <span className="font-medium text-[var(--text)]">Short Description</span>
-                <textarea rows={4} className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--text)] outline-none" {...register("shortDescription")} />
-              </label>
-
-              <label className="grid gap-2 text-sm text-[var(--muted)]">
-                <span className="font-medium text-[var(--text)]">Long Description</span>
-                <textarea rows={5} className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--text)] outline-none" {...register("longDescription")} />
-              </label>
-
-              <div className="flex flex-col gap-3 border-t border-[var(--border)] pt-5 sm:flex-row sm:justify-end">
-                <Button type="button" variant="outline" className="rounded-lg" onClick={() => setOpen(false)} disabled={isSubmitting}>
+              {/* Sticky Footer */}
+              <div className="flex items-center justify-end gap-3 border-t border-[var(--border)] bg-[var(--surface-soft)]/50 px-6 py-4 lg:px-8">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-xl border-[var(--border)] px-5 h-10 text-xs font-bold text-[var(--muted)] hover:text-[var(--text)] cursor-pointer"
+                  onClick={() => setOpen(false)}
+                  disabled={isSubmitting}
+                >
                   Cancel
                 </Button>
-                <Button type="submit" className="rounded-lg" disabled={isSubmitting} leadingIcon={isSubmitting ? <Spinner /> : null}>
-                  {isSubmitting ? (editingEvent ? "Updating Event..." : "Saving Event...") : editingEvent ? "Update Event" : "Save Event"}
+                <Button
+                  type="submit"
+                  className="rounded-xl font-bold bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white shadow-sm transition-all duration-200 px-5 h-10 text-xs cursor-pointer"
+                  disabled={isSubmitting}
+                  leadingIcon={isSubmitting ? <Spinner /> : null}
+                >
+                  {isSubmitting ? "Saving..." : editingEvent ? "Update Event" : "Save Event"}
                 </Button>
               </div>
             </form>

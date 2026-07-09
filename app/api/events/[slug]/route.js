@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requirePermission } from "@/server/auth";
 import { deleteEvent, getEventBySlug, updateEvent } from "@/server/repositories/events-repository";
 import { validateEventPayload } from "@/lib/validators";
+import { translateEventOnSave } from "@/server/services/translation-service";
 
 export async function GET(_request, { params }) {
   const access = await requirePermission("events");
@@ -40,11 +41,15 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ error: "Event not found." }, { status: 404 });
     }
 
+    translateEventOnSave(event).catch((err) =>
+      console.error("[PUT /api/events/[slug]] Auto translation failed:", err)
+    );
     return NextResponse.json({ data: event });
   } catch (error) {
     return NextResponse.json({ error: error.message || "Unable to update event." }, { status: 400 });
   }
 }
+
 
 export async function DELETE(_request, { params }) {
   const access = await requirePermission("events");

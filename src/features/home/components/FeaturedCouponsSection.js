@@ -3,7 +3,27 @@ import Link from "next/link";
 import SectionHeader from "@/components/shared/SectionHeader";
 import FeaturedCouponCard from "./FeaturedCouponCard";
 
-export default function FeaturedCouponsSection({ featuredCoupons, title = "Featured Coupons" }) {
+export default function FeaturedCouponsSection({ featuredCoupons, title = "Featured Coupons", t: propT }) {
+  // Fallback default translations
+  const t = propT || {
+    verified: "Verified",
+    active: "ACTIVE",
+    expiresIn: "Expires in:",
+    days: "DAYS",
+    hrs: "HRS",
+    min: "MIN",
+    sec: "SEC",
+    redirecting: "Redirecting...",
+    copied: "Copied!",
+    getDealNow: "Get Deal Now",
+    copyCode: "Copy Code",
+    deal: "DEAL",
+    code: "CODE",
+    noActiveCoupons: "No Active Coupons Yet",
+    scannedDesc: "We're currently scanning and verifying exclusive coupon codes. Create a deal in the admin dashboard to populate this slot.",
+    manageCoupons: "Manage Coupons",
+  };
+
   // Filter: Only show 1 main coupon per store (deduplicated by storeSlug or brand)
   const seenStores = new Set();
   const deduplicatedCoupons = featuredCoupons.filter((coupon) => {
@@ -37,9 +57,9 @@ export default function FeaturedCouponsSection({ featuredCoupons, title = "Featu
                   <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 0 1 0 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 0 1 0-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375Z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-white tracking-tight">No Active Coupons Yet</h3>
+              <h3 className="text-xl font-bold text-white tracking-tight">{t.noActiveCoupons}</h3>
               <p className="mt-3 text-sm leading-relaxed text-white/40 font-medium">
-                We're currently scanning and verifying exclusive coupon codes. Create a deal in the admin dashboard to populate this slot.
+                {t.scannedDesc}
               </p>
             </div>
             
@@ -47,7 +67,7 @@ export default function FeaturedCouponsSection({ featuredCoupons, title = "Featu
               href="/admin/homepage" 
               className="relative mt-8 flex items-center justify-center gap-2.5 w-full h-12 rounded-xl bg-white/5 border border-white/10 text-white/70 text-xs font-bold transition-all duration-300 hover:bg-[var(--color-primary)] hover:border-[var(--color-primary)] hover:text-black hover:shadow-[0_0_15px_rgba(139,92,246,0.2)] active:scale-[0.98]"
             >
-              <span>Manage Coupons</span>
+              <span>{t.manageCoupons}</span>
               <span>→</span>
             </Link>
           </div>
@@ -67,6 +87,7 @@ export default function FeaturedCouponsSection({ featuredCoupons, title = "Featu
             key={`${coupon.storeSlug || coupon.brand}-${index}`}
             coupon={coupon}
             index={index}
+            t={t}
           />
         ))}
       </div>

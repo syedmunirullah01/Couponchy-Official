@@ -2,33 +2,40 @@ import OfferSection from "./OfferSection";
 import StoreContent from "./StoreContent";
 import StoreHeader from "./StoreHeader";
 import StoreSidebar from "./StoreSidebar";
+import { getStoreUITranslations } from "./store-translations";
 
-export default function SingleStorePage({ singleStore, storeTabs, offerTabs, offers, products, faqs, relatedStores }) {
+export default function SingleStorePage({ singleStore, storeTabs, offerTabs, offers, products, faqs, relatedStores, aboutText }) {
+  const t = getStoreUITranslations(singleStore.countryCode);
+
   return (
     <div className="mx-auto max-w-[1380px] px-4 py-8 sm:px-6 lg:px-8">
-      <StoreHeader singleStore={singleStore} storeTabs={storeTabs} offerTabs={offerTabs} offers={offers} />
+      <StoreHeader singleStore={singleStore} storeTabs={storeTabs} offerTabs={offerTabs} offers={offers} t={t} />
       {/* Main: offers left, sidebar right */}
       <div className="mt-8 flex flex-col gap-8 lg:flex-row lg:items-start">
         {/* Left: main content */}
         <div className="min-w-0 flex-1">
-          <OfferSection offers={offers} store={singleStore} />
-          <StoreContent singleStore={singleStore} faqs={faqs} />
+          <OfferSection offers={offers} store={singleStore} t={t} />
+          <StoreContent singleStore={singleStore} faqs={faqs} t={t} />
         </div>
         {/* Right: sidebar */}
-        <StoreSidebar singleStore={singleStore} relatedStores={relatedStores} offers={offers} />
+        <StoreSidebar singleStore={singleStore} relatedStores={relatedStores} offers={offers} aboutText={aboutText} t={t} />
       </div>
 
       {/* How It Works Section */}
       <section className="mt-20 border-t border-white/5 pt-16">
         <div className="text-center max-w-2xl mx-auto mb-14">
           <span className="rounded-full bg-[var(--accent)]/10 border border-[var(--accent)]/20 px-3.5 py-1.5 text-[9px] font-black uppercase tracking-[0.25em] text-[var(--accent)]">
-            SAVINGS GUIDE
+            {t.savingsGuide}
           </span>
           <h2 className="mt-5 text-3xl sm:text-4xl font-black uppercase tracking-[-0.04em] text-white">
-            How to save at{" "}<span className="bg-gradient-to-r from-white via-white to-[var(--color-primary-hover)] bg-clip-text text-transparent">{singleStore.name || "this store"}</span>
+            {t.howToSave.split("{name}")[0]}
+            <span className="bg-gradient-to-r from-white via-white to-[var(--color-primary-hover)] bg-clip-text text-transparent">
+              {singleStore.name || "this store"}
+            </span>
+            {t.howToSave.split("{name}")[1] || ""}
           </h2>
           <p className="mt-3.5 text-sm text-white/50 leading-relaxed">
-            Follow these three quick and easy steps to claim verified coupon discounts on your purchases.
+            {t.howToSaveDesc}
           </p>
         </div>
 
@@ -39,10 +46,10 @@ export default function SingleStorePage({ singleStore, storeTabs, offerTabs, off
               01
             </div>
             <h3 className="mt-6 text-lg font-black text-white group-hover:text-[var(--accent)] transition-colors">
-              Pick Your Offer
+              {t.step1Title}
             </h3>
             <p className="mt-3 text-xs leading-relaxed text-white/45">
-              Scroll through the active coupon codes and deals verified for {singleStore.name || "this store"} listed above, and click the copy or reveal button.
+              {t.step1Desc.replace("{name}", singleStore.name || "this store")}
             </p>
           </div>
 
@@ -52,10 +59,10 @@ export default function SingleStorePage({ singleStore, storeTabs, offerTabs, off
               02
             </div>
             <h3 className="mt-6 text-lg font-black text-white group-hover:text-[var(--accent)] transition-colors">
-              Copy the Code
+              {t.step2Title}
             </h3>
             <p className="mt-3 text-xs leading-relaxed text-white/45">
-              For coupons, click &quot;Reveal Code&quot;. The discount code will copy to your clipboard automatically, and the {singleStore.name || "this store"} shopping tab will open.
+              {t.step2Desc.replace("{name}", singleStore.name || "this store")}
             </p>
           </div>
 
@@ -65,10 +72,10 @@ export default function SingleStorePage({ singleStore, storeTabs, offerTabs, off
               03
             </div>
             <h3 className="mt-6 text-lg font-black text-white group-hover:text-[var(--accent)] transition-colors">
-              Apply at Checkout
+              {t.step3Title}
             </h3>
             <p className="mt-3 text-xs leading-relaxed text-white/45">
-              Select items to purchase on the merchant site. During checkout, paste your copied coupon code inside the discount promo box to apply savings.
+              {t.step3Desc.replace("{name}", singleStore.name || "this store")}
             </p>
           </div>
         </div>

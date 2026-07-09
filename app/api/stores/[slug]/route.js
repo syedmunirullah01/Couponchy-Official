@@ -4,6 +4,7 @@ import { deleteOffersByStoreSlug } from "@/server/repositories/offers-repository
 import { validateStorePayload } from "@/lib/validators";
 import { requirePermission } from "@/server/auth";
 import { revalidatePath } from "next/cache";
+import { translateStoreOnSave } from "@/server/services/translation-service";
 
 export async function GET(_request, { params }) {
   const { slug } = await params;
@@ -37,12 +38,16 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ error: "Store not found." }, { status: 404 });
     }
 
+    translateStoreOnSave(store).catch((err) =>
+      console.error("[PUT /api/stores/[slug]] Auto translation failed:", err)
+    );
     revalidatePath("/", "layout");
     return NextResponse.json({ data: store });
   } catch (error) {
     return NextResponse.json({ error: error.message || "Unable to update store." }, { status: 400 });
   }
 }
+
 
 export async function DELETE(_request, { params }) {
   const access = await requirePermission("stores");

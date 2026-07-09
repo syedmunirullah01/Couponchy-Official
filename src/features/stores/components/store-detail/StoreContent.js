@@ -28,13 +28,13 @@ function FAQItem({ faq, index }) {
   );
 }
 
-export default function StoreContent({ singleStore, faqs }) {
+export default function StoreContent({ singleStore, faqs, t }) {
   return (
     <>
       {/* About Section */}
       <section id="store-info" className="mt-10 scroll-mt-28 overflow-hidden rounded-[24px] border border-white/[0.06] bg-[#0c0c11] p-7">
         <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/[0.07] bg-white/[0.03] px-3 py-1">
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/35">Store Guide</span>
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/35">{t.storeGuide}</span>
         </div>
         <h2 className="text-2xl font-black tracking-[-0.03em] text-white sm:text-3xl">
           {singleStore.introTitle}
@@ -47,7 +47,7 @@ export default function StoreContent({ singleStore, faqs }) {
           {singleStore.whyItems?.length > 0 && (
             <div className="mt-6 rounded-[18px] border border-white/[0.05] bg-white/[0.02] p-5">
               <h3 className="mb-4 text-base font-black text-white/80">
-                Why Use {singleStore.name} Coupons from Couponchy?
+                {t.whyUseBrand.replace("{name}", singleStore.name)}
               </h3>
               <ul className="space-y-2.5">
                 {singleStore.whyItems.map((item, i) => (
@@ -73,7 +73,7 @@ export default function StoreContent({ singleStore, faqs }) {
             <div className="h-px flex-1 bg-white/[0.05]" />
           </div>
           <h2 className="mb-5 text-xl font-black tracking-[-0.02em] text-white sm:text-2xl">
-            Frequently Asked Questions
+            {t.faqTitle}
           </h2>
           <div className="space-y-2.5">
             {faqs.map((faq, index) => (

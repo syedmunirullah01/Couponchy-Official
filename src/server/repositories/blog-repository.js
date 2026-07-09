@@ -40,6 +40,7 @@ function normalizeBlogPost(input, currentPost) {
     thumbnailType: String(input.thumbnailType || "wave").trim(),
     content: String(input.content || "").trim(),
     featured: Boolean(input.featured),
+    countryCode: String(input.countryCode || "GLOBAL").trim().toUpperCase(),
     createdAt: currentPost?.createdAt || input.createdAt || now.toISOString(),
     updatedAt: now.toISOString(),
   };

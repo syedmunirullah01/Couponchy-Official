@@ -252,6 +252,14 @@ export default function AdminTopbar({ title, breadcrumbTrail = [] }) {
                                       <polyline points="22,6 12,13 2,6" />
                                     </svg>
                                   </div>
+                                ) : n.type === "social_click" ? (
+                                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 shadow-[0_0_10px_rgba(99,102,241,0.1)]">
+                                    <svg viewBox="0 0 24 24" className="h-4.5 w-4.5 stroke-current" fill="none" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                                      <polyline points="15 3 21 3 21 9" />
+                                      <line x1="10" y1="14" x2="21" y2="3" />
+                                    </svg>
+                                  </div>
                                 ) : n.feedback === "yes" ? (
                                   <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.1)]">
                                     <svg viewBox="0 0 24 24" className="h-4.5 w-4.5 stroke-current" fill="none" strokeWidth="2.5">
@@ -271,9 +279,25 @@ export default function AdminTopbar({ title, breadcrumbTrail = [] }) {
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center justify-between gap-2 mb-1">
                                   <span className={`text-[10.5px] font-black uppercase tracking-wider ${
-                                    n.type === "contact" ? "text-amber-400" : n.type === "subscriber" ? "text-blue-400" : n.feedback === "yes" ? "text-emerald-400" : "text-rose-400"
+                                    n.type === "contact"
+                                      ? "text-amber-400"
+                                      : n.type === "subscriber"
+                                      ? "text-blue-400"
+                                      : n.type === "social_click"
+                                      ? "text-indigo-400"
+                                      : n.feedback === "yes"
+                                      ? "text-emerald-400"
+                                      : "text-rose-400"
                                   }`}>
-                                    {n.type === "contact" ? "New Contact Message" : n.type === "subscriber" ? "New Subscriber" : n.feedback === "yes" ? "Coupon Works" : "Coupon Broken"}
+                                    {n.type === "contact"
+                                      ? "New Contact Message"
+                                      : n.type === "subscriber"
+                                      ? "New Subscriber"
+                                      : n.type === "social_click"
+                                      ? "Social Visit"
+                                      : n.feedback === "yes"
+                                      ? "Coupon Works"
+                                      : "Coupon Broken"}
                                   </span>
                                   <span className="text-[10px] font-bold text-[var(--muted)]/50">
                                     {new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -283,7 +307,13 @@ export default function AdminTopbar({ title, breadcrumbTrail = [] }) {
                                   {n.type === "contact" ? `${n.name} (${n.email})` : n.type === "subscriber" ? n.email : n.storeName}
                                 </p>
                                 <p className="text-[11px] font-semibold text-[var(--muted)]/70 leading-normal truncate">
-                                  {n.type === "contact" ? `Subject: ${n.subject || "General"}` : n.type === "subscriber" ? "Joined the newsletter list." : n.offerTitle}
+                                  {n.type === "contact"
+                                    ? `Subject: ${n.subject || "General"}`
+                                    : n.type === "subscriber"
+                                    ? "Joined the newsletter list."
+                                    : n.type === "social_click"
+                                    ? `User visited ${n.platform} link.`
+                                    : n.offerTitle}
                                 </p>
                               </div>
                               
