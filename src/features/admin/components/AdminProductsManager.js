@@ -59,7 +59,27 @@ export default function AdminProductsManager() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [error, setError] = useState("");
+  const [storeSearch, setStoreSearch] = useState("");
+  const [storeDropdownOpen, setStoreDropdownOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("details");
+
+
+  const filteredStoresForSelect = useMemo(() => {
+    const sorted = [...stores].sort((a, b) => {
+      const dateA = a.createdAt || a.created_at || 0;
+      const dateB = b.createdAt || b.created_at || 0;
+      return new Date(dateB) - new Date(dateA);
+    });
+
+    if (!storeSearch) return sorted;
+    const lowerQuery = storeSearch.toLowerCase();
+    return sorted.filter((store) => {
+      const name = (store.name || "").toLowerCase();
+      const slug = (store.slug || "").toLowerCase();
+      return name.includes(lowerQuery) || slug.includes(lowerQuery);
+    });
+  }, [stores, storeSearch]);
+
 
   const visibleProducts = useMemo(() => {
     if (selectedStoreFilter === "all") {
@@ -563,21 +583,72 @@ export default function AdminProductsManager() {
                         <div className="grid gap-4 sm:grid-cols-2">
                           <div className="grid gap-1.5">
                             <label className="text-xs font-bold text-[var(--text)]">Linked Store</label>
-                            <select
-                              name="storeSlug"
-                              value={form.storeSlug}
-                              onChange={handleChange}
-                              className="h-10 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 text-xs text-[var(--text)] outline-none focus:border-[var(--color-primary)]"
-                              required
-                            >
-                              <option value="">Select store</option>
-                              {stores.map((store) => (
-                                <option key={store.slug} value={store.slug}>
-                                  {store.name}
-                                </option>
-                              ))}
-                            </select>
+                            <div className="relative">
+                              <button
+                                type="button"
+                                onClick={() => setStoreDropdownOpen(!storeDropdownOpen)}
+                                className="flex h-10 w-full items-center justify-between rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 text-xs text-[var(--text)] outline-none focus:border-[var(--color-primary)] text-left cursor-pointer"
+                              >
+                                <span className={form.storeSlug ? "text-[var(--text)]" : "text-[var(--muted)]"}>
+                                  {form.storeName || "Select store"}
+                                </span>
+                                <svg viewBox="0 0 24 24" className="h-4 w-4 text-[var(--muted)]" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                  <path d="m6 9 6 6 6-6" />
+                                </svg>
+                              </button>
+
+                              {storeDropdownOpen && (
+                                <>
+                                  <div className="fixed inset-0 z-40" onClick={() => setStoreDropdownOpen(false)} />
+                                  <div className="absolute left-0 right-0 mt-1.5 max-h-60 overflow-y-auto rounded-xl border border-[var(--border)] bg-[#0c0c11] p-2 shadow-2xl z-50 flex flex-col gap-1.5 custom-scrollbar">
+                                    <input
+                                      type="text"
+                                      value={storeSearch}
+                                      onChange={(e) => setStoreSearch(e.target.value)}
+                                      placeholder="Search store..."
+                                      autoFocus
+                                      className="h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface-soft)]/40 px-3 text-xs text-[var(--text)] outline-none focus:border-[var(--color-primary)] placeholder-[var(--muted)]"
+                                      onClick={(e) => e.stopPropagation()}
+                                    />
+                                    <div className="overflow-y-auto max-h-40 flex flex-col gap-1 pr-1 custom-scrollbar">
+                                      {filteredStoresForSelect.length === 0 ? (
+                                        <div className="py-4 text-center text-xs text-[var(--muted)] italic">No stores found</div>
+                                      ) : (
+                                        filteredStoresForSelect.map((store) => {
+                                          const isSelected = form.storeSlug === store.slug;
+                                          return (
+                                            <button
+                                              key={store.slug}
+                                              type="button"
+                                              onClick={() => {
+                                                setForm({
+                                                  ...form,
+                                                  storeSlug: store.slug,
+                                                  storeName: store.name,
+                                                  productUrl: store.affiliateLink || "",
+                                                });
+                                                setStoreDropdownOpen(false);
+                                                setStoreSearch("");
+                                              }}
+                                              className={cn(
+                                                "w-full rounded-lg px-3 py-2 text-left text-xs transition duration-150 cursor-pointer",
+                                                isSelected
+                                                  ? "bg-[var(--color-primary)] text-white font-bold"
+                                                  : "text-[var(--text)] hover:bg-[var(--surface-soft)]"
+                                              )}
+                                            >
+                                              {store.name}
+                                            </button>
+                                          );
+                                        })
+                                      )}
+                                    </div>
+                                  </div>
+                                </>
+                              )}
+                            </div>
                             <span className="text-[9px] text-[var(--muted)]">Links product to a merchant catalog.</span>
+
                           </div>
 
                           <div className="grid gap-1.5">

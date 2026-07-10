@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { notFound } from "next/navigation";
 import path from "path";
 
 const ALLOWED_EXTENSIONS = [".html", ".txt"];
@@ -8,7 +9,7 @@ export async function GET(_request, { params }) {
 
   const ext = path.extname(filename).toLowerCase();
   if (!ALLOWED_EXTENSIONS.includes(ext)) {
-    return new Response("Not found", { status: 404 });
+    notFound();
   }
 
   try {
@@ -17,7 +18,7 @@ export async function GET(_request, { params }) {
       .download(`verification/${filename}`);
 
     if (error || !data) {
-      return new Response("Verification file not found in storage.", { status: 404 });
+      notFound();
     }
 
     const content = await data.text();
@@ -31,6 +32,6 @@ export async function GET(_request, { params }) {
       },
     });
   } catch (err) {
-    return new Response("Error fetching verification file.", { status: 500 });
+    notFound();
   }
 }

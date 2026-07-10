@@ -174,9 +174,9 @@ export default function SingleStorePage({ singleStore, storeTabs, offerTabs, off
                               </div>
 
                               <div className="flex items-end gap-3">
-                                <span className="text-xl font-black text-[var(--text)]">${product.price}</span>
+                                <span className="text-xl font-black text-[var(--text)]">{product.currency || "$"}{product.price}</span>
                                 {product.originalPrice ? (
-                                  <span className="text-sm text-[var(--muted)] line-through">${product.originalPrice}</span>
+                                  <span className="text-sm text-[var(--muted)] line-through">{product.currency || "$"}{product.originalPrice}</span>
                                 ) : null}
                               </div>
                             </div>
@@ -291,9 +291,9 @@ export default function SingleStorePage({ singleStore, storeTabs, offerTabs, off
                                     </div>
 
                                     <div className="flex items-end gap-3">
-                                      <span className="text-xl font-black text-[var(--text)]">${product.price}</span>
+                                      <span className="text-xl font-black text-[var(--text)]">{product.currency || "$"}{product.price}</span>
                                       {product.originalPrice ? (
-                                        <span className="text-sm text-[var(--muted)] line-through">${product.originalPrice}</span>
+                                        <span className="text-sm text-[var(--muted)] line-through">{product.currency || "$"}{product.originalPrice}</span>
                                       ) : null}
                                     </div>
                                   </div>

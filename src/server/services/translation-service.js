@@ -35,7 +35,7 @@ CRITICAL RULES:
 1. Translate only human-readable descriptive text.
 2. Keep the following technical terms and values EXACTLY as they are in the source text. Do NOT translate, modify, or transliterate them:
    - Brand names, store names (e.g., "Nike", "Apple", "Walmart", "Couponchy")
-   - Coupon codes, promo codes (e.g., "SAVE20", "FREEFLOW")
+   - Actual promo code / coupon code values (e.g., "SAVE20", "FREEFLOW"). Do NOT keep the generic words "coupons", "promo codes", "deals" in English; translate them naturally to the target language (e.g., in German: "coupons" -> "Gutscheine", "promo codes" -> "Aktionscodes" or "Rabattcodes", "deals" -> "Angebote").
    - Slugs, URLs, paths (e.g., "/store/nike", "https://nike.com")
    - HTML tags and their attributes (e.g., <span className="...">, <a>, etc.)
    - JSON keys and variable names/tokens (e.g., "%store%", "%best_discount%", "%year%")
@@ -1568,8 +1568,9 @@ export async function getTranslatedStoreDetail(detail, lang) {
 
       const currentHash = getHash(originalText);
       const dbEntry = translations[fieldKey];
+      const isFakeTranslation = lang !== "en" && dbEntry && dbEntry.text && dbEntry.text.trim() === originalText.trim() && originalText.trim().length > 10;
 
-      if (dbEntry && dbEntry.text && dbEntry.text.trim() && dbEntry.hash === currentHash) {
+      if (dbEntry && dbEntry.text && dbEntry.text.trim() && dbEntry.hash === currentHash && !isFakeTranslation) {
         return dbEntry.text;
       }
 

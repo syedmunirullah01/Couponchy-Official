@@ -6,9 +6,9 @@ export async function getPublicSiteSettings() {
   const settings = await getSettings();
 
   return {
-    siteName: settings.general.siteName,
-    tagline: settings.general.tagline,
-    supportEmail: settings.general.supportEmail,
+    siteName: settings.general?.siteName,
+    tagline: settings.general?.tagline,
+    supportEmail: settings.general?.supportEmail,
     social: settings.social,
     seo: settings.seo,
   };
@@ -16,11 +16,15 @@ export async function getPublicSiteSettings() {
 
 export async function getMetadataDefaults(pageTitle, overrides = {}) {
   const settings = await getSettings();
-  const title = settings.seo.titleTemplate.replace("%s", pageTitle);
-  const description = overrides.description || settings.seo.metaDescription;
-  const openGraphTitle = overrides.openGraph?.title || overrides.title || settings.seo.ogTitle;
-  const openGraphDescription = overrides.openGraph?.description || description || settings.seo.ogDescription;
-  const favicon = settings.general.faviconUrl || "/favicon.ico";
+  const seo = settings.seo || {};
+  const general = settings.general || {};
+
+  const titleTemplate = seo.titleTemplate || "%s | Couponchy";
+  const title = titleTemplate.replace("%s", pageTitle);
+  const description = overrides.description || seo.metaDescription || "";
+  const openGraphTitle = overrides.openGraph?.title || overrides.title || seo.ogTitle || title;
+  const openGraphDescription = overrides.openGraph?.description || description || seo.ogDescription || "";
+  const favicon = general.faviconUrl || "/favicon.ico";
 
   return {
     title: overrides.title || title,
@@ -34,6 +38,6 @@ export async function getMetadataDefaults(pageTitle, overrides = {}) {
       title: openGraphTitle,
       description: openGraphDescription,
     },
-    robots: settings.seo.robots,
+    robots: seo.robots,
   };
 }
