@@ -22,21 +22,32 @@
 }
 
 .admin-root.light {
-  --color-primary: #3b82f6;
-  --color-primary-hover: #2563eb;
+  --color-primary: #1d4ed8;
+  --color-primary-hover: #1e40af;
   --color-secondary: #ffffff;
   --color-secondary-muted: #f8fafc;
-  --color-muted: #64748b;
-  --color-text: #1e293b;
-  --color-border: #e2e8f0;
-  --page-bg: #f4f6fa;
+  --color-muted: #475569;
+  --color-text: #0f172a;
+  --color-border: #cbd5e1;
+  --page-bg: #f1f5f9;
   --surface: #ffffff;
   --surface-soft: #f8fafc;
-  --border: #e2e8f0;
-  --text: #1e293b;
-  --muted: #64748b;
+  --border: #cbd5e1;
+  --text: #0f172a;
+  --muted: #475569;
   --accent: var(--color-primary);
-  --body-bg: #f4f6fa;
+  --body-bg: #f1f5f9;
+}
+
+/* Make admin panel display text slightly larger for better readability, exempting inputs & action elements */
+.admin-root .text-xs:not(input):not(button):not(select):not(textarea):not(.h-8):not(.h-9):not(.h-9\.5):not(.h-10) {
+  font-size: 0.8125rem !important; /* 13px instead of 12px */
+}
+
+/* Also ensure form labels and display helper text have slightly improved readability */
+.admin-root label, 
+.admin-root .text-sm:not(input):not(button):not(select):not(textarea) {
+  font-size: 0.875rem !important; /* 14px */
 }
 
 @theme {
