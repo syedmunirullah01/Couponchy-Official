@@ -57,28 +57,18 @@ export default function StoreSidebar({ singleStore, relatedStores, offers = [], 
       {/* Sidebar Vertical Banner (Optional, Desktop Only) */}
       {singleStore.sidebarBannerImage && (
         <div className="hidden lg:block overflow-hidden rounded-[22px] border border-white/[0.06] bg-[#0c0c11] p-1.5 transition-all duration-300 hover:border-[var(--color-primary)]/30 hover:shadow-[0_22px_48px_rgba(0,0,0,0.45)]">
-          {singleStore.sidebarBannerUrl ? (
-            <a
-              href={singleStore.sidebarBannerUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block relative w-full overflow-hidden rounded-[16px]"
-            >
-              <img
-                src={singleStore.sidebarBannerImage}
-                alt={`${singleStore.name} Promotion`}
-                className="w-full h-auto object-cover transition duration-700 hover:scale-[1.03]"
-              />
-            </a>
-          ) : (
-            <div className="relative w-full overflow-hidden rounded-[16px]">
-              <img
-                src={singleStore.sidebarBannerImage}
-                alt={`${singleStore.name} Promotion`}
-                className="w-full h-auto object-cover"
-              />
-            </div>
-          )}
+          <a
+            href={singleStore.sidebarBannerUrl || storeWebsite}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block relative w-full overflow-hidden rounded-[16px] cursor-pointer"
+          >
+            <img
+              src={singleStore.sidebarBannerImage}
+              alt={`${singleStore.name} Promotion`}
+              className="w-full h-auto object-cover transition duration-700 hover:scale-[1.03]"
+            />
+          </a>
         </div>
       )}
     </aside>
