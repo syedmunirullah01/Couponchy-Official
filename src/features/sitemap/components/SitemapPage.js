@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { buildCountryPath } from "@/lib/countries";
 
-export default function SitemapPage({ categories = [], stores = [], settings = {} }) {
+export default function SitemapPage({ categories = [], stores = [], settings = {}, countryCode = "us" }) {
   const [searchQuery, setSearchQuery] = useState("");
 
   const siteName = settings.siteName || "Couponchy";
@@ -94,7 +95,7 @@ export default function SitemapPage({ categories = [], stores = [], settings = {
                   { name: "Privacy Policy", href: "/privacy-policy", desc: "Read our rules concerning your personal cookies and data." },
                   { name: "Terms of Service", href: "/terms-of-service", desc: "Examine licensing rules and obligations of website usage." },
                 ].map((item) => (
-                  <Link key={item.href} href={item.href} style={{ background: "rgba(15,15,20,0.4)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "18px", padding: "24px", textDecoration: "none", display: "block", transition: "all 0.3s" }}
+                  <Link key={item.href} href={buildCountryPath(item.href, countryCode)} style={{ background: "rgba(15,15,20,0.4)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "18px", padding: "24px", textDecoration: "none", display: "block", transition: "all 0.3s" }}
                     onMouseEnter={e => { e.currentTarget.style.border = "1px solid rgba(139,92,246,0.3)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
                     onMouseLeave={e => { e.currentTarget.style.border = "1px solid rgba(255,255,255,0.05)"; e.currentTarget.style.transform = "translateY(0)"; }}>
                     <h3 style={{ fontSize: "16px", fontWeight: 800, margin: "0 0 4px", color: "#fff" }}>{item.name}</h3>
@@ -113,7 +114,7 @@ export default function SitemapPage({ categories = [], stores = [], settings = {
               </h2>
               <div style={{ display: "grid", gap: "16px", gridTemplateColumns: "repeat(2, 1fr)" }} className="sitemap-categories-grid">
                 {categories.map((cat) => (
-                  <Link key={cat.slug} href={`/stores?category=${cat.slug}`} style={{ background: "rgba(15,15,20,0.4)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "18px", padding: "20px 24px", textDecoration: "none", display: "flex", justifyContent: "space-between", alignItems: "center", transition: "all 0.3s" }}
+                  <Link key={cat.slug} href={buildCountryPath(`/stores?category=${cat.slug}`, countryCode)} style={{ background: "rgba(15,15,20,0.4)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "18px", padding: "20px 24px", textDecoration: "none", display: "flex", justifyContent: "space-between", alignItems: "center", transition: "all 0.3s" }}
                     onMouseEnter={e => { e.currentTarget.style.border = "1px solid rgba(139,92,246,0.3)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
                     onMouseLeave={e => { e.currentTarget.style.border = "1px solid rgba(255,255,255,0.05)"; e.currentTarget.style.transform = "translateY(0)"; }}>
                     <span style={{ fontSize: "15px", fontWeight: 800, color: "#fff" }}>{cat.name}</span>
@@ -153,7 +154,7 @@ export default function SitemapPage({ categories = [], stores = [], settings = {
                         {matchingStores.map((store) => (
                           <Link
                             key={store.slug}
-                            href={`/stores/${store.categorySlug || "uncategorized"}/${store.slug}`}
+                            href={buildCountryPath(`/stores/${store.categorySlug || "uncategorized"}/${store.slug}`, countryCode)}
                             style={{
                               fontSize: "14px",
                               fontWeight: 700,
