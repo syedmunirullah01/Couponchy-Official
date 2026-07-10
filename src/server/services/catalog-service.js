@@ -432,7 +432,7 @@ export async function getStorePageData(slug, countryCode) {
     ...translatedDetail,
     products: products.map((product) => ({
       ...product,
-      productUrl: `/stores/${store.categorySlug}/${store.slug}/products/${product.slug}`,
+      productUrl: product.productUrl || `/stores/${store.categorySlug}/${store.slug}/products/${product.slug}`,
     })),
   };
 }

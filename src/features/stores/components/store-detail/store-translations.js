@@ -59,7 +59,10 @@ const STORE_TRANSLATIONS = {
     "verifiedPercent": "100% Verified",
     "coupon": "coupon",
     "deal": "deal",
-    "code": "code"
+    "code": "code",
+    "curatedShowcase": "CURATED SHOWCASE",
+    "shopProducts": "Shop Products",
+    "trendingProducts": "Trending {name} Products"
   },
   "pl": {
     "savingsGuide": "PORADNIK OSZCZĘDZANIA",
@@ -121,7 +124,10 @@ const STORE_TRANSLATIONS = {
     "verifiedPercent": "W 100% zweryfikowane",
     "coupon": "kupon",
     "deal": "promocja",
-    "code": "kod"
+    "code": "kod",
+    "curatedShowcase": "WYBRANE PRODUKTY",
+    "shopProducts": "Kup produkty",
+    "trendingProducts": "Popularne produkty {name}"
   },
   "de": {
     "savingsGuide": "SPAR-GUIDE",
@@ -148,9 +154,9 @@ const STORE_TRANSLATIONS = {
     "sec": "SEK",
     "lastUsed": "Zuletzt verwendet:",
     "usesToday": "Heute verwendet:",
-    "revealCode": "CODE ANZEIGEN",
-    "getCode": "CODE ANZEIGEN",
-    "getDeal": "ANGEBOT ANZEIGEN",
+    "revealCode": "CODE ZEIGEN",
+    "getCode": "CODE HOLEN",
+    "getDeal": "ZUM DEAL",
     "goToStore": "Zum Shop →",
     "health": "Erfolgsrate:",
     "copyCodeBelow": "Kopieren Sie den folgenden Code und fügen Sie ihn an der Kasse ein.",
@@ -183,7 +189,10 @@ const STORE_TRANSLATIONS = {
     "verifiedPercent": "100% Verifiziert",
     "coupon": "gutschein",
     "deal": "angebot",
-    "code": "code"
+    "code": "code",
+    "curatedShowcase": "EXKLUSIVE AUSWAHL",
+    "shopProducts": "Produkte shoppen",
+    "trendingProducts": "Beliebte {name}-Produkte"
   },
   "fr": {
     "savingsGuide": "GUIDE D'ÉPARGNE",
@@ -210,7 +219,7 @@ const STORE_TRANSLATIONS = {
     "sec": "SEC",
     "lastUsed": "Dernière utilisation:",
     "usesToday": "Utilisés aujourd'hui:",
-    "revealCode": "RÉVÉLER LE CODE",
+    "revealCode": "VOIR LE CODE",
     "getCode": "OBTENIR LE CODE",
     "getDeal": "VOIR L'OFFRE",
     "goToStore": "Aller sur le site →",
@@ -245,7 +254,10 @@ const STORE_TRANSLATIONS = {
     "verifiedPercent": "100% Vérifié",
     "coupon": "coupon",
     "deal": "offre",
-    "code": "code"
+    "code": "code",
+    "curatedShowcase": "SÉLECTION EXCLUSIVE",
+    "shopProducts": "Acheter les produits",
+    "trendingProducts": "Produits {name} tendance"
   },
   "nl": {
     "savingsGuide": "BESPAARGIDS",
@@ -307,7 +319,10 @@ const STORE_TRANSLATIONS = {
     "verifiedPercent": "100% Geverifieerd",
     "coupon": "kortingsbon",
     "deal": "aanbieding",
-    "code": "code"
+    "code": "code",
+    "curatedShowcase": "EXCLUSIEVE SELECTIE",
+    "shopProducts": "Producten kopen",
+    "trendingProducts": "Populaire {name} producten"
   },
   "it": {
     "savingsGuide": "GUIDA AL RISPARMIO",
@@ -335,8 +350,8 @@ const STORE_TRANSLATIONS = {
     "lastUsed": "Ultimo utilizzo:",
     "usesToday": "Usati oggi:",
     "revealCode": "MOSTRA CODICE",
-    "getCode": "SCOPRI IL CODICE",
-    "getDeal": "SCOPRI L'OFFERTA",
+    "getCode": "MOSTRA CODICE",
+    "getDeal": "VEDI OFFERTA",
     "goToStore": "Vai al negozio →",
     "health": "Tasso di successo:",
     "copyCodeBelow": "Copia il codice qui sotto e incollalo al checkout.",
@@ -369,7 +384,10 @@ const STORE_TRANSLATIONS = {
     "verifiedPercent": "100% Verificato",
     "coupon": "coupon",
     "deal": "offerta",
-    "code": "codice"
+    "code": "codice",
+    "curatedShowcase": "SELEZIONE ESCLUSIVA",
+    "shopProducts": "Acquista prodotti",
+    "trendingProducts": "Prodotti {name} di tendenza"
   },
   "es": {
     "savingsGuide": "GUÍA DE AHORRO",
@@ -397,8 +415,8 @@ const STORE_TRANSLATIONS = {
     "lastUsed": "Último uso:",
     "usesToday": "Usados hoy:",
     "revealCode": "REVELAR CÓDIGO",
-    "getCode": "OBTENER CÓDIGO",
-    "getDeal": "OBTENER OFERTA",
+    "getCode": "VER CÓDIGO",
+    "getDeal": "VER OFERTA",
     "goToStore": "Ir a la tienda →",
     "health": "Tasa de éxito:",
     "copyCodeBelow": "Copia el código a continuación y pégalo al pagar.",
@@ -431,7 +449,10 @@ const STORE_TRANSLATIONS = {
     "verifiedPercent": "100% Verificado",
     "coupon": "cupón",
     "deal": "oferta",
-    "code": "código"
+    "code": "código",
+    "curatedShowcase": "SELECCIÓN EXCLUSIVA",
+    "shopProducts": "Comprar productos",
+    "trendingProducts": "Productos {name} de moda"
   },
   "sv": {
     "savingsGuide": "SPARGUIDE",
@@ -493,7 +514,10 @@ const STORE_TRANSLATIONS = {
     "verifiedPercent": "100% Verifierad",
     "coupon": "kupong",
     "deal": "erbjudande",
-    "code": "kod"
+    "code": "kod",
+    "curatedShowcase": "EXKLUSIVT URVAL",
+    "shopProducts": "Köp produkter",
+    "trendingProducts": "Populära {name}-produkter"
   },
   "ja": {
     "savingsGuide": "節約ガイド",
@@ -555,7 +579,10 @@ const STORE_TRANSLATIONS = {
     "verifiedPercent": "100% 確認済み",
     "coupon": "クーポン",
     "deal": "セール",
-    "code": "コード"
+    "code": "コード",
+    "curatedShowcase": "厳選ショーケース",
+    "shopProducts": "商品を購入",
+    "trendingProducts": "人気の{name}商品"
   },
   "pt": {
     "savingsGuide": "GUIA DE ECONOMIA",
@@ -617,7 +644,10 @@ const STORE_TRANSLATIONS = {
     "verifiedPercent": "100% Verificado",
     "coupon": "cupom",
     "deal": "oferta",
-    "code": "código"
+    "code": "código",
+    "curatedShowcase": "SELEÇÃO EXCLUSIVA",
+    "shopProducts": "Comprar produtos",
+    "trendingProducts": "Produtos {name} populares"
   },
   "ar": {
     "savingsGuide": "دليل التوفير",
@@ -679,7 +709,10 @@ const STORE_TRANSLATIONS = {
     "verifiedPercent": "100% موثقة",
     "coupon": "كوبون",
     "deal": "صفقة",
-    "code": "كود"
+    "code": "كود",
+    "curatedShowcase": "معرض مختار",
+    "shopProducts": "تسوق المنتجات",
+    "trendingProducts": "منتجات {name} الرائجة"
   }
 };
 
