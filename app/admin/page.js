@@ -120,7 +120,7 @@ export default async function AdminDashboardPage() {
           <ActivityTrendsChart chartData={chartData} />
 
           {/* Country Wise Stores Breakdown (Image 2 - Branches list equivalent) */}
-          <CountryStoresCard stores={stores} />
+          <CountryStoresCard stores={stores} activeCountries={settings?.general?.countries} />
         </section>
 
         {/* Bottom Section: Website Traffic Distribution & Recent Offers Table */}

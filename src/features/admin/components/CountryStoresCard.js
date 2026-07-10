@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
-import { SUPPORTED_COUNTRIES } from "@/lib/countries";
+import { SUPPORTED_COUNTRIES, sanitizeCountryList } from "@/lib/countries";
 
-export default function CountryStoresCard({ stores = [] }) {
+export default function CountryStoresCard({ stores = [], activeCountries }) {
   const [expanded, setExpanded] = useState(false);
 
   // Group stores count by country code
@@ -14,8 +14,12 @@ export default function CountryStoresCard({ stores = [] }) {
     countsByCountry[code] = (countsByCountry[code] || 0) + 1;
   });
 
-  // Map to listed countries in SUPPORTED_COUNTRIES
-  const countryData = SUPPORTED_COUNTRIES.map((c) => ({
+  // Map to listed active countries
+  const sourceCountries = activeCountries && activeCountries.length
+    ? sanitizeCountryList(activeCountries)
+    : SUPPORTED_COUNTRIES;
+
+  const countryData = sourceCountries.map((c) => ({
     code: c.code,
     name: c.name,
     flag: c.flag,
