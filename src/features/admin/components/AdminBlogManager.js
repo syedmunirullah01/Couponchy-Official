@@ -29,7 +29,26 @@ const blogPostSchema = z.object({
   content: z.string().trim().min(1, "Content body is required."),
   featured: z.boolean().default(false),
   countryCode: z.string().trim().min(1, "Country target is required."),
+  date: z.string().trim().min(1, "Published date is required."),
 });
+
+function formatDateToHuman(dateStr) {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return dateStr;
+  const options = { year: "numeric", month: "short", day: "numeric" };
+  return d.toLocaleDateString("en-US", options);
+}
+
+function formatDateToInput(dateStr) {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return "";
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
 
 const defaultValues = {
   title: "",
@@ -42,6 +61,7 @@ const defaultValues = {
   content: "",
   featured: false,
   countryCode: "GLOBAL",
+  date: new Date().toISOString().split("T")[0],
 };
 
 function RefreshIcon() {
@@ -322,7 +342,10 @@ export default function AdminBlogManager() {
   function openCreateModal() {
     slugEditedRef.current = false;
     setEditingPost(null);
-    reset(defaultValues);
+    reset({
+      ...defaultValues,
+      date: new Date().toISOString().split("T")[0],
+    });
     setOpen(true);
   }
 
@@ -340,18 +363,23 @@ export default function AdminBlogManager() {
       content: post.content,
       featured: Boolean(post.featured),
       countryCode: post.countryCode || "GLOBAL",
+      date: formatDateToInput(post.date),
     });
     setOpen(true);
   }
 
   async function submitPost(values) {
+    const formattedValues = {
+      ...values,
+      date: formatDateToHuman(values.date),
+    };
     const endpoint = editingPost ? `/api/blog/${editingPost.slug}` : "/api/blog";
     const method = editingPost ? "PUT" : "POST";
 
     const response = await fetch(endpoint, {
       method,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(values),
+      body: JSON.stringify(formattedValues),
     });
     const payload = await response.json();
 
@@ -705,8 +733,8 @@ export default function AdminBlogManager() {
                     </label>
                   </div>
 
-                  {/* Author Name + Author Role */}
-                  <div className="grid gap-4 sm:grid-cols-2">
+                  {/* Author Name + Author Role + Published Date */}
+                  <div className="grid gap-4 sm:grid-cols-3">
                     <label className="grid gap-2">
                       <span className="text-xs font-bold uppercase tracking-wider text-[var(--text)]">Author Name</span>
                       <Input
@@ -725,6 +753,16 @@ export default function AdminBlogManager() {
                         {...register("authorRole")}
                       />
                       {errors.authorRole ? <span className="text-xs text-red-500">{errors.authorRole.message}</span> : null}
+                    </label>
+
+                    <label className="grid gap-2">
+                      <span className="text-xs font-bold uppercase tracking-wider text-[var(--text)]">Published Date</span>
+                      <Input
+                        type="date"
+                        className="h-11 rounded-xl border-[var(--border)] bg-[var(--surface-soft)] px-4 text-sm text-[var(--text)] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/10"
+                        {...register("date")}
+                      />
+                      {errors.date ? <span className="text-xs text-red-500">{errors.date.message}</span> : null}
                     </label>
                   </div>
 

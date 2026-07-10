@@ -33,7 +33,7 @@ function normalizeBlogPost(input, currentPost) {
     slug,
     excerpt: String(input.excerpt || "").trim(),
     category: String(input.category || "Latest Data").trim(),
-    date: currentPost?.date || input.date || formattedDate,
+    date: input.date || currentPost?.date || formattedDate,
     readTime,
     author: String(input.author || "Admin").trim(),
     authorRole: String(input.authorRole || "Editor").trim(),
