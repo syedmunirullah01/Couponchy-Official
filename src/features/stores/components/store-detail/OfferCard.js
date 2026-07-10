@@ -149,6 +149,7 @@ export default function OfferCard({ offer, store, isFirst, t }) {
   const actionHref = isExternal || offerHref === "#" ? offerHref : buildCountryPath(offerHref, store.countryCode);
   const offerValue = getOfferValue(offer);
   const isCoupon = offer.type === "Coupon";
+  const isGermany = String(store?.countryCode || "").toUpperCase() === "DE";
   const expiryText = formatExpiry(offer.expiryDate);
 
   const submitFeedback = async (val) => {
@@ -503,28 +504,30 @@ export default function OfferCard({ offer, store, isFirst, t }) {
             </div>
 
             {/* CTA Button */}
-            <div className="shrink-0">
-              {isCoupon && offer.code ? (
-                <button
-                  onClick={handleReveal}
-                  className={cn(
-                    "flex h-8 items-center justify-center rounded-lg px-3 text-[10px] font-black uppercase tracking-wider transition-all duration-300 active:scale-[0.96] cursor-pointer shadow-md shadow-violet-500/5",
-                    revealed
-                      ? "border border-[var(--color-primary)]/20 bg-[var(--color-primary)]/10 text-[var(--color-primary)] font-mono tracking-widest text-[9.5px]"
-                      : "bg-[var(--color-primary)] text-black"
-                  )}
-                >
-                  {revealed ? (copied ? copyLabels.copied : offer.code) : t.getCode}
-                </button>
-              ) : (
-                <button
-                  onClick={handleGetDeal}
-                  className="flex h-8 items-center justify-center rounded-lg bg-[var(--color-primary)] text-black px-3 text-[10px] font-black uppercase tracking-wider transition-all duration-300 active:scale-[0.96] shadow-md shadow-violet-500/5"
-                >
-                  {t.getDeal}
-                </button>
-              )}
-            </div>
+            {!isGermany && (
+              <div className="shrink-0">
+                {isCoupon && offer.code ? (
+                  <button
+                    onClick={handleReveal}
+                    className={cn(
+                      "flex h-8 items-center justify-center rounded-lg px-3 text-[10px] font-black uppercase tracking-wider transition-all duration-300 active:scale-[0.96] cursor-pointer shadow-md shadow-violet-500/5",
+                      revealed
+                        ? "border border-[var(--color-primary)]/20 bg-[var(--color-primary)]/10 text-[var(--color-primary)] font-mono tracking-widest text-[9.5px]"
+                        : "bg-[var(--color-primary)] text-black"
+                    )}
+                  >
+                    {revealed ? (copied ? copyLabels.copied : offer.code) : t.getCode}
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleGetDeal}
+                    className="flex h-8 items-center justify-center rounded-lg bg-[var(--color-primary)] text-black px-3 text-[10px] font-black uppercase tracking-wider transition-all duration-300 active:scale-[0.96] shadow-md shadow-violet-500/5"
+                  >
+                    {t.getDeal}
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Title */}
@@ -589,6 +592,32 @@ export default function OfferCard({ offer, store, isFirst, t }) {
               <span className="text-[10px] font-extrabold uppercase tracking-wider">{t.health} 100%</span>
             </div>
           </div>
+
+          {/* Mobile CTA Button - Premium Full Width at the bottom */}
+          {isGermany && (
+            <div className="mt-4 shrink-0">
+              {isCoupon && offer.code ? (
+                <button
+                  onClick={handleReveal}
+                  className={cn(
+                    "flex h-11 w-full items-center justify-center rounded-xl text-xs font-black uppercase tracking-[0.12em] transition-all duration-300 active:scale-[0.98] cursor-pointer shadow-lg shadow-violet-500/10",
+                    revealed
+                      ? "border border-[var(--color-primary)]/20 bg-[var(--color-primary)]/10 text-[var(--color-primary)] font-mono tracking-widest text-[11px]"
+                      : "bg-[var(--color-primary)] text-black"
+                  )}
+                >
+                  {revealed ? (copied ? copyLabels.copied : offer.code) : t.getCode}
+                </button>
+              ) : (
+                <button
+                  onClick={handleGetDeal}
+                  className="flex h-11 w-full items-center justify-center rounded-xl bg-[var(--color-primary)] text-black text-xs font-black uppercase tracking-[0.12em] transition-all duration-300 active:scale-[0.98] shadow-lg shadow-violet-500/10"
+                >
+                  {t.getDeal}
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </article>
 
