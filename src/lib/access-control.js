@@ -12,6 +12,7 @@ export const PERMISSIONS = [
   { key: "settings", label: "Settings", href: "/admin/settings" },
   { key: "subscribers", label: "Email List", href: "/admin/subscribers" },
   { key: "contacts", label: "Contact Messages", href: "/admin/contacts" },
+  { key: "notifications", label: "Notifications", href: "/admin/notifications" },
 ];
 
 export const ROLE_LABELS = {
@@ -22,8 +23,8 @@ export const ROLE_LABELS = {
 
 export const ROLE_PERMISSIONS = {
   admin: PERMISSIONS.map((item) => item.key),
-  editor: ["dashboard", "homepage", "stores", "products", "offers", "hero", "events", "categories", "blog", "company", "subscribers", "contacts"],
-  "social-media": ["dashboard", "offers"],
+  editor: ["dashboard", "homepage", "stores", "products", "offers", "hero", "events", "categories", "blog", "company", "subscribers", "contacts", "notifications"],
+  "social-media": ["dashboard", "offers", "notifications"],
 };
 
 export function normalizePermissions(permissions = []) {
@@ -41,6 +42,9 @@ export function getPermissionsForRole(role, permissions) {
 }
 
 export function canAccessPermission(permissions, permission) {
+  if (permission === "notifications") {
+    return permissions.includes("dashboard") || permissions.includes("notifications");
+  }
   return permission === "dashboard" || permissions.includes(permission);
 }
 
@@ -57,5 +61,6 @@ export function getPermissionForPath(pathname) {
   if (pathname.startsWith("/admin/stores")) return "stores";
   if (pathname.startsWith("/admin/subscribers")) return "subscribers";
   if (pathname.startsWith("/admin/contacts")) return "contacts";
+  if (pathname.startsWith("/admin/notifications")) return "notifications";
   return "dashboard";
 }

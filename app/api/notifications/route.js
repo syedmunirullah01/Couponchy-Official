@@ -1,17 +1,25 @@
 import { NextResponse } from "next/server";
 import { readCollection, writeCollection } from "@/server/database/json-store";
 
-const RETENTION_MS = 24 * 60 * 60 * 1000; // 24 hours
+const GENERAL_RETENTION_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+const AFFILIATE_RETENTION_MS = 5 * 24 * 60 * 60 * 1000; // 5 days
+
+function filterActiveNotifications(notifications, now) {
+  return notifications.filter((n) => {
+    const elapsed = now - new Date(n.createdAt).getTime();
+    if (n.type === "affiliate_click") {
+      return elapsed < AFFILIATE_RETENTION_MS;
+    }
+    return elapsed < GENERAL_RETENTION_MS;
+  });
+}
 
 export async function GET() {
   try {
     const notifications = await readCollection("notifications.json", []);
     const now = Date.now();
     
-    // Filter out notifications older than 24 hours
-    const active = notifications.filter(
-      (n) => now - new Date(n.createdAt).getTime() < RETENTION_MS
-    );
+    const active = filterActiveNotifications(notifications, now);
     
     // If some notifications expired, update the stored collection dynamically
     if (active.length !== notifications.length) {
@@ -30,10 +38,10 @@ export async function POST() {
     const notifications = await readCollection("notifications.json", []);
     const now = Date.now();
     
-    // Filter out notifications older than 24 hours, and mark active ones as read
-    const active = notifications
-      .filter((n) => now - new Date(n.createdAt).getTime() < RETENTION_MS)
-      .map((n) => ({ ...n, read: true }));
+    const active = filterActiveNotifications(notifications, now).map((n) => ({
+      ...n,
+      read: true,
+    }));
       
     await writeCollection("notifications.json", active);
     return NextResponse.json({ success: true });

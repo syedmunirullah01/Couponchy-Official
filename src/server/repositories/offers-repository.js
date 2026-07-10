@@ -1,3 +1,4 @@
+
 import "server-only";
 
 import { supabase } from "@/lib/supabase";
@@ -52,7 +53,7 @@ function serializeOfferForDb(offer) {
     source: offer.source?.trim() || "Manual",
     expiry_date: expiryDate,
     // auto_renew: true means no manual expiry was given — cron will renew every 15 days
-    auto_renew: offer.autoRenew ?? !hadManualExpiry,
+    auto_renew: !hadManualExpiry,
     status: offer.status?.trim() || "Active",
     code: offer.code?.trim() || "",
     affiliate_link: offer.affiliateLink?.trim() || "",
@@ -72,7 +73,21 @@ export async function getAllOffers() {
   if (error) {
     throw error;
   }
-  return (data || []).map(mapDbOfferToJs);
+
+  const today = new Date().toISOString().slice(0, 10);
+  const jsOffers = (data || []).map(mapDbOfferToJs);
+
+  const expiredIds = jsOffers
+    .filter(o => !o.autoRenew && o.expiryDate && o.expiryDate < today)
+    .map(o => o.id);
+
+  if (expiredIds.length > 0) {
+    supabase.from("offers").delete().in("id", expiredIds).then(({ error }) => {
+      if (error) console.error("[offers-repository] Failed to delete expired offers:", error);
+    });
+  }
+
+  return jsOffers.filter(o => o.autoRenew || !o.expiryDate || o.expiryDate >= today);
 }
 
 export async function getOfferById(id) {
@@ -85,7 +100,19 @@ export async function getOfferById(id) {
   if (error) {
     throw error;
   }
-  return mapDbOfferToJs(data);
+
+  const offer = mapDbOfferToJs(data);
+  if (!offer) return null;
+
+  const today = new Date().toISOString().slice(0, 10);
+  if (!offer.autoRenew && offer.expiryDate && offer.expiryDate < today) {
+    supabase.from("offers").delete().eq("id", id).then(({ error }) => {
+      if (error) console.error("[offers-repository] Failed to delete expired offer:", error);
+    });
+    return null;
+  }
+
+  return offer;
 }
 
 export async function getOffersByStoreSlug(storeSlug) {
@@ -99,7 +126,21 @@ export async function getOffersByStoreSlug(storeSlug) {
   if (error) {
     throw error;
   }
-  return (data || []).map(mapDbOfferToJs);
+
+  const today = new Date().toISOString().slice(0, 10);
+  const jsOffers = (data || []).map(mapDbOfferToJs);
+
+  const expiredIds = jsOffers
+    .filter(o => !o.autoRenew && o.expiryDate && o.expiryDate < today)
+    .map(o => o.id);
+
+  if (expiredIds.length > 0) {
+    supabase.from("offers").delete().in("id", expiredIds).then(({ error }) => {
+      if (error) console.error("[offers-repository] Failed to delete expired offers:", error);
+    });
+  }
+
+  return jsOffers.filter(o => o.autoRenew || !o.expiryDate || o.expiryDate >= today);
 }
 
 export async function createOffer(payload) {

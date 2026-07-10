@@ -199,7 +199,7 @@ export default async function Footer() {
   };
 
   const socialLinks = [
-    { label: "facebook", href: getSocialHref("Facebook", settings.social?.facebook), icon: <FacebookIcon /> },
+    { label: "Facebook", href: getSocialHref("Facebook", settings.social?.facebook), icon: <FacebookIcon /> },
     { label: "Instagram", href: getSocialHref("Instagram", settings.social?.instagram), icon: <InstagramIcon /> },
     { label: "Tiktok", href: getSocialHref("TikTok", settings.social?.tiktok), icon: <TikTokIcon /> },
     { label: "Youtube", href: getSocialHref("YouTube", settings.social?.youtube), icon: <YouTubeIcon /> },

@@ -195,6 +195,21 @@ export default function OfferCard({ offer, store, isFirst, t }) {
     }
   };
 
+  const handleAffiliateClick = async () => {
+    try {
+      await fetch("/api/notifications/affiliate-click", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          storeName: store.name,
+          offerTitle: offer.title,
+        }),
+      });
+    } catch (err) {
+      console.error("Failed to send affiliate click notification:", err);
+    }
+  };
+
   useEffect(() => {
     if (isModalOpen) {
       document.body.classList.add("modal-open");
@@ -262,6 +277,8 @@ export default function OfferCard({ offer, store, isFirst, t }) {
   const handleReveal = (e) => {
     if (e && typeof e.preventDefault === "function") e.preventDefault();
 
+    handleAffiliateClick();
+
     // 1. Perform copy & state changes first (under active user gesture)
     if (isCoupon && offer.code) {
       setRevealed(true);
@@ -288,6 +305,9 @@ export default function OfferCard({ offer, store, isFirst, t }) {
 
   const handleGetDeal = (e) => {
     if (e && typeof e.preventDefault === "function") e.preventDefault();
+    
+    handleAffiliateClick();
+
     if (isExternal && actionHref !== "#") {
       let targetUrl = actionHref;
       if (actionHref && !/^https?:\/\//i.test(actionHref)) {

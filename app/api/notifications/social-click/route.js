@@ -9,7 +9,7 @@ export async function POST(request) {
 
     const notifications = await readCollection("notifications.json", []);
     const now = Date.now();
-    const RETENTION_MS = 24 * 60 * 60 * 1000; // 24 hours
+    const RETENTION_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
     const newNotification = {
       id: `notif_social_${Math.random().toString(36).slice(2, 10)}`,
@@ -22,11 +22,11 @@ export async function POST(request) {
 
     notifications.unshift(newNotification);
 
-    // Filter active and slice to max 100
+    // Filter active and slice to max 1000
     const active = notifications.filter(
       (n) => now - new Date(n.createdAt).getTime() < RETENTION_MS
     );
-    const trimmed = active.slice(0, 100);
+    const trimmed = active.slice(0, 1000);
 
     await writeCollection("notifications.json", trimmed);
 

@@ -123,7 +123,11 @@ export default function AdminTopbar({ title, breadcrumbTrail = [] }) {
     return () => clearInterval(interval);
   }, []);
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const displayNotifications = notifications.filter(
+    (n) => n.type !== "affiliate_click" && !(n.type === "feedback" && n.feedback === "no")
+  );
+
+  const unreadCount = displayNotifications.filter((n) => !n.read).length;
 
   const handleToggleNotifications = async () => {
     setShowNotifications(!showNotifications);
@@ -222,13 +226,13 @@ export default function AdminTopbar({ title, breadcrumbTrail = [] }) {
                           </span>
                         )}
                       </div>
-                      {notifications.length === 0 ? (
+                      {displayNotifications.length === 0 ? (
                         <div className="py-12 text-center text-xs text-[var(--muted)]/50 italic">
                           No notifications yet
                         </div>
                       ) : (
                         <div className="flex flex-col gap-2">
-                          {notifications.map((n) => (
+                          {displayNotifications.map((n) => (
                             <div
                               key={n.id}
                               className={`relative p-3.5 rounded-xl border transition-all duration-200 text-left flex gap-3.5 ${
