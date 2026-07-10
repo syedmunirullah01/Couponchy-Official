@@ -261,7 +261,7 @@ export default function OfferCard({ offer, store, isFirst, t }) {
 
   const handleReveal = (e) => {
     if (e && typeof e.preventDefault === "function") e.preventDefault();
-    
+
     // 1. Perform copy & state changes first (under active user gesture)
     if (isCoupon && offer.code) {
       setRevealed(true);
@@ -336,8 +336,8 @@ export default function OfferCard({ offer, store, isFirst, t }) {
               {(isCoupon && offerValue !== "Code"
                 ? (t.code || "code")
                 : (offer.type === "Coupon"
-                    ? (t.coupon || "coupon")
-                    : (t.deal || "deal"))).toUpperCase()}
+                  ? (t.coupon || "coupon")
+                  : (t.deal || "deal"))).toUpperCase()}
             </p>
           </div>
 

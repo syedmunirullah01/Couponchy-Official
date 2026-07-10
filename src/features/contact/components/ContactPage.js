@@ -182,7 +182,12 @@ export default function ContactPage({ settings = {}, company = null, t = null })
     }
   };
 
-  const supportEmail = settings.supportEmail || company?.contactUs?.email || "contact@couponchy.com";
+  const supportEmail = company?.contactUs?.email || settings.supportEmail || "support@couponchy.com";
+  const formEnabled = company?.contactUs?.formEnabled !== false;
+
+  const displayTitle = company?.contactUs?.title || tr("headerTitle", "Connect with");
+  const displaySubtitle = company?.contactUs?.subtitle || tr("headerSubtitle", "Have a question, want to submit a coupon, or looking to partner? Reach out and we'll respond within 24 hours.");
+  const displayFormNote = company?.contactUs?.formNote || tr("formNoteDefault", "Fill out the form below and we'll get back to you within 24 hours.");
 
   // Subject chips with translated labels
   const subjectChips = [
@@ -211,10 +216,10 @@ export default function ContactPage({ settings = {}, company = null, t = null })
             </span>
           </div>
           <h1 style={{ fontSize: "clamp(38px, 5vw, 64px)", fontWeight: 900, lineHeight: 0.95, letterSpacing: "-0.04em", margin: "0 0 20px" }}>
-            {tr("headerTitle", "Connect with")} <span style={{ color: "var(--color-primary)" }}>Couponchy</span>
+            {displayTitle} {!company?.contactUs?.title && <span style={{ color: "var(--color-primary)" }}>Couponchy</span>}
           </h1>
           <p style={{ fontSize: "16px", color: "rgba(255,255,255,0.5)", maxWidth: "520px", margin: "0 auto", lineHeight: 1.6, fontWeight: 500 }}>
-            {tr("headerSubtitle", "Have a question, want to submit a coupon, or looking to partner? Reach out and we'll respond within 24 hours.")}
+            {displaySubtitle}
           </p>
         </div>
 
@@ -263,6 +268,68 @@ export default function ContactPage({ settings = {}, company = null, t = null })
               </div>
             </div>
 
+            {/* Business Hours, Address & Phone Card */}
+            {(company?.contactUs?.phone || company?.contactUs?.address || company?.contactUs?.businessHours) ? (
+              <div style={{ background: "rgba(15,15,20,0.6)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "24px", padding: "32px", backdropFilter: "blur(12px)", position: "relative", overflow: "hidden" }}>
+                <div style={{ position: "absolute", top: -20, right: -20, width: "120px", height: "120px", background: "radial-gradient(circle, rgba(139,92,246,0.06) 0%, transparent 70%)" }} />
+                <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                  {company.contactUs.phone && (
+                    <div style={{ display: "flex", gap: "20px", alignItems: "center" }}>
+                      <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: "rgba(139,92,246,0.08)", border: "1px solid rgba(139,92,246,0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--color-primary)", flexShrink: 0 }}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 18, height: 18 }}>
+                          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h4 style={{ fontSize: "11px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", margin: "0 0 2px" }}>
+                          {tr("phoneLabel", "Phone")}
+                        </h4>
+                        <p style={{ fontSize: "15px", fontWeight: 700, margin: 0, color: "#fff" }}>
+                          {company.contactUs.phone}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {company.contactUs.address && (
+                    <div style={{ display: "flex", gap: "20px", alignItems: "center" }}>
+                      <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: "rgba(139,92,246,0.08)", border: "1px solid rgba(139,92,246,0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--color-primary)", flexShrink: 0 }}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 18, height: 18 }}>
+                          <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="3" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h4 style={{ fontSize: "11px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", margin: "0 0 2px" }}>
+                          {tr("addressLabel", "Office")}
+                        </h4>
+                        <p style={{ fontSize: "15px", fontWeight: 700, margin: 0, color: "#fff" }}>
+                          {company.contactUs.address}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {company.contactUs.businessHours && (
+                    <div style={{ display: "flex", gap: "20px", alignItems: "center" }}>
+                      <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: "rgba(139,92,246,0.08)", border: "1px solid rgba(139,92,246,0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--color-primary)", flexShrink: 0 }}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 18, height: 18 }}>
+                          <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h4 style={{ fontSize: "11px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", margin: "0 0 2px" }}>
+                          {tr("hoursLabel", "Business Hours")}
+                        </h4>
+                        <p style={{ fontSize: "15px", fontWeight: 700, margin: 0, color: "#fff" }}>
+                          {company.contactUs.businessHours}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : null}
+
             {/* Social Channels Card */}
             <div style={{ background: "rgba(15,15,20,0.6)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "24px", padding: "32px", backdropFilter: "blur(12px)" }}>
               <h3 style={{ fontSize: "12px", fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.15em", color: "rgba(255,255,255,0.35)", margin: "0 0 18px" }}>
@@ -310,10 +377,24 @@ export default function ContactPage({ settings = {}, company = null, t = null })
             </div>
           </div>
 
-          {/* RIGHT: Contact Form / Success Message */}
+          {/* RIGHT: Contact Form / Success Message / Form Disabled Message */}
           <div style={{ background: "rgba(15,15,20,0.6)", border: "1px solid rgba(139,92,246,0.12)", borderRadius: "32px", padding: "40px", backdropFilter: "blur(12px)", boxShadow: "0 24px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)" }}>
             
-            {isSuccess ? (
+            {!formEnabled ? (
+              <div style={{ textAlign: "center", padding: "40px 0" }}>
+                <div style={{ width: "72px", height: "72px", borderRadius: "50%", background: "rgba(239,68,68,0.1)", border: "2px solid #ef4444", display: "flex", alignItems: "center", justifyItems: "center", justifyContent: "center", margin: "0 auto 28px", color: "#ef4444" }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ width: 32, height: 32, marginTop: "20px" }}>
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                  </svg>
+                </div>
+                <h2 style={{ fontSize: "24px", fontWeight: 900, margin: "0 0 12px", letterSpacing: "-0.02em" }}>
+                  {tr("formDisabledTitle", "Form Offline")}
+                </h2>
+                <p style={{ fontSize: "14px", color: "rgba(255,255,255,0.55)", lineHeight: 1.6, maxWidth: "340px", margin: "0 auto", fontWeight: 500 }}>
+                  {tr("formDisabledDesc", "The online contact form is currently offline. Please reach out to us directly via our support email above.")}
+                </p>
+              </div>
+            ) : isSuccess ? (
               /* Success State */
               <div style={{ textAlign: "center", padding: "40px 0" }}>
                 <div style={{ width: "72px", height: "72px", borderRadius: "50%", background: "rgba(139,92,246,0.1)", border: "2px solid var(--color-primary)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 28px", color: "var(--color-primary)", boxShadow: "0 0 30px rgba(139,92,246,0.2)" }}>
@@ -340,6 +421,11 @@ export default function ContactPage({ settings = {}, company = null, t = null })
               /* Contact Form Input fields */
               <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
                 
+                {/* Form Note */}
+                <p style={{ fontSize: "14px", color: "rgba(255,255,255,0.5)", margin: "0 0 8px", fontWeight: 500, lineHeight: 1.5 }}>
+                  {displayFormNote}
+                </p>
+
                 {/* Row: Name and Email */}
                 <div style={{ display: "grid", gap: "20px", gridTemplateColumns: "1fr" }} className="form-row-2col">
                   <div>

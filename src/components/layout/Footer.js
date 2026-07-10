@@ -181,7 +181,7 @@ export default async function Footer() {
         .sort((a, b) => (b.offersCount || 0) - (a.offersCount || 0))
         .slice(0, 8)
         .map((s) => ({
-          name: toTitleCase(s.name),
+          name: s.name,
           categorySlug: s.categorySlug || "all",
           slug: s.slug,
         }))

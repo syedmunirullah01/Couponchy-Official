@@ -13,7 +13,7 @@ const writableDir = path.join("/tmp", "couponchy-db");
 async function ensureDir(dir) {
   try {
     await mkdir(dir, { recursive: true });
-  } catch {}
+  } catch { }
 }
 
 export async function readCollection(fileName, fallback = []) {
@@ -43,7 +43,7 @@ export async function readCollection(fileName, fallback = []) {
   try {
     const fileContents = await readFile(tmpPath, "utf8");
     return JSON.parse(fileContents);
-  } catch {}
+  } catch { }
 
   // 3. Fall back to bundled data/database file
   try {
@@ -59,7 +59,7 @@ export async function readCollection(fileName, fallback = []) {
           contentType: "application/json",
           upsert: true,
         });
-    } catch {}
+    } catch { }
 
     return records;
   } catch {
@@ -74,7 +74,7 @@ export async function writeCollection(fileName, records) {
   try {
     await ensureDir(writableDir);
     await writeFile(path.join(writableDir, fileName), jsonStr, "utf8");
-  } catch {}
+  } catch { }
 
   // 2. Upload to Supabase Storage (cloud database backup)
   try {

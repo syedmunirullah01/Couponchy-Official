@@ -185,8 +185,8 @@ export default function StoreHeader({ singleStore, storeTabs, offerTabs, offers 
               key={tab}
               href={storeTabTargets[tab] || "#"}
               className={`rounded-full px-5 py-2 text-[11px] font-black uppercase tracking-[0.14em] transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] ${index === 0
-                  ? "bg-[var(--color-primary)] text-black hover:shadow-[0_0_15px_rgba(139,92,246,0.4)]"
-                  : "border border-white/[0.07] bg-white/[0.03] text-white/45 hover:bg-white/[0.07] hover:border-white/[0.12] hover:text-white/75"
+                ? "bg-[var(--color-primary)] text-black hover:shadow-[0_0_15px_rgba(139,92,246,0.4)]"
+                : "border border-white/[0.07] bg-white/[0.03] text-white/45 hover:bg-white/[0.07] hover:border-white/[0.12] hover:text-white/75"
                 }`}
             >
               {tab}
@@ -249,8 +249,8 @@ export default function StoreHeader({ singleStore, storeTabs, offerTabs, offers 
               key={tab}
               href={storeTabTargets[tab] || "#"}
               className={`rounded-full px-4.5 py-2 text-xs font-black uppercase tracking-[0.14em] transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] ${index === 0
-                  ? "bg-[var(--color-primary)] text-black hover:shadow-[0_0_15px_rgba(139,92,246,0.4)]"
-                  : "border border-white/[0.07] bg-white/[0.03] text-white/45 hover:bg-white/[0.07] hover:border-white/[0.12] hover:text-white/75"
+                ? "bg-[var(--color-primary)] text-black hover:shadow-[0_0_15px_rgba(139,92,246,0.4)]"
+                : "border border-white/[0.07] bg-white/[0.03] text-white/45 hover:bg-white/[0.07] hover:border-white/[0.12] hover:text-white/75"
                 }`}
             >
               {tab}
