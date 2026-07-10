@@ -70,7 +70,23 @@ function MenuIcon({ className = "h-5 w-5" }) {
   );
 }
 
-function BrandMark({ countryCode, onClick }) {
+function BrandMark({ countryCode, logoUrl, onClick }) {
+  if (logoUrl) {
+    return (
+      <Link
+        href={buildCountryPath("/", countryCode)}
+        onClick={onClick}
+        className="group inline-flex items-center transition duration-300"
+      >
+        <img
+          src={logoUrl}
+          alt="Logo"
+          className="h-8 w-auto max-w-[200px] object-contain transition-transform duration-300 group-hover:scale-102"
+        />
+      </Link>
+    );
+  }
+
   return (
     <Link
       href={buildCountryPath("/", countryCode)}
@@ -196,6 +212,7 @@ export default function Navbar({
   initialEvents = [],
   initialCountries = SUPPORTED_COUNTRIES,
   initialCountryCode,
+  logoUrl,
   t,
 }) {
   const pathname = usePathname();
@@ -317,7 +334,8 @@ export default function Navbar({
     }
   }, [pathname, categories]);
 
-  // Sync props to state on layout updates
+  // Sync props to state 
+  // on layout updates
   useEffect(() => {
     setCategories(initialCategories);
     setStores(initialStores);
@@ -593,7 +611,7 @@ export default function Navbar({
         )}
       >
         <div className="flex items-center gap-4 lg:gap-6">
-          <BrandMark countryCode={selectedCountryCode} />
+          <BrandMark countryCode={selectedCountryCode} logoUrl={logoUrl} />
 
           <nav className="hidden items-center gap-6 lg:flex" ref={menuRef}>
             {navItems.map((item) => {
@@ -1235,7 +1253,7 @@ export default function Navbar({
         <div className="mx-auto flex min-h-[100dvh] max-w-[1400px] flex-col overflow-x-hidden px-4 pb-5 pt-4">
           <div className="border-b border-white/8 pb-4">
             <div className="flex items-center justify-between gap-4">
-              <BrandMark countryCode={selectedCountryCode} onClick={() => setMobileOpen(false)} />
+              <BrandMark countryCode={selectedCountryCode} logoUrl={logoUrl} onClick={() => setMobileOpen(false)} />
               <div className="flex items-center gap-3 text-white">
                 <button type="button" onClick={() => setDesktopSearchOpen((current) => !current)} className="inline-flex h-10 w-10 items-center justify-center" aria-label="Toggle Search">
                   <SearchIcon className="h-5 w-5" />

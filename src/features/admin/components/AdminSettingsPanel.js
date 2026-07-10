@@ -18,6 +18,8 @@ const initialState = {
     customHeadScript: "",
     customBodyStartScript: "",
     customBodyEndScript: "",
+    logoUrl: "",
+    faviconUrl: "",
   },
   affiliate: {
     cjEnabled: true,
@@ -133,6 +135,36 @@ export default function AdminSettingsPanel() {
   const [verificationFiles, setVerificationFiles] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
   const [deleteTargetFile, setDeleteTargetFile] = useState(null);
+  const [uploadingAsset, setUploadingAsset] = useState("");
+
+  async function handleBrandingUpload(e, type) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("type", type);
+
+    setUploadingAsset(type);
+    try {
+      const res = await fetch("/api/uploads/branding", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (res.ok) {
+        updateSection("general", `${type}Url`, data.data.secureUrl);
+        toast.success(`${type === "logo" ? "Logo" : "Favicon"} uploaded successfully.`);
+      } else {
+        toast.error(data.error || `Failed to upload ${type}.`);
+      }
+    } catch (err) {
+      toast.error(`Failed to upload ${type}.`);
+    } finally {
+      setUploadingAsset("");
+      e.target.value = "";
+    }
+  }
 
   useEffect(() => {
     let active = true;
@@ -428,6 +460,118 @@ export default function AdminSettingsPanel() {
                     onChange={(event) => updateSection("general", "supportEmail", event.target.value)}
                   />
                 </SectionField>
+              </div>
+            </SettingsSection>
+
+            <SettingsSection
+              title="Branding Assets"
+              description="Manage and upload your custom brand logo and website favicon."
+            >
+              <div className="grid gap-6 md:grid-cols-2">
+                {/* Logo Manager */}
+                <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-4">
+                  <div>
+                    <h4 className="text-xs font-bold text-[var(--text)] uppercase tracking-wider">Brand Logo</h4>
+                    <p className="text-[10px] text-[var(--muted)] mt-0.5">Recommended: 200x50 px, transparent PNG or SVG. Max 1MB.</p>
+                  </div>
+
+                  <div className="flex h-16 w-full items-center justify-center rounded-lg border border-dashed border-[var(--border)] bg-[var(--surface-soft)] overflow-hidden">
+                    {settings.general.logoUrl ? (
+                      <img src={settings.general.logoUrl} alt="Logo Preview" className="h-10 object-contain" />
+                    ) : (
+                      <span className="text-[11px] text-[var(--muted)] italic">Using default BrandMark logo</span>
+                    )}
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    <label className={cn(
+                      "relative inline-flex h-9 items-center justify-center rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] px-4 text-xs font-bold text-white shadow-sm transition duration-200 cursor-pointer",
+                      uploadingAsset !== "" && "opacity-50 pointer-events-none"
+                    )}>
+                      {uploadingAsset === "logo" ? "Uploading..." : "Upload Logo"}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleBrandingUpload(e, "logo")}
+                        disabled={uploadingAsset !== ""}
+                        className="hidden"
+                      />
+                    </label>
+
+                    {settings.general.logoUrl && (
+                      <>
+                        <a
+                          href={settings.general.logoUrl}
+                          download="logo"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex h-9 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 text-xs font-bold text-[var(--text)] hover:bg-[var(--surface)] transition duration-200"
+                        >
+                          Download
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => updateSection("general", "logoUrl", "")}
+                          className="inline-flex h-9 items-center justify-center rounded-xl border border-red-500/20 bg-red-500/5 px-4 text-xs font-bold text-red-500 hover:bg-red-500/10 transition duration-200 cursor-pointer"
+                        >
+                          Reset
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Favicon Manager */}
+                <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 flex flex-col gap-4">
+                  <div>
+                    <h4 className="text-xs font-bold text-[var(--text)] uppercase tracking-wider">Favicon Icon</h4>
+                    <p className="text-[10px] text-[var(--muted)] mt-0.5">Recommended: 32x32 px or 512x512 px, PNG or SVG. Max 500KB.</p>
+                  </div>
+
+                  <div className="flex h-16 w-full items-center justify-center rounded-lg border border-dashed border-[var(--border)] bg-[var(--surface-soft)] overflow-hidden">
+                    {settings.general.faviconUrl ? (
+                      <img src={settings.general.faviconUrl} alt="Favicon Preview" className="h-8 w-8 object-contain" />
+                    ) : (
+                      <img src="/favicon.ico" alt="Default Favicon" className="h-8 w-8 object-contain opacity-50" />
+                    )}
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    <label className={cn(
+                      "relative inline-flex h-9 items-center justify-center rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] px-4 text-xs font-bold text-white shadow-sm transition duration-200 cursor-pointer",
+                      uploadingAsset !== "" && "opacity-50 pointer-events-none"
+                    )}>
+                      {uploadingAsset === "favicon" ? "Uploading..." : "Upload Favicon"}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleBrandingUpload(e, "favicon")}
+                        disabled={uploadingAsset !== ""}
+                        className="hidden"
+                      />
+                    </label>
+
+                    <a
+                      href={settings.general.faviconUrl || "/favicon.ico"}
+                      download="favicon"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex h-9 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 text-xs font-bold text-[var(--text)] hover:bg-[var(--surface)] transition duration-200"
+                    >
+                      Download Current
+                    </a>
+
+                    {settings.general.faviconUrl && (
+                      <button
+                        type="button"
+                        onClick={() => updateSection("general", "faviconUrl", "")}
+                        className="inline-flex h-9 items-center justify-center rounded-xl border border-red-500/20 bg-red-500/5 px-4 text-xs font-bold text-red-500 hover:bg-red-500/10 transition duration-200 cursor-pointer"
+                      >
+                        Reset
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
             </SettingsSection>
 

@@ -55,6 +55,7 @@ export default async function PublicLayout({ children }) {
         initialEvents={translatedEvents}
         initialCountries={countries}
         initialCountryCode={countryCode}
+        logoUrl={settings?.general?.logoUrl}
         t={translatedNavbar}
       />
       <main className="relative z-10 flex-1">{children}</main>

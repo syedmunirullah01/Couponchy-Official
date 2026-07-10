@@ -14,6 +14,8 @@ export const defaultSettings = {
     customHeadScript: "",
     customBodyStartScript: "",
     customBodyEndScript: "",
+    logoUrl: "",
+    faviconUrl: "",
   },
   affiliate: {
     cjEnabled: true,

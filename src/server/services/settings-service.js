@@ -20,10 +20,16 @@ export async function getMetadataDefaults(pageTitle, overrides = {}) {
   const description = overrides.description || settings.seo.metaDescription;
   const openGraphTitle = overrides.openGraph?.title || overrides.title || settings.seo.ogTitle;
   const openGraphDescription = overrides.openGraph?.description || description || settings.seo.ogDescription;
+  const favicon = settings.general.faviconUrl || "/favicon.ico";
 
   return {
     title: overrides.title || title,
     description,
+    icons: {
+      icon: favicon,
+      shortcut: favicon,
+      apple: favicon,
+    },
     openGraph: {
       title: openGraphTitle,
       description: openGraphDescription,

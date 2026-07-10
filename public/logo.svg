@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 200" width="800" height="200">
+  <defs>
+    <linearGradient id="badge-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8b5cf6" />
+      <stop offset="100%" stop-color="#d946ef" />
+    </linearGradient>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@800;900&amp;display=swap');
+      .logo-text {
+        font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-size: 104px;
+        font-weight: 900;
+        letter-spacing: -4px;
+      }
+    </style>
+  </defs>
+  <!-- Rounded badge container -->
+  <rect x="40" y="40" width="120" height="120" rx="30" fill="url(#badge-grad)" />
+  <!-- Inner percentage symbol -->
+  <g transform="translate(64, 64) scale(3)" stroke="#000000" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="19" y1="5" x2="5" y2="19" />
+    <circle cx="6.5" cy="6.5" r="2.5" fill="#000000" />
+    <circle cx="17.5" cy="17.5" r="2.5" fill="#000000" />
+  </g>
+  <!-- Logo text -->
+  <text x="188" y="128" class="logo-text">
+    <tspan fill="#ffffff">Coupon</tspan><tspan fill="#8b5cf6">chy</tspan>
+  </text>
+</svg>
