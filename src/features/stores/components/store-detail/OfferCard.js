@@ -149,7 +149,7 @@ export default function OfferCard({ offer, store, isFirst, t }) {
   const actionHref = isExternal || offerHref === "#" ? offerHref : buildCountryPath(offerHref, store.countryCode);
   const offerValue = getOfferValue(offer);
   const isCoupon = offer.type === "Coupon";
-  const isGermany = String(store?.countryCode || "").toUpperCase() === "DE";
+  const isTranslated = !["US", "GB", "CA", "AU", "IN", "AE", "CH"].includes(String(store?.countryCode || "").toUpperCase());
   const expiryText = formatExpiry(offer.expiryDate);
 
   const submitFeedback = async (val) => {
@@ -504,7 +504,7 @@ export default function OfferCard({ offer, store, isFirst, t }) {
             </div>
 
             {/* CTA Button */}
-            {!isGermany && (
+            {!isTranslated && (
               <div className="shrink-0">
                 {isCoupon && offer.code ? (
                   <button
@@ -594,7 +594,7 @@ export default function OfferCard({ offer, store, isFirst, t }) {
           </div>
 
           {/* Mobile CTA Button - Premium Full Width at the bottom */}
-          {isGermany && (
+          {isTranslated && (
             <div className="mt-4 shrink-0">
               {isCoupon && offer.code ? (
                 <button
