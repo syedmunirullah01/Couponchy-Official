@@ -8,7 +8,7 @@ import NewsletterForm from "./NewsletterForm";
 
 const topCategories = ["Fashion", "Food", "Footwear", "Travel", "Beauty", "Furniture", "Home & Garden", "E-Bike"];
 const topStores = ["Waterdrop", "Dorothy Perkins", "Debenhams", "Gousto UK", "EcoFlow", "FlexShopper", "Vitality", "Beginning Boutique AU"];
-const usefulLinks = ["About Us", "Contact Us", "Privacy Policy", "Terms Of Service", "Sitemap"];
+const usefulLinks = ["About Us", "Contact Us", "Privacy Policy", "Terms Of Service", "Imprint", "Affiliate Disclosure", "Sitemap"];
 
 
 function toTitleCase(str) {
@@ -153,6 +153,8 @@ const getUsefulLinkHref = (name) => {
     "Contact Us": "/contact",
     "Privacy Policy": "/privacy-policy",
     "Terms Of Service": "/terms-of-service",
+    "Imprint": "/imprint",
+    "Affiliate Disclosure": "/affiliate-disclosure",
     "Sitemap": "/sitemap",
   };
   return mapping[name] || "/";
