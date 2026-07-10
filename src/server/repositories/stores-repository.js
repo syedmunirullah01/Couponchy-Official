@@ -37,6 +37,8 @@ function mapDbStoreToJs(dbStore) {
       "https://images.unsplash.com/photo-1556740749-887f6717d7e4?auto=format&fit=crop&w=900&q=80",
     rating: dbStore.rating || "4.7 (0 reviews)",
     offersCount: Number(dbStore.offers_count ?? 0),
+    sidebarBannerImage: dbStore.sidebar_banner_image || "",
+    sidebarBannerUrl: dbStore.sidebar_banner_url || "",
     createdAt: dbStore.created_at,
     updatedAt: dbStore.updated_at,
   };
@@ -85,6 +87,8 @@ function serializeStoreForDb(store) {
       "https://images.unsplash.com/photo-1556740749-887f6717d7e4?auto=format&fit=crop&w=900&q=80",
     rating: store.rating?.trim() || "4.7 (0 reviews)",
     offers_count: Number(store.offersCount ?? 0),
+    sidebar_banner_image: store.sidebarBannerImage?.trim() || "",
+    sidebar_banner_url: store.sidebarBannerUrl?.trim() || "",
     created_at: store.createdAt || now,
     updated_at: now,
   };

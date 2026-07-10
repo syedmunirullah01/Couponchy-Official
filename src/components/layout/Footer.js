@@ -89,7 +89,7 @@ function XIcon() {
 function TikTokIcon() {
   return (
     <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.17-2.86-.74-3.99-1.72-.04-.03-.07-.06-.11-.09-.03 2.12-.04 4.24-.05 6.36a9.02 9.02 0 01-1.51 4.97 8.96 8.96 0 01-8.15 3.96c-2.61-.17-5.07-1.42-6.52-3.62A8.99 8.99 0 014 9.47c1.07-2.45 3.17-4.32 5.73-4.88a9.06 9.06 0 014.29.3v4.11a5.06 5.06 0 00-2.52.88c-1.39.99-2.07 2.76-1.71 4.45.33 1.55 1.57 2.78 3.12 3.11 1.7.35 3.49-.33 4.46-1.72.39-.55.59-1.22.59-1.9-.01-2.91 0-5.82 0-8.73.91-.07 1.83-.02 2.75-.02z" />
+      <path d="M19.59 6.69a4.83 4.83 0 0 1-3.7-3.7V1.42h-3.41v12.48a2.23 2.23 0 0 1-2.23 2.23 2.23 2.23 0 0 1-2.23-2.23 2.23 2.23 0 0 1 2.23-2.23c.31 0 .6.07.87.19V8.41a6.07 6.07 0 0 0-3.1-.81 6.09 6.09 0 0 0-6.09 6.09 6.09 6.09 0 0 0 6.09 6.09 6.09 6.09 0 0 0 6.09-6.09V7.43c1.67 1.15 3.76 1.83 6 1.83V5.88a4.82 4.82 0 0 1-3.7-2.73z" />
     </svg>
   );
 }
@@ -251,7 +251,7 @@ export default async function Footer() {
 
         {/* Large Watermark Site Title and Centered Social Link Row */}
         <div className="relative mb-20 mt-8 flex flex-col items-center text-center">
-          <div aria-hidden="true" className="select-none text-[13vw] font-black uppercase leading-none tracking-tighter text-white/[0.03] notranslate">
+          <div aria-hidden="true" className="select-none text-[13vw] font-black uppercase leading-none tracking-tighter text-white/[0.07] notranslate">
             {settings.siteName || "Couponchy"}
           </div>
           <div className="mt-6 flex items-center justify-center gap-3 flex-wrap z-10">

@@ -49,6 +49,8 @@ const storeSchema = z.object({
     .or(z.literal("")),
   affiliateLink: z.string().trim().optional().or(z.literal("")),
   logoImage: z.string().optional().or(z.literal("")),
+  sidebarBannerImage: z.string().optional().or(z.literal("")),
+  sidebarBannerUrl: z.string().trim().optional().or(z.literal("")),
   contentIntroTitle: z.string().trim().optional().or(z.literal("")),
   contentIntroParagraph1: z.string().trim().optional().or(z.literal("")),
   contentIntroParagraph2: z.string().trim().optional().or(z.literal("")),
@@ -72,6 +74,8 @@ const defaultValues = {
   logoText: "",
   affiliateLink: "",
   logoImage: "",
+  sidebarBannerImage: "",
+  sidebarBannerUrl: "",
   contentIntroTitle: "",
   contentIntroParagraph1: "",
   contentIntroParagraph2: "",
@@ -279,7 +283,10 @@ export default function AdminStoresManager() {
   const slugEditedRef = useRef(false);
   const logoTextEditedRef = useRef(false);
   const fileInputRef = useRef(null);
+  const bannerFileInputRef = useRef(null);
   const descriptionRef = useRef(null);
+  const [isUploadingBanner, setIsUploadingBanner] = useState(false);
+  const [isDraggingBanner, setIsDraggingBanner] = useState(false);
   const { titleId, descriptionId } = useDialogA11yIds();
 
   const {
@@ -302,6 +309,8 @@ export default function AdminStoresManager() {
   const watchedDescription = watch("description") || "";
   const watchedLogoImage = watch("logoImage");
   const watchedLogoText = watch("logoText");
+  const watchedSidebarBannerImage = watch("sidebarBannerImage");
+  const watchedSidebarBannerUrl = watch("sidebarBannerUrl");
   const watchedCategory = watch("category");
   const watchedCountryCode = watch("countryCode");
   const watchedTrustStatus = watch("trustStatus");
@@ -417,6 +426,8 @@ export default function AdminStoresManager() {
       logoText: store.logoText || "",
       affiliateLink: store.affiliateLink || "",
       logoImage: store.logoImage || "",
+      sidebarBannerImage: store.sidebarBannerImage || "",
+      sidebarBannerUrl: store.sidebarBannerUrl || "",
       contentIntroTitle: store.contentIntroTitle || "",
       contentIntroParagraph1: store.contentIntroParagraph1 || "",
       contentIntroParagraph2: store.contentIntroParagraph2 || "",
@@ -505,12 +516,79 @@ export default function AdminStoresManager() {
     }
   }
 
+  async function handleBannerSelection(file) {
+    const validationMessage = validateLogoFile(file);
+
+    if (validationMessage) {
+      setError("sidebarBannerImage", { type: "manual", message: validationMessage });
+      return;
+    }
+
+    try {
+      setIsUploadingBanner(true);
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("slug", `${watchedSlug || slugify(watchedName || "store")}-sidebar-banner`);
+
+      const response = await fetch("/api/uploads/store-logo", {
+        method: "POST",
+        body: formData,
+      });
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(payload.error || "Unable to upload sidebar banner.");
+      }
+
+      setValue("sidebarBannerImage", payload.data.secureUrl, { shouldDirty: true, shouldValidate: true });
+      clearErrors("sidebarBannerImage");
+      toast.success("Sidebar banner uploaded to Cloudinary.");
+    } catch (error) {
+      setError("sidebarBannerImage", { type: "manual", message: error.message });
+      toast.error(error.message || "Unable to upload sidebar banner.");
+    } finally {
+      setIsUploadingBanner(false);
+    }
+  }
+
+  async function handleBannerFileInputChange(event) {
+    const file = event.target.files?.[0];
+    if (file) {
+      await handleBannerSelection(file);
+    }
+  }
+
+  async function handleBannerDrop(event) {
+    event.preventDefault();
+    setIsDraggingBanner(false);
+
+    const file = event.dataTransfer.files?.[0];
+    if (file) {
+      await handleBannerSelection(file);
+    }
+  }
+
   async function submitStore(values) {
     const selectedCategory = getCategoryOptionMap(categories)[values.category];
 
     if (!selectedCategory) {
       toast.error("Select a managed category before saving the store.");
       return;
+    }
+
+    let sanitizedBannerImage = values.sidebarBannerImage || "";
+    if (sanitizedBannerImage) {
+      try {
+        const parsed = new URL(sanitizedBannerImage);
+        if (parsed.hostname.includes("google.") && parsed.pathname.includes("/imgres")) {
+          const imgUrlParam = parsed.searchParams.get("imgurl");
+          if (imgUrlParam) {
+            sanitizedBannerImage = decodeURIComponent(imgUrlParam);
+          }
+        }
+      } catch (e) {
+        // Ignore parsing errors for relative URLs
+      }
     }
 
     const endpoint = editingStore ? `/api/stores/${editingStore.slug}` : "/api/stores";
@@ -521,6 +599,7 @@ export default function AdminStoresManager() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         ...values,
+        sidebarBannerImage: sanitizedBannerImage,
         category: selectedCategory.name,
         categorySlug: selectedCategory.slug,
         logoText: values.logoText || values.name.trim(),
@@ -1070,6 +1149,7 @@ export default function AdminStoresManager() {
                             onChange={handleFileInputChange}
                             aria-label="Upload store logo"
                           />
+                          <input type="hidden" {...register("logoImage")} />
                           
                           <div
                             className={cn(
@@ -1111,6 +1191,91 @@ export default function AdminStoresManager() {
                             </div>
                           </div>
                           {errors.logoImage && <span className="text-[10px] font-semibold text-[var(--color-primary)]">{errors.logoImage.message}</span>}
+                        </div>
+
+                        {/* Sidebar Vertical Banner (Optional) */}
+                        <div className="grid gap-1.5 border-t border-[var(--border)] pt-4 mt-2">
+                          <label className="text-xs font-bold text-[var(--text)]">Sidebar Vertical Banner (Optional)</label>
+                          <input
+                            ref={bannerFileInputRef}
+                            type="file"
+                            accept={ACCEPTED_LOGO_TYPES.join(",")}
+                            className="hidden"
+                            onChange={handleBannerFileInputChange}
+                            aria-label="Upload sidebar banner"
+                          />
+                           <div
+                            className={cn(
+                              "rounded-xl border border-dashed p-4 transition-all duration-200 flex flex-col items-center justify-center text-center",
+                              isDraggingBanner
+                                ? "border-[var(--color-primary)] bg-[var(--surface-soft)]/30"
+                                : "border-[var(--border)] bg-[var(--surface-soft)]/10 hover:border-[var(--border)]/80"
+                            )}
+                            onDragOver={(event) => {
+                              event.preventDefault();
+                              setIsDraggingBanner(true);
+                            }}
+                            onDragLeave={() => setIsDraggingBanner(false)}
+                            onDrop={handleBannerDrop}
+                          >
+                            {watchedSidebarBannerImage ? (
+                              <div className="relative h-28 w-20 mb-2 border border-[var(--border)] rounded bg-[var(--surface-soft)] overflow-hidden">
+                                <img
+                                  src={watchedSidebarBannerImage}
+                                  alt="Sidebar banner preview"
+                                  className="h-full w-full object-cover"
+                                />
+                              </div>
+                            ) : (
+                              <svg viewBox="0 0 24 24" className="h-7 w-7 text-[var(--muted)] stroke-current mb-2" fill="none" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                                <line x1="21" y1="15" x2="16" y2="10" />
+                                <path d="M5 21l6-6" />
+                              </svg>
+                            )}
+                            <p className="text-[11px] font-bold text-[var(--text)]">Drag & drop banner file here</p>
+                            <p className="text-[10px] text-[var(--muted)] mt-0.5">Supports PNG, JPG, WEBP, SVG up to 2MB (Recommended: Vertical Ratio, e.g. 300x600 px)</p>
+                            
+                            <div className="flex gap-2 mt-3">
+                              <Button type="button" variant="outline" className="rounded-lg h-7 text-[10px] px-3 bg-[var(--surface)] hover:bg-[var(--surface-soft)] cursor-pointer" onClick={() => bannerFileInputRef.current?.click()}>
+                                {isUploadingBanner ? "Uploading..." : "Browse Banner"}
+                              </Button>
+                              {watchedSidebarBannerImage ? (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  className="rounded-lg h-7 text-[10px] px-3 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white border border-red-500/20 cursor-pointer"
+                                  disabled={isUploadingBanner}
+                                  onClick={() => setValue("sidebarBannerImage", "", { shouldDirty: true, shouldValidate: true })}
+                                >
+                                  Remove banner
+                                </Button>
+                              ) : null}
+                            </div>
+                          </div>
+                          {errors.sidebarBannerImage && <span className="text-[10px] font-semibold text-[var(--color-primary)]">{errors.sidebarBannerImage.message}</span>}
+                        </div>
+
+                        <div className="grid gap-1.5">
+                          <label className="text-xs font-bold text-[var(--text)]">Or Paste Sidebar Banner Image URL (Optional)</label>
+                          <Input
+                            type="url"
+                            placeholder="https://example.com/images/banner.jpg"
+                            className="rounded-lg bg-[var(--surface)]"
+                            {...register("sidebarBannerImage")}
+                          />
+                          <span className="text-[9px] text-[var(--muted)]">Paste an external image URL directly if you don't want to upload a file.</span>
+                        </div>
+
+                        <div className="grid gap-1.5">
+                          <label className="text-xs font-bold text-[var(--text)]">Sidebar Banner Link (Optional)</label>
+                          <Input
+                            type="url"
+                            placeholder="https://example.com/promo/banner-redirect"
+                            className="rounded-lg bg-[var(--surface)]"
+                            {...register("sidebarBannerUrl")}
+                          />
+                          <span className="text-[9px] text-[var(--muted)]">Redirect link when the sidebar banner is clicked.</span>
                         </div>
 
                         <div className="grid gap-1.5">
