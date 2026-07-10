@@ -18,11 +18,11 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function Page({ params }) {
-  const { store } = await params;
+  const { category, store } = await params;
   const countryCode = await resolveRequestCountryCode();
   const storePageData = await getStorePageData(store, countryCode);
 
-  if (!storePageData) {
+  if (!storePageData || storePageData.singleStore.categorySlug !== category) {
     notFound();
   }
 
