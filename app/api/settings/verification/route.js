@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/server/auth";
-import fs from "fs/promises";
+import { supabase } from "@/lib/supabase";
 import path from "path";
 
 // Allowed extensions and maximum size (1MB)
@@ -25,23 +25,25 @@ export async function GET() {
   }
 
   try {
-    const publicDir = path.join(process.cwd(), "public");
-    const files = await fs.readdir(publicDir);
+    const { data: files, error } = await supabase.storage
+      .from("couponchy")
+      .list("verification");
 
-    const verificationFiles = [];
-    for (const file of files) {
-      const ext = path.extname(file).toLowerCase();
-      if (ALLOWED_EXTENSIONS.includes(ext)) {
-        const stats = await fs.stat(path.join(publicDir, file));
-        if (stats.isFile()) {
-          verificationFiles.push({
-            name: file,
-            size: stats.size,
-            updatedAt: stats.mtime.toISOString(),
-          });
-        }
-      }
+    if (error) {
+      throw error;
     }
+
+    const verificationFiles = (files || [])
+      .filter((file) => {
+        if (file.name === ".emptyFolderPlaceholder") return false;
+        const ext = path.extname(file.name).toLowerCase();
+        return ALLOWED_EXTENSIONS.includes(ext);
+      })
+      .map((file) => ({
+        name: file.name,
+        size: file.metadata?.size || 0,
+        updatedAt: file.updated_at || new Date().toISOString(),
+      }));
 
     return NextResponse.json({ data: verificationFiles });
   } catch (error) {
@@ -84,8 +86,16 @@ export async function POST(request) {
       );
     }
 
-    const targetPath = path.join(process.cwd(), "public", sanitizedName);
-    await fs.writeFile(targetPath, buffer);
+    const { error: uploadError } = await supabase.storage
+      .from("couponchy")
+      .upload(`verification/${sanitizedName}`, buffer, {
+        contentType: file.type || "text/plain",
+        upsert: true,
+      });
+
+    if (uploadError) {
+      throw uploadError;
+    }
 
     return NextResponse.json({
       success: true,
@@ -121,15 +131,14 @@ export async function DELETE(request) {
       return NextResponse.json({ error: "Invalid file name." }, { status: 400 });
     }
 
-    const targetPath = path.join(process.cwd(), "public", sanitizedName);
+    const { error: deleteError } = await supabase.storage
+      .from("couponchy")
+      .remove([`verification/${sanitizedName}`]);
 
-    try {
-      await fs.access(targetPath);
-    } catch {
-      return NextResponse.json({ error: "File not found." }, { status: 404 });
+    if (deleteError) {
+      throw deleteError;
     }
 
-    await fs.unlink(targetPath);
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json(
