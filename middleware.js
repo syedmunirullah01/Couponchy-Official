@@ -39,6 +39,11 @@ export async function middleware(req) {
     return NextResponse.next();
   }
 
+  // Skip if already processed by country routing middleware (prevent override in self-hosted rewrite loops)
+  if (req.headers.has(COUNTRY_HEADER_KEY)) {
+    return NextResponse.next();
+  }
+
   // ================= ADMIN =================
   if (pathname.startsWith("/admin")) {
    const token = await getToken({

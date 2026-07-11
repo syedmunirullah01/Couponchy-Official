@@ -158,7 +158,7 @@ export default function AboutPage({ totalStores = 0, totalOffers = 0, company = 
             </span>
           </div>
 
-          <h1 style={{ fontSize: "clamp(44px, 6vw, 80px)", fontWeight: 900, lineHeight: 0.95, letterSpacing: "-0.04em", margin: 0, marginBottom: "28px" }}>
+          <h1 style={{ fontSize: "clamp(44px, 6vw, 80px)", fontWeight: 900, lineHeight: 0.95, letterSpacing: "-0.04em", margin: 0, marginBottom: "28px", wordBreak: "break-word", overflowWrap: "break-word" }}>
             {tr.heroTitleLine1 || aboutData.heroTitleLine1 || "We killed the"}<br />
             <span style={{ color: "var(--color-primary)" }}>{tr.heroTitleAccent || aboutData.heroTitleAccent || "expired code."}</span>
           </h1>
@@ -193,7 +193,7 @@ export default function AboutPage({ totalStores = 0, totalOffers = 0, company = 
               onMouseEnter={e => { e.currentTarget.style.border = "1px solid rgba(139,92,246,0.35)"; e.currentTarget.style.transform = "translateY(-6px)"; e.currentTarget.style.boxShadow = "0 20px 40px rgba(0,0,0,0.5), 0 0 20px rgba(139,92,246,0.1)"; }}
               onMouseLeave={e => { e.currentTarget.style.border = "1px solid rgba(139,92,246,0.12)"; e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}>
               <div style={{ fontSize: "clamp(36px, 5vw, 56px)", fontWeight: 900, letterSpacing: "-0.04em", background: "linear-gradient(135deg, #fff 0%, var(--color-primary) 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>{s.value}</div>
-              <div style={{ fontSize: "13px", fontWeight: 700, color: "rgba(255,255,255,0.45)", textTransform: "uppercase", letterSpacing: "0.12em", marginTop: "8px" }}>{s.label}</div>
+              <div className="about-stat-label" style={{ fontWeight: 700, color: "rgba(255,255,255,0.45)", textTransform: "uppercase", marginTop: "8px", wordBreak: "break-word" }}>{s.label}</div>
             </div>
           ))}
         </div>
@@ -341,10 +341,18 @@ export default function AboutPage({ totalStores = 0, totalOffers = 0, company = 
         .about-mission-grid { grid-template-columns: 1fr !important; }
         .about-steps-grid   { grid-template-columns: 1fr !important; }
         .about-values-grid  { grid-template-columns: 1fr !important; }
+        .about-stat-label {
+          font-size: 11px !important;
+          letter-spacing: 0.05em !important;
+        }
         @media (min-width: 640px) {
           .about-stats-grid  { grid-template-columns: repeat(4, 1fr) !important; }
           .about-steps-grid  { grid-template-columns: repeat(2, 1fr) !important; }
           .about-values-grid { grid-template-columns: repeat(2, 1fr) !important; }
+          .about-stat-label {
+            font-size: 13px !important;
+            letter-spacing: 0.12em !important;
+          }
         }
         @media (min-width: 1024px) {
           .about-mission-grid { grid-template-columns: 1fr 1fr !important; }

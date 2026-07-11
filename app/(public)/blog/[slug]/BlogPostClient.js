@@ -418,7 +418,7 @@ export default function BlogPostClient({ slug, countryCode, initialArticle, init
       {/* Related Articles Banner */}
       <section className="pt-10 border-t border-white/[0.05]">
         <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/35">{t.moreFromOurJournal}</span>
-        <h2 className="mt-2 text-3xl font-black tracking-tight text-white uppercase">
+        <h2 className="mt-2 text-2xl sm:text-3xl font-black tracking-tight text-white uppercase break-words">
           {t.relatedArticles}
         </h2>
         <div className="mt-8 grid gap-6 sm:grid-cols-2">
@@ -446,13 +446,13 @@ export default function BlogPostClient({ slug, countryCode, initialArticle, init
           </Link>
         </div>
       </section>
-
+ 
       {/* Newsletter Signup Banner */}
       <section className="rounded-[32px] border border-white/5 bg-gradient-to-br from-[#0c0c0f] to-[#07070a] p-8 sm:p-12 flex flex-col md:flex-row md:items-center justify-between gap-8 relative overflow-hidden">
         <div className="absolute right-0 bottom-0 h-64 w-64 rounded-full bg-[var(--color-primary)]/3 blur-[100px] pointer-events-none" />
         <div className="max-w-md relative z-10">
           <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-primary)]">{t.stayUpdated}</span>
-          <h2 className="mt-3 text-3xl font-black tracking-tight text-white uppercase">
+          <h2 className="mt-3 text-2xl sm:text-3xl font-black tracking-tight text-white uppercase break-words">
             {t.findOutWhenWePublish}
           </h2>
           <p className="mt-2.5 text-xs leading-relaxed text-white/50">

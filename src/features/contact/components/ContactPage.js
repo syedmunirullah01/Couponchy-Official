@@ -215,7 +215,7 @@ export default function ContactPage({ settings = {}, company = null, t = null })
               {tr("getInTouchBadge", "Get In Touch")}
             </span>
           </div>
-          <h1 style={{ fontSize: "clamp(38px, 5vw, 64px)", fontWeight: 900, lineHeight: 0.95, letterSpacing: "-0.04em", margin: "0 0 20px" }}>
+          <h1 style={{ fontSize: "clamp(38px, 5vw, 64px)", fontWeight: 900, lineHeight: 0.95, letterSpacing: "-0.04em", margin: "0 0 20px", wordBreak: "break-word", overflowWrap: "break-word" }}>
             {displayTitle} {!company?.contactUs?.title && <span style={{ color: "var(--color-primary)" }}>Couponchy</span>}
           </h1>
           <p style={{ fontSize: "16px", color: "rgba(255,255,255,0.5)", maxWidth: "520px", margin: "0 auto", lineHeight: 1.6, fontWeight: 500 }}>
@@ -241,7 +241,7 @@ export default function ContactPage({ settings = {}, company = null, t = null })
                   <h3 style={{ fontSize: "14px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", margin: "0 0 4px" }}>
                     {tr("emailUsLabel", "Email Us")}
                   </h3>
-                  <a href={`mailto:${supportEmail}`} style={{ fontSize: "18px", fontWeight: 800, color: "#fff", textDecoration: "none", transition: "color 0.2s" }} onMouseEnter={e => e.currentTarget.style.color = "var(--color-primary)"} onMouseLeave={e => e.currentTarget.style.color = "#fff"}>
+                  <a href={`mailto:${supportEmail}`} style={{ fontSize: "18px", fontWeight: 800, color: "#fff", textDecoration: "none", transition: "color 0.2s", wordBreak: "break-all" }} onMouseEnter={e => e.currentTarget.style.color = "var(--color-primary)"} onMouseLeave={e => e.currentTarget.style.color = "#fff"}>
                     {supportEmail}
                   </a>
                 </div>
@@ -261,7 +261,7 @@ export default function ContactPage({ settings = {}, company = null, t = null })
                   <h3 style={{ fontSize: "14px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.4)", margin: "0 0 4px" }}>
                     {tr("partnershipsLabel", "Partnerships")}
                   </h3>
-                  <p style={{ fontSize: "16px", fontWeight: 700, margin: 0, color: "rgba(255,255,255,0.85)" }}>
+                  <p style={{ fontSize: "16px", fontWeight: 700, margin: 0, color: "rgba(255,255,255,0.85)", wordBreak: "break-all" }}>
                     partners@couponchy.com
                   </p>
                 </div>

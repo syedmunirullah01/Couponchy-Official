@@ -51,7 +51,7 @@ export default function PrivacyPolicyPage({ settings = {}, company = null, t = n
               {tr("legalDocsBadge", "Legal Docs")}
             </span>
           </div>
-          <h1 style={{ fontSize: "clamp(38px, 5vw, 64px)", fontWeight: 900, lineHeight: 0.95, letterSpacing: "-0.04em", margin: "0 0 20px" }}>
+          <h1 style={{ fontSize: "clamp(38px, 5vw, 64px)", fontWeight: 900, lineHeight: 0.95, letterSpacing: "-0.04em", margin: "0 0 20px", wordBreak: "break-word", overflowWrap: "break-word" }}>
             {policyData.title || "Privacy Policy"}
           </h1>
           <p style={{ fontSize: "15px", color: "rgba(255,255,255,0.45)", fontWeight: 500 }}>

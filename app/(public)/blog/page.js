@@ -386,7 +386,7 @@ export default function BlogPage() {
         <div className="absolute right-0 bottom-0 h-64 w-64 rounded-full bg-[var(--color-primary)]/3 blur-[100px] pointer-events-none" />
         <div className="max-w-md relative z-10">
           <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-primary)]">{t.stayUpdated}</span>
-          <h2 className="mt-3 text-3xl font-black tracking-tight text-white uppercase">
+          <h2 className="mt-3 text-2xl sm:text-3xl font-black tracking-tight text-white uppercase break-words">
             {t.findOutWhenWePublish}
           </h2>
           <p className="mt-2.5 text-xs leading-relaxed text-white/50">
@@ -424,7 +424,7 @@ export default function BlogPage() {
       {/* Understand the Engine Section */}
       <section className="pt-6 border-t border-white/[0.05]">
         <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/35">{t.insideOurPlatform}</span>
-        <h2 className="mt-2 text-3xl font-black tracking-tight text-white uppercase">
+        <h2 className="mt-2 text-2xl sm:text-3xl font-black tracking-tight text-white uppercase break-words">
           {t.understandTheEngine}
         </h2>
 
