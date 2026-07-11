@@ -26,7 +26,7 @@ function ActivityMarqueeTrack({ items, t }) {
   };
 
   return (
-    <div className="flex min-w-max shrink-0 animate-[activityMarquee_28s_linear_infinite] items-center">
+    <div className="flex min-w-max shrink-0 animate-[activityMarquee_55s_linear_infinite] items-center">
       {items.map((item, index) => (
         <div
           key={`${item.store}-${item.code}-${index}`}
@@ -54,8 +54,13 @@ function ActivityMarqueeTrack({ items, t }) {
   );
 }
 
-export default function ActivityMarqueeSection({ t: propT }) {
-  const marqueeItems = [...activityMarqueeItems, ...activityMarqueeItems];
+export default function ActivityMarqueeSection({ t: propT, items }) {
+  let itemsToUse = items && items.length > 0 ? items : activityMarqueeItems;
+  // Repeat items if it's too short so it doesn't leave blank gaps during animation
+  while (itemsToUse.length < 10) {
+    itemsToUse = [...itemsToUse, ...itemsToUse];
+  }
+  const marqueeItems = [...itemsToUse, ...itemsToUse];
 
   const t = propT || {
     codeVerified: "Code verified",

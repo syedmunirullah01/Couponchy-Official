@@ -10,6 +10,7 @@ export default function HomePage({
   hero,
   heroStatsT,
   marqueeT,
+  marqueeItems,
   trendingStores,
   trendingStoresTitle,
   trendingStoresT,
@@ -29,7 +30,7 @@ export default function HomePage({
   return (
     <div className="mx-auto flex w-full max-w-[1240px] flex-col gap-20 px-4 pb-8 pt-3 sm:px-6 sm:pb-10 sm:pt-4 lg:px-8 lg:pb-12 lg:pt-5">
       <HeroSection hero={hero} countryCode={countryCode} totalStoresCount={totalStoresCount} initialStores={allStores} t={heroStatsT} />
-      <ActivityMarqueeSection t={marqueeT} />
+      <ActivityMarqueeSection t={marqueeT} items={marqueeItems} />
       <TrendingStoresSection
         trendingStores={trendingStores}
         title={trendingStoresTitle}

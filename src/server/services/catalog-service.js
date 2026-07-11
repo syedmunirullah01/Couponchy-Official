@@ -294,6 +294,56 @@ export async function getHomePageData(countryCode) {
   // Translate offers for the active language
   const translatedOffers = await getTranslatedOffers(scopedOffers, lang);
 
+  const marqueeItems = translatedOffers.slice(0, 15).map((offer, idx) => {
+    const isCoupon = offer.type === "Coupon";
+    
+    // Create some variety in activity labels
+    let action = isCoupon ? "Code verified" : "Deal activated";
+    let statusLabel = isCoupon ? "Verified" : "Live deal";
+    let statusTone = "success";
+    let actor = "COUPONCHY LAB";
+
+    if (isCoupon) {
+      if (idx % 3 === 0) {
+        action = "Code verified";
+        statusLabel = "Verified";
+        statusTone = "success";
+        actor = "COUPONCHY LAB";
+      } else if (idx % 3 === 1) {
+        action = "Code submitted";
+        statusLabel = "New code";
+        statusTone = "warning";
+        actor = "COUPONCHY TEAM";
+      } else {
+        action = "Coupon updated";
+        statusLabel = "Fresh update";
+        statusTone = "warning";
+        actor = "SAVINGS TEAM";
+      }
+    } else {
+      if (idx % 2 === 0) {
+        action = "Deal activated";
+        statusLabel = "Live deal";
+        statusTone = "success";
+        actor = "EDITORIAL DESK";
+      } else {
+        action = "Coupon updated";
+        statusLabel = "Fresh update";
+        statusTone = "warning";
+        actor = "COUPONCHY TEAM";
+      }
+    }
+
+    return {
+      store: offer.storeName || "Brand",
+      action,
+      code: isCoupon ? (offer.code || "SAVE") : "GET DEAL",
+      statusLabel,
+      statusTone,
+      actor,
+    };
+  });
+
   const scopedProducts = products.filter((product) => allowedStoreSlugs.has(product.storeSlug));
   const homepageSections = translatedSettings.homepage.sections;
 
@@ -326,6 +376,7 @@ export async function getHomePageData(countryCode) {
     categoriesTitle,
     heroStatsT: translatedHero,
     marqueeT: translatedMarquee,
+    marqueeItems,
     trendingStoresT: translatedTrendingStores,
     howItWorksT: translatedHowItWorks,
     featuredCouponsT: translatedFeaturedCoupons,
