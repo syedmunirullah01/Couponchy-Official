@@ -471,7 +471,7 @@ export default function TrendingStoresSection({
           }
         }
         .store-card-name {
-          font-size: 15px;
+          font-size: 17px;
           font-weight: 900;
           letter-spacing: -0.02em;
           text-align: left;
