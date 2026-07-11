@@ -218,7 +218,7 @@ export default function BlogPage() {
           <span className="rounded-full bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/20 px-3 py-1 text-[10px] font-black uppercase tracking-[0.24em] text-[var(--color-primary)]">
             {t.ourJournal}
           </span>
-          <h1 className="mt-6 text-5xl font-black tracking-[-0.05em] text-white leading-tight sm:text-6xl">
+          <h1 className="mt-6 text-4xl sm:text-5xl lg:text-6xl font-black tracking-[-0.05em] text-white leading-tight break-words">
             {t.shoppingDecoded}
           </h1>
           <p className="mt-4 text-base leading-7 text-white/50 sm:text-lg">
