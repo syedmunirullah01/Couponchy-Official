@@ -26,6 +26,12 @@ export default function AdminNotificationsManager() {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Ignored IP Addresses States
+  const [ignoredIps, setIgnoredIps] = useState([]);
+  const [clientIp, setClientIp] = useState("");
+  const [newIp, setNewIp] = useState("");
+  const [submittingIp, setSubmittingIp] = useState(false);
   
   // Filtering and Sorting States
   const [selectedDate, setSelectedDate] = useState(""); // YYYY-MM-DD
@@ -59,8 +65,61 @@ export default function AdminNotificationsManager() {
     }
   }, []);
 
+  const fetchIgnoredIps = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/ignored-ips");
+      if (res.ok) {
+        const data = await res.json();
+        setIgnoredIps(data.ignoredIps || []);
+        setClientIp(data.clientIp || "");
+      }
+    } catch (err) {
+      console.error("Failed to fetch ignored IPs:", err);
+    }
+  }, []);
+
+  const handleAddIp = async (e) => {
+    e.preventDefault();
+    if (!newIp.trim()) return;
+
+    setSubmittingIp(true);
+    try {
+      const res = await fetch("/api/admin/ignored-ips", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "add", ip: newIp.trim() }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setIgnoredIps(data.ignoredIps || []);
+        setNewIp("");
+      }
+    } catch (err) {
+      console.error("Failed to add ignored IP:", err);
+    } finally {
+      setSubmittingIp(false);
+    }
+  };
+
+  const handleRemoveIp = async (ipToRemove) => {
+    try {
+      const res = await fetch("/api/admin/ignored-ips", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "remove", ip: ipToRemove }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setIgnoredIps(data.ignoredIps || []);
+      }
+    } catch (err) {
+      console.error("Failed to remove ignored IP:", err);
+    }
+  };
+
   useEffect(() => {
     fetchNotifications();
+    fetchIgnoredIps();
 
     // Mark as read after loading the page
     const timer = setTimeout(() => {
@@ -76,7 +135,7 @@ export default function AdminNotificationsManager() {
       clearTimeout(timer);
       clearInterval(interval);
     };
-  }, [fetchNotifications, markAllAsRead]);
+  }, [fetchNotifications, fetchIgnoredIps, markAllAsRead]);
 
   // Filter & Sort Notifications
   const filteredNotifications = useMemo(() => {
@@ -249,6 +308,72 @@ export default function AdminNotificationsManager() {
         <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-4 shadow-sm">
           <p className="text-[10px] font-black uppercase tracking-wider text-[var(--muted)]">Failed Votes</p>
           <p className="text-2xl font-black text-red-500 mt-1">{stats.negativeFeedback}</p>
+        </div>
+      </div>
+
+      {/* Exclude IP Addresses Section */}
+      <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5 shadow-sm">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div>
+            <h3 className="text-sm font-bold text-[var(--text)] uppercase tracking-wider flex items-center gap-2">
+              <span className="flex h-5 w-5 items-center justify-center rounded bg-red-500/10 text-red-500 text-[10px]">IP</span>
+              Exclude IP Addresses from Affiliate Redirects
+            </h3>
+            <p className="text-[11px] text-[var(--muted)] mt-0.5">Clicks originating from these IP addresses will not trigger "Affiliate Redirect" notifications.</p>
+          </div>
+          {/* Add IP Form */}
+          <form onSubmit={handleAddIp} className="flex items-center gap-2 lg:max-w-md w-full">
+            <input
+              type="text"
+              value={newIp}
+              onChange={(e) => setNewIp(e.target.value)}
+              placeholder="e.g. 192.168.1.1"
+              className="h-9 w-full rounded-xl border border-[var(--border)] bg-[var(--surface-soft)]/20 px-3 text-xs text-[var(--text)] outline-none focus:border-[var(--color-primary)] placeholder-white/30 font-mono"
+            />
+            <button
+              type="submit"
+              className="rounded-xl h-9 text-xs px-4 bg-[var(--color-primary)] text-black hover:bg-[var(--color-primary)]/90 disabled:bg-[var(--surface-soft)] disabled:text-[var(--muted)] cursor-pointer font-bold transition-all duration-200 whitespace-nowrap"
+              disabled={submittingIp || !newIp.trim()}
+            >
+              Exclude IP
+            </button>
+          </form>
+        </div>
+
+        {/* Display Current Client IP Helper */}
+        {clientIp && (
+          <div className="mt-3 text-[10px] text-[var(--muted)]">
+            Your current IP: <span 
+              onClick={() => setNewIp(clientIp)}
+              className="font-bold text-[var(--color-primary)] cursor-pointer hover:underline font-mono"
+              title="Click to insert into input field"
+            >
+              {clientIp}
+            </span> (Click to use)
+          </div>
+        )}
+
+        {/* Ignored IPs List */}
+        <div className="mt-4 border-t border-[var(--border)] pt-4">
+          {ignoredIps.length === 0 ? (
+            <p className="text-[11px] text-[var(--muted)] italic">No IP addresses are currently ignored.</p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {ignoredIps.map((ip) => (
+                <div key={ip} className="flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--surface-soft)]/30 px-3 py-1.5 text-xs text-[var(--text)]">
+                  <span className="font-mono text-[11px]">{ip}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveIp(ip)}
+                    className="text-red-500 hover:text-red-400 font-bold hover:bg-red-500/10 h-5 w-5 rounded-md flex items-center justify-center transition-colors duration-200 cursor-pointer"
+                    title="Remove"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

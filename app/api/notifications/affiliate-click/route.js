@@ -7,6 +7,16 @@ export async function POST(request) {
   try {
     const { storeName, offerTitle } = await request.json();
 
+    // Check client IP against ignored IPs list
+    const clientIp = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || 
+                     request.headers.get("x-real-ip")?.trim() || 
+                     "127.0.0.1";
+
+    const ignoredIps = await readCollection("ignored_ips.json", []);
+    if (ignoredIps.includes(clientIp)) {
+      return NextResponse.json({ success: true, ignored: true });
+    }
+
     const notifications = await readCollection("notifications.json", []);
     const now = Date.now();
     const RETENTION_MS = 30 * 24 * 60 * 60 * 1000; // 30 days retention to allow daily historical sorting!
