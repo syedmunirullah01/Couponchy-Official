@@ -749,7 +749,7 @@ export default function OfferCard({ offer, store, isFirst, t }) {
               href={actionHref && !/^https?:\/\//i.test(actionHref) ? `https://${actionHref}` : actionHref}
               target="_blank"
               rel="noopener noreferrer"
-              className="group/btn relative flex w-full items-center justify-center overflow-hidden rounded-xl bg-[var(--color-primary)] py-3.5 text-xs font-black uppercase tracking-[0.16em] text-black transition-all duration-300 hover:shadow-[0_0_24px_rgba(139,92,246,0.3)] shadow-lg shadow-violet-500/10 active:scale-[0.98]"
+              className="group/btn relative flex w-full items-center justify-center overflow-hidden rounded-xl bg-[var(--color-primary)] py-3.5 text-[11px] sm:text-xs font-black uppercase tracking-[0.06em] sm:tracking-[0.16em] text-black transition-all duration-300 hover:shadow-[0_0_24px_rgba(139,92,246,0.3)] shadow-lg shadow-violet-500/10 active:scale-[0.98]"
             >
               <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover/btn:translate-x-full" />
               <span className="relative flex items-center gap-2">
