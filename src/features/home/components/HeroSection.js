@@ -375,7 +375,7 @@ export default function HeroSection({ hero, countryCode = DEFAULT_COUNTRY_CODE, 
             {/* Main headline */}
             <h1
               style={{
-                fontSize: "clamp(44px, 6vw, 76px)",
+                fontSize: "clamp(36px, 6vw, 76px)",
                 fontWeight: 900,
                 lineHeight: 1.05,
                 letterSpacing: "-0.04em",
