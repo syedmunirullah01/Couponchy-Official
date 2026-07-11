@@ -18,7 +18,11 @@ export async function GET(request) {
                      request.headers.get("x-real-ip")?.trim() || 
                      "127.0.0.1";
 
-    return NextResponse.json({ ignoredIps, clientIp });
+    return NextResponse.json({ 
+      ignoredIps, 
+      clientIp,
+      debugHeaders: Object.fromEntries(request.headers.entries())
+    });
   } catch (err) {
     console.error("Fetch ignored IPs error:", err);
     return NextResponse.json({ error: "Failed to fetch ignored IPs" }, { status: 500 });
