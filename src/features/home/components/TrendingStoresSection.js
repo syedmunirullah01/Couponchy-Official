@@ -333,20 +333,9 @@ export default function TrendingStoresSection({
                   )}
                 </div>
                 <div
+                  className="store-card-name"
                   style={{
-                    fontSize: "18px",
-                    fontWeight: "900",
-                    letterSpacing: "-0.02em",
                     color: isHovered ? "var(--color-primary-hover)" : "#ffffff",
-                    textAlign: "left",
-                    flex: 1,
-                    paddingRight: "72px",
-                    display: "-webkit-box",
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: "vertical",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    transition: "color 0.3s ease",
                   }}
                   title={store.name}
                 >
@@ -479,6 +468,26 @@ export default function TrendingStoresSection({
           50% {
             transform: scale(1.15);
             opacity: 1;
+          }
+        }
+        .store-card-name {
+          font-size: 15px;
+          font-weight: 900;
+          letter-spacing: -0.02em;
+          text-align: left;
+          flex: 1;
+          padding-right: 56px;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          transition: color 0.3s ease;
+        }
+        @media (min-width: 640px) {
+          .store-card-name {
+            font-size: 18px;
+            padding-right: 72px;
           }
         }
         .explore-more-btn {
