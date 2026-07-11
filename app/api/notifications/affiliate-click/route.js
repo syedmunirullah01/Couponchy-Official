@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { readCollection, writeCollection } from "@/server/database/json-store";
+import { getAppSession } from "@/server/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -7,14 +8,20 @@ export async function POST(request) {
   try {
     const { storeName, offerTitle } = await request.json();
 
-    // Check client IP against ignored IPs list
+    // 1. Auto-exclude logged-in admin clicks
+    const session = await getAppSession();
+    if (session?.user?.role === "admin") {
+      return NextResponse.json({ success: true, ignored: true, reason: "admin_session" });
+    }
+
+    // 2. Check client IP against ignored IPs list
     const clientIp = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || 
                      request.headers.get("x-real-ip")?.trim() || 
                      "127.0.0.1";
 
     const ignoredIps = await readCollection("ignored_ips.json", []);
     if (ignoredIps.includes(clientIp)) {
-      return NextResponse.json({ success: true, ignored: true });
+      return NextResponse.json({ success: true, ignored: true, reason: "ignored_ip" });
     }
 
     const notifications = await readCollection("notifications.json", []);
