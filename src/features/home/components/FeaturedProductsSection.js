@@ -27,6 +27,14 @@ export default function FeaturedProductsSection({ featuredProducts, title = "Fea
   const [isMobile, setIsMobile] = useState(true);
   const timerRef = useRef(null);
 
+  const [expandedProducts, setExpandedProducts] = useState({});
+  const toggleExpand = (productId) => {
+    setExpandedProducts((prev) => ({
+      ...prev,
+      [productId]: !prev[productId],
+    }));
+  };
+
   const [startX, setStartX] = useState(0);
   const [currentX, setCurrentX] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -174,12 +182,14 @@ export default function FeaturedProductsSection({ featuredProducts, title = "Fea
                 }}
               >
                 <article
-                  className="group/card relative overflow-hidden rounded-[28px] border border-[var(--border)] bg-[var(--surface)] transition duration-500 hover:-translate-y-1 hover:border-[var(--color-primary)]/30 hover:shadow-[0_22px_48px_rgba(0,0,0,0.45)]"
+                  className={`group/card relative overflow-hidden rounded-[28px] border border-[var(--border)] bg-[var(--surface)] transition duration-500 hover:-translate-y-1 hover:border-[var(--color-primary)]/30 hover:shadow-[0_22px_48px_rgba(0,0,0,0.45)] w-full ${
+                    expandedProducts[product.id] ? "sm:h-auto" : "sm:h-[280px]"
+                  }`}
                 >
                   <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(139,92,246,0.14),transparent_36%)] opacity-0 transition duration-500 group-hover/card:opacity-100" />
-                  <div className="grid grid-cols-1 sm:grid-cols-[1.05fr_0.95fr]">
+                  <div className="grid grid-cols-1 sm:grid-cols-[1.05fr_0.95fr] h-full">
                     {/* Product Image Panel */}
-                    <div className="relative min-h-[220px] sm:h-[280px] overflow-hidden bg-[var(--surface-soft)]">
+                    <div className="relative min-h-[220px] sm:h-full overflow-hidden bg-[var(--surface-soft)]">
                       {product.image ? (
                         <Image
                           src={product.image}
@@ -199,12 +209,28 @@ export default function FeaturedProductsSection({ featuredProducts, title = "Fea
                     </div>
 
                     {/* Product Description Panel */}
-                    <div className="relative flex flex-col justify-between gap-5 p-5 sm:p-6">
+                    <div className="relative flex flex-col justify-between gap-5 p-5 sm:p-6 h-full overflow-hidden">
                       <div className="space-y-4">
                         <div className="space-y-2">
                           <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">{product.storeName}</p>
-                          <h3 className="text-2xl font-black tracking-[-0.04em] text-[var(--text)] transition-colors duration-300 group-hover/card:text-[var(--color-primary)]">{product.title}</h3>
-                          <p className="line-clamp-3 text-sm leading-6 text-[var(--muted)]">{product.description || "Featured product curated from the Couponchy store catalog."}</p>
+                          <h3 
+                            onClick={() => toggleExpand(product.id)}
+                            className={`text-2xl font-black tracking-[-0.04em] text-[var(--text)] transition-colors duration-300 group-hover/card:text-[var(--color-primary)] cursor-pointer hover:opacity-85 ${
+                              expandedProducts[product.id] ? "" : "line-clamp-2"
+                            }`}
+                            title={expandedProducts[product.id] ? "Click to collapse" : "Click to read more"}
+                          >
+                            {product.title}
+                          </h3>
+                          <p 
+                            onClick={() => toggleExpand(product.id)}
+                            className={`text-sm leading-relaxed text-[var(--muted)] cursor-pointer hover:text-[var(--text)] transition-colors ${
+                              expandedProducts[product.id] ? "" : "line-clamp-2"
+                            }`}
+                            title={expandedProducts[product.id] ? "Click to collapse" : "Click to read more"}
+                          >
+                            {product.description || "Featured product curated from the Couponchy store catalog."}
+                          </p>
                         </div>
 
                         <div className="flex items-end gap-3">
@@ -217,7 +243,7 @@ export default function FeaturedProductsSection({ featuredProducts, title = "Fea
 
                       <div className="flex items-center justify-between gap-4">
                         <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--color-primary)]">Ready to explore</p>
-                        <Button asChild variant="outline" size="sm" className="rounded-full px-5 hover:bg-[var(--color-primary)] hover:text-black hover:border-[var(--color-primary)] transition-all duration-300">
+                        <Button asChild variant="outline" size="sm" className="rounded-full px-5 hover:bg-[var(--color-primary)] hover:text-black hover:border-[var(--color-primary)] transition-all duration-300 whitespace-nowrap shrink-0">
                           <Link href={product.productUrl} target="_blank" rel="noopener noreferrer">
                             {product.ctaLabel || "View Product"}
                           </Link>

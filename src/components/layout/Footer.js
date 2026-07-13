@@ -371,7 +371,7 @@ export default async function Footer() {
               {t.allVerified}
             </span>
           </div>
-          <p className="text-white/40">{`© 2026 ${settings.siteName || "Couponchy"}. ${t.allRightsReserved}`}</p>
+          <p className="text-white/40">{`© ${new Date().getFullYear()} ${settings.siteName || "Couponchy"}. ${t.allRightsReserved}`}</p>
           <p className="text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] transition-colors">
             <a href={`mailto:${settings.supportEmail || "contact@couponchy.com"}`}>
               {settings.supportEmail || "Contact@couponchy.com"}
