@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/Table";
 import BulkCouponImportDialog from "@/features/admin/components/BulkCouponImportDialog";
 import { cn } from "@/lib/utils";
+import { SUPPORTED_COUNTRIES, sanitizeCountryList } from "@/lib/countries";
 
 const initialForm = {
   title: "",
@@ -41,11 +42,24 @@ export default function AdminOffersManager() {
 
   const [offers, setOffers] = useState([]);
   const [stores, setStores] = useState([]);
+  const [countries, setCountries] = useState(SUPPORTED_COUNTRIES);
+  const [selectedCountryFilter, setSelectedCountryFilter] = useState("all");
 
   const filteredOffers = useMemo(() => {
-    if (!searchQuery) return offers;
+    const storeMap = new Map(stores.map((s) => [s.slug, s]));
+    let result = offers;
+
+    if (selectedCountryFilter !== "all") {
+      result = result.filter((offer) => {
+        const store = storeMap.get(offer.storeSlug);
+        const countryCode = store?.countryCode || "US";
+        return countryCode.toLowerCase() === selectedCountryFilter.toLowerCase();
+      });
+    }
+
+    if (!searchQuery) return result;
     const lowerQuery = searchQuery.toLowerCase();
-    return offers.filter((offer) => {
+    return result.filter((offer) => {
       const title = (offer.title || "").toLowerCase();
       const desc = (offer.description || "").toLowerCase();
       const storeName = (offer.storeName || "").toLowerCase();
@@ -59,7 +73,7 @@ export default function AdminOffersManager() {
         type.includes(lowerQuery)
       );
     });
-  }, [offers, searchQuery]);
+  }, [offers, stores, searchQuery, selectedCountryFilter]);
 
   const [storeSearch, setStoreSearch] = useState("");
   const [storeDropdownOpen, setStoreDropdownOpen] = useState(false);
@@ -97,10 +111,10 @@ export default function AdminOffersManager() {
     return filteredOffers.slice(startIndex, startIndex + pageSize);
   }, [filteredOffers, currentPage, pageSize]);
 
-  // Reset page when search query changes
+  // Reset page when search query or country filter changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery]);
+  }, [searchQuery, selectedCountryFilter]);
 
   const getPageNumbers = () => {
     const pages = [];
@@ -127,14 +141,20 @@ export default function AdminOffersManager() {
   const affiliateEditedRef = useRef(false);
 
   async function loadData() {
-    const [offersResponse, storesResponse] = await Promise.all([
+    const [offersResponse, storesResponse, countriesResponse] = await Promise.all([
       fetch("/api/offers", { cache: "no-store" }),
       fetch("/api/stores", { cache: "no-store" }),
+      fetch("/api/public/countries", { cache: "no-store" }),
     ]);
 
-    const [offersPayload, storesPayload] = await Promise.all([offersResponse.json(), storesResponse.json()]);
+    const [offersPayload, storesPayload, countriesPayload] = await Promise.all([
+      offersResponse.json(),
+      storesResponse.json(),
+      countriesResponse.json(),
+    ]);
     setOffers(offersPayload.data || []);
     setStores(storesPayload.data || []);
+    setCountries(sanitizeCountryList(countriesPayload.data || SUPPORTED_COUNTRIES));
     setSelectedOfferIds((current) => current.filter((id) => (offersPayload.data || []).some((offer) => offer.id === id)));
   }
 
@@ -142,16 +162,22 @@ export default function AdminOffersManager() {
     let active = true;
 
     async function hydrateData() {
-      const [offersResponse, storesResponse] = await Promise.all([
+      const [offersResponse, storesResponse, countriesResponse] = await Promise.all([
         fetch("/api/offers", { cache: "no-store" }),
         fetch("/api/stores", { cache: "no-store" }),
+        fetch("/api/public/countries", { cache: "no-store" }),
       ]);
 
-      const [offersPayload, storesPayload] = await Promise.all([offersResponse.json(), storesResponse.json()]);
+      const [offersPayload, storesPayload, countriesPayload] = await Promise.all([
+        offersResponse.json(),
+        storesResponse.json(),
+        countriesResponse.json(),
+      ]);
 
       if (active) {
         setOffers(offersPayload.data || []);
         setStores(storesPayload.data || []);
+        setCountries(sanitizeCountryList(countriesPayload.data || SUPPORTED_COUNTRIES));
         setSelectedOfferIds([]);
       }
     }
@@ -310,6 +336,18 @@ export default function AdminOffersManager() {
               </svg>
               Delete Selected {selectedOfferIds.length ? `(${selectedOfferIds.length})` : ""}
             </Button>
+            <select
+              value={selectedCountryFilter}
+              onChange={(event) => setSelectedCountryFilter(event.target.value)}
+              className="h-10 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 text-xs font-bold text-[var(--text)] outline-none cursor-pointer"
+            >
+              <option value="all">All countries</option>
+              {countries.map((c) => (
+                <option key={c.code} value={c.code}>
+                  {c.flag} {c.name}
+                </option>
+              ))}
+            </select>
             <Button type="button" variant="ghost" size="sm" className="h-10 w-10 rounded-xl border border-[var(--border)] px-0 bg-[var(--surface)] hover:bg-[var(--surface-soft)] transition" onClick={loadData} aria-label="Refresh offers">
               <RefreshIcon />
             </Button>

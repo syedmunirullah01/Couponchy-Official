@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/Input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/Table";
 import { cn } from "@/lib/utils";
+import { SUPPORTED_COUNTRIES, sanitizeCountryList } from "@/lib/countries";
 
 const initialForm = {
   title: "",
@@ -51,6 +52,8 @@ export default function AdminProductsManager() {
   const [products, setProducts] = useState([]);
   const [stores, setStores] = useState([]);
   const [selectedStoreFilter, setSelectedStoreFilter] = useState("all");
+  const [countries, setCountries] = useState(SUPPORTED_COUNTRIES);
+  const [selectedCountryFilter, setSelectedCountryFilter] = useState("all");
   const [open, setOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [form, setForm] = useState(initialForm);
@@ -82,12 +85,34 @@ export default function AdminProductsManager() {
 
 
   const visibleProducts = useMemo(() => {
-    if (selectedStoreFilter === "all") {
-      return products;
+    const storeMap = new Map(stores.map((s) => [s.slug, s]));
+    let result = products;
+
+    if (selectedCountryFilter !== "all") {
+      result = result.filter((product) => {
+        const store = storeMap.get(product.storeSlug);
+        const countryCode = store?.countryCode || "US";
+        return countryCode.toLowerCase() === selectedCountryFilter.toLowerCase();
+      });
     }
 
-    return products.filter((product) => product.storeSlug === selectedStoreFilter);
-  }, [products, selectedStoreFilter]);
+    if (selectedStoreFilter !== "all") {
+      result = result.filter((product) => product.storeSlug === selectedStoreFilter);
+    }
+
+    return result;
+  }, [products, stores, selectedStoreFilter, selectedCountryFilter]);
+
+  const filteredStoresForFilter = useMemo(() => {
+    if (selectedCountryFilter === "all") return stores;
+    return stores.filter(
+      (store) => (store.countryCode || "").toLowerCase() === selectedCountryFilter.toLowerCase()
+    );
+  }, [stores, selectedCountryFilter]);
+
+  useEffect(() => {
+    setSelectedStoreFilter("all");
+  }, [selectedCountryFilter]);
 
   const searchParams = useSearchParams();
   const searchQuery = searchParams.get("search") || "";
@@ -104,30 +129,42 @@ export default function AdminProductsManager() {
   }, [visibleProducts, searchQuery]);
 
   async function loadData() {
-    const [productsResponse, storesResponse] = await Promise.all([
+    const [productsResponse, storesResponse, countriesResponse] = await Promise.all([
       fetch("/api/products", { cache: "no-store" }),
       fetch("/api/stores", { cache: "no-store" }),
+      fetch("/api/public/countries", { cache: "no-store" }),
     ]);
 
-    const [productsPayload, storesPayload] = await Promise.all([productsResponse.json(), storesResponse.json()]);
+    const [productsPayload, storesPayload, countriesPayload] = await Promise.all([
+      productsResponse.json(),
+      storesResponse.json(),
+      countriesResponse.json(),
+    ]);
     setProducts(productsPayload.data || []);
     setStores(storesPayload.data || []);
+    setCountries(sanitizeCountryList(countriesPayload.data || SUPPORTED_COUNTRIES));
   }
 
   useEffect(() => {
     let active = true;
 
     async function hydrateData() {
-      const [productsResponse, storesResponse] = await Promise.all([
+      const [productsResponse, storesResponse, countriesResponse] = await Promise.all([
         fetch("/api/products", { cache: "no-store" }),
         fetch("/api/stores", { cache: "no-store" }),
+        fetch("/api/public/countries", { cache: "no-store" }),
       ]);
 
-      const [productsPayload, storesPayload] = await Promise.all([productsResponse.json(), storesResponse.json()]);
+      const [productsPayload, storesPayload, countriesPayload] = await Promise.all([
+        productsResponse.json(),
+        storesResponse.json(),
+        countriesResponse.json(),
+      ]);
 
       if (active) {
         setProducts(productsPayload.data || []);
         setStores(storesPayload.data || []);
+        setCountries(sanitizeCountryList(countriesPayload.data || SUPPORTED_COUNTRIES));
       }
     }
 
@@ -296,12 +333,24 @@ export default function AdminProductsManager() {
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <select
+              value={selectedCountryFilter}
+              onChange={(event) => setSelectedCountryFilter(event.target.value)}
+              className="h-10 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 text-xs font-bold text-[var(--text)] outline-none cursor-pointer"
+            >
+              <option value="all">All countries</option>
+              {countries.map((c) => (
+                <option key={c.code} value={c.code}>
+                  {c.flag} {c.name}
+                </option>
+              ))}
+            </select>
+            <select
               value={selectedStoreFilter}
               onChange={(event) => setSelectedStoreFilter(event.target.value)}
               className="h-10 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 text-xs font-bold text-[var(--text)] outline-none cursor-pointer"
             >
               <option value="all">All stores</option>
-              {stores.map((store) => (
+              {filteredStoresForFilter.map((store) => (
                 <option key={store.slug} value={store.slug}>
                   {store.name}
                 </option>

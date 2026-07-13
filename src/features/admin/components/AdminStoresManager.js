@@ -215,11 +215,18 @@ export default function AdminStoresManager() {
   const [categories, setCategories] = useState([]);
   const [countries, setCountries] = useState(SUPPORTED_COUNTRIES);
   const [open, setOpen] = useState(false);
+  const [selectedCountryFilter, setSelectedCountryFilter] = useState("all");
 
   const filteredStores = useMemo(() => {
-    if (!searchQuery) return stores;
+    let result = stores;
+    if (selectedCountryFilter !== "all") {
+      result = result.filter(
+        (store) => (store.countryCode || "").toLowerCase() === selectedCountryFilter.toLowerCase()
+      );
+    }
+    if (!searchQuery) return result;
     const lowerQuery = searchQuery.toLowerCase();
-    return stores.filter((store) => {
+    return result.filter((store) => {
       const name = (store.name || "").toLowerCase();
       const slug = (store.slug || "").toLowerCase();
       const category = (store.category || "").toLowerCase();
@@ -231,7 +238,7 @@ export default function AdminStoresManager() {
         countryCode.includes(lowerQuery)
       );
     });
-  }, [stores, searchQuery]);
+  }, [stores, searchQuery, selectedCountryFilter]);
   const [bulkImportOpen, setBulkImportOpen] = useState(false);
   const [editingStore, setEditingStore] = useState(null);
   const [isHydrating, setIsHydrating] = useState(false);
@@ -253,10 +260,10 @@ export default function AdminStoresManager() {
     return filteredStores.slice(startIndex, startIndex + pageSize);
   }, [filteredStores, currentPage, pageSize]);
 
-  // Reset page when search query changes
+  // Reset page when search query or country filter changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery]);
+  }, [searchQuery, selectedCountryFilter]);
 
   const getPageNumbers = () => {
     const pages = [];
@@ -693,6 +700,18 @@ export default function AdminStoresManager() {
                 Delete Selected ({selectedStoreSlugs.length})
               </Button>
             ) : null}
+            <select
+              value={selectedCountryFilter}
+              onChange={(event) => setSelectedCountryFilter(event.target.value)}
+              className="h-10 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 text-xs font-bold text-[var(--text)] outline-none cursor-pointer"
+            >
+              <option value="all">All countries</option>
+              {countries.map((c) => (
+                <option key={c.code} value={c.code}>
+                  {c.flag} {c.name}
+                </option>
+              ))}
+            </select>
             <Button type="button" variant="ghost" size="sm" className="h-10 w-10 rounded-xl border border-[var(--border)] px-0 bg-[var(--surface)] hover:bg-[var(--surface-soft)] transition" onClick={loadStores} aria-label="Refresh stores">
               <RefreshIcon />
             </Button>
