@@ -24,7 +24,7 @@ export async function PATCH(request, { params }) {
     return access.error;
   }
 
-  const { id } = params;
+  const { id } = await params;
 
   try {
     const payload = await request.json();
@@ -99,7 +99,7 @@ export async function DELETE(_request, { params }) {
     return access.error;
   }
 
-  const { id } = params;
+  const { id } = await params;
 
   const { data: user, error: fetchError } = await supabase
     .from("users")
