@@ -4,65 +4,40 @@ import { getAppSession } from "@/server/auth";
 
 export const dynamic = "force-dynamic";
 
-// Cache the server's public country so we don't hit freeipapi on every local request
-let _cachedServerCountry = null;
-let _cachedServerCountryAt = 0;
-
 async function getCountryFromRequest(request) {
-  const clientIp = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || 
-                   request.headers.get("x-real-ip")?.trim() || 
-                   "127.0.0.1";
+  const clientIp =
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    request.headers.get("x-real-ip")?.trim() ||
+    "127.0.0.1";
 
-  // 1. Use CDN/proxy country header if available (production: Vercel, Cloudflare)
-  const countryHeader = request.headers.get("x-vercel-ip-country") || 
-                        request.headers.get("cf-ipcountry") || 
-                        request.headers.get("x-country-code") || 
-                        request.headers.get("x-country");
+  // 1. Use CDN/proxy country header if available (Vercel sets this automatically in production)
+  const countryHeader =
+    request.headers.get("x-vercel-ip-country") ||
+    request.headers.get("cf-ipcountry") ||
+    request.headers.get("x-country-code") ||
+    request.headers.get("x-country");
   if (countryHeader && countryHeader.length === 2) {
     return countryHeader.toUpperCase();
   }
 
-  const isLocal = clientIp === "127.0.0.1" || 
-                  clientIp === "::1" || 
-                  clientIp.includes("127.0.0.1") ||
-                  clientIp.startsWith("192.168.") || 
-                  clientIp.startsWith("10.") ||
-                  clientIp.startsWith("172.");
+  const isLocal =
+    clientIp === "127.0.0.1" ||
+    clientIp === "::1" ||
+    clientIp.startsWith("127.") ||
+    clientIp.startsWith("192.168.") ||
+    clientIp.startsWith("10.") ||
+    clientIp.startsWith("172.");
 
-  // 2. For local/LAN IPs, use cached server country (re-fetch every 10 minutes)
-  if (isLocal) {
-    const now = Date.now();
-    if (_cachedServerCountry && now - _cachedServerCountryAt < 10 * 60 * 1000) {
-      return _cachedServerCountry;
-    }
-    try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 4000);
-      const res = await fetch("https://freeipapi.com/api/json", {
-        signal: controller.signal,
-      }).catch(() => null);
-      clearTimeout(timeout);
-      if (res && res.ok) {
-        const data = await res.json();
-        if (data && data.countryCode && data.countryCode.length === 2) {
-          _cachedServerCountry = data.countryCode.toUpperCase();
-          _cachedServerCountryAt = now;
-          return _cachedServerCountry;
-        }
-      }
-    } catch (err) {
-      console.error("GeoIP (local) lookup failed:", err);
-    }
-    return _cachedServerCountry || "US";
-  }
+  // 2. For local/LAN IPs (dev only), lookup server's own public IP — no caching to avoid cross-user pollution
+  // 3. For real public IPs, do direct per-IP lookup
+  const lookupUrl = isLocal
+    ? "https://freeipapi.com/api/json"
+    : `https://freeipapi.com/api/json/${clientIp}`;
 
-  // 3. For real public IPs, do direct lookup
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 3000);
-    const res = await fetch(`https://freeipapi.com/api/json/${clientIp}`, {
-      signal: controller.signal,
-    }).catch(() => null);
+    const timeout = setTimeout(() => controller.abort(), 4000);
+    const res = await fetch(lookupUrl, { signal: controller.signal }).catch(() => null);
     clearTimeout(timeout);
     if (res && res.ok) {
       const data = await res.json();
@@ -71,7 +46,7 @@ async function getCountryFromRequest(request) {
       }
     }
   } catch (err) {
-    console.error("GeoIP lookup failed:", err);
+    console.error("GeoIP lookup failed:", err.message);
   }
 
   return "US";
