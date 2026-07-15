@@ -115,12 +115,12 @@ export default function AboutPage({ totalStores = 0, totalOffers = 0, company = 
   const aboutData = company?.aboutUs || {};
   const tr = t || {};
 
-  // Build dynamic stats that match the homepage numbers
+  // Build dynamic stats that match the homepage numbers (allowing override from admin)
   const STATS = [
-    { value: formatCount(totalStores), label: tr.statVerifiedStoresLabel || "Verified Stores" },
+    { value: aboutData.statVerifiedStores || formatCount(totalStores), label: tr.statVerifiedStoresLabel || "Verified Stores" },
     { value: aboutData.statMonthlyUsers || "4.6M+", label: tr.statMonthlyUsersLabel || "Monthly Users" },
     { value: aboutData.statCodeAccuracy || "98%", label: tr.statCodeAccuracyLabel || "Code Accuracy" },
-    { value: formatCount(totalOffers), label: tr.statActiveDealsLabel || "Active Deals" },
+    { value: aboutData.statActiveDeals || formatCount(totalOffers), label: tr.statActiveDealsLabel || "Active Deals" },
   ];
 
   // Build translated VALUES and STEPS from `t` prop

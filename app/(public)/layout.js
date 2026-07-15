@@ -1,5 +1,6 @@
 import Navbar from "@/components/layout/Navbar";
 import ScrollToTopButton from "@/components/layout/ScrollToTopButton";
+import ScrollProgressIndicator from "@/components/layout/ScrollProgressIndicator";
 import Footer from "@/components/layout/Footer";
 import { getAllCategories } from "@/server/repositories/categories-repository";
 import { getAllStores } from "@/server/repositories/stores-repository";
@@ -30,15 +31,14 @@ export default async function PublicLayout({ children }) {
 
   const lang = COUNTRY_TO_LANG[String(countryCode || "").toUpperCase()] || "en";
   const currentCountry = String(countryCode || "US").toUpperCase();
-  const enabledEvents = events.filter((event) => {
-    if (event.status !== "enabled") return false;
+  const visibleEvents = events.filter((event) => {
     const eventCountry = String(event.countryCode || "GLOBAL").toUpperCase();
     return eventCountry === "GLOBAL" || eventCountry === currentCountry;
   });
 
   const [translatedCategories, translatedEvents, translatedNavbar] = await Promise.all([
     getTranslatedCategories(categories, lang),
-    getTranslatedEvents(enabledEvents, lang),
+    getTranslatedEvents(visibleEvents, lang),
     getTranslatedNavbar(lang),
   ]);
 
@@ -61,6 +61,7 @@ export default async function PublicLayout({ children }) {
       <main className="relative z-10 flex-1">{children}</main>
       <Footer />
       <ScrollToTopButton />
+      <ScrollProgressIndicator />
     </div>
   );
 }

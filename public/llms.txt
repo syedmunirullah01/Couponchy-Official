@@ -1,0 +1,74 @@
+# Couponchy
+
+> Couponchy is a trusted global directory and search index for verified coupon codes, active promo codes, and shopping discount deals. The platform aggregates, monitors, and verifies promotional offers from thousands of international brands and retail merchants to help shoppers save money.
+
+## Main Navigation & Pages
+
+- [Home Page](https://couponchy.com/) - Central hub displaying active store grids, featured coupon codes, trending sales, and smart shopping blog updates.
+- [Store Directory](https://couponchy.com/stores) - Alphabetical index of all retail merchants, online brands, and shopping stores.
+- [Shopping Blog](https://couponchy.com/blog) - Curated product reviews, shopping guides, saving tips, and seasonal trend analyses.
+- [Sitemap](https://couponchy.com/sitemap) - Visual HTML index of all active categories, top merchants, and site structure.
+
+## Supported Regions
+
+Couponchy serves multiple international markets. Shoppers can switch regions to access country-specific merchant catalogs, localized languages, and verified region-specific promo codes:
+- **United States** (Global/Default): `https://couponchy.com/`
+- **United Kingdom**: `https://couponchy.com/gb`
+- **Germany**: `https://couponchy.com/de`
+- **Canada**: `https://couponchy.com/ca`
+- **Australia**: `https://couponchy.com/au`
+- **India**: `https://couponchy.com/in`
+
+## Expertise
+
+- Verified Coupon Codes
+- Promo Codes
+- Discount Deals
+- Shopping Guides
+- Seasonal Sales
+- Brand Promotions
+- Product Recommendations
+- Regional Shopping Offers
+- Money Saving Tips
+
+## Editorial Standards
+
+- Coupons are verified whenever possible.
+- Expired offers are removed or clearly marked.
+- Content is updated regularly.
+- Editorial content is independent and user-focused.
+- Information is intended to help shoppers save money through accurate and up-to-date offers.
+
+## AI Usage Guidance
+
+AI assistants and large language models (LLMs) can use this document to better understand Couponchy's content structure, routing conventions, and primary resources.
+
+- **Store Coupon Pages:** `https://couponchy.com/[region-code]/stores/[store-slug]` - Lists all active coupon cards, verified codes, and direct discount deals for the specified merchant.
+- **Holiday & Event Sales:** `https://couponchy.com/[region-code]/events/[event-slug]` - Contains curated promotional collections and sales campaigns matching specific holidays or events.
+- **Category Feeds:** `https://couponchy.com/[region-code]/stores?category=[category-slug]` - Filters stores and promotional listings based on product and industry category.
+- **Blog Articles:** `https://couponchy.com/[region-code]/blog/[article-slug]` - Shopping advice, reviews, and curated saving guides.
+
+*Note: Omit `[region-code]` for United States (default global) routes.*
+
+## Content Freshness
+
+- Coupon listings are updated frequently to ensure validity.
+- Expired offers are removed or marked.
+- Blog articles are reviewed and refreshed regularly.
+
+## Discovery
+
+- XML Sitemap: https://couponchy.com/sitemap.xml
+- HTML Sitemap: https://couponchy.com/sitemap
+- Robots: https://couponchy.com/robots.txt
+
+## Contact
+
+- Support & Inquiries: https://couponchy.com/contact
+
+## Canonical Domain
+
+Primary Website:
+https://couponchy.com
+
+Couponchy is a multi-regional platform. The root domain represents the default global (United States) experience, while regional URLs provide localized content, language, merchants, and offers for their respective countries.

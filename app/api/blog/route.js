@@ -5,11 +5,17 @@ import { requirePermission } from "@/server/auth";
 import { translateBlogOnSave, getTranslatedBlogs, getTranslatedBlogUI, COUNTRY_TO_LANG } from "@/server/services/translation-service";
 import { resolveRequestCountryCode } from "@/server/resolve-request-country";
 
-export async function GET() {
-  const [posts, countryCode] = await Promise.all([
-    getAllBlogPosts(),
-    resolveRequestCountryCode()
-  ]);
+export async function GET(request) {
+  const { searchParams } = new URL(request.url);
+  const raw = searchParams.get("raw") === "true";
+
+  const posts = await getAllBlogPosts();
+
+  if (raw) {
+    return NextResponse.json({ data: posts });
+  }
+
+  const countryCode = await resolveRequestCountryCode();
   const lang = COUNTRY_TO_LANG[String(countryCode || "").toUpperCase()] || "en";
   const [translatedPosts, translatedUI] = await Promise.all([
     getTranslatedBlogs(posts, lang),

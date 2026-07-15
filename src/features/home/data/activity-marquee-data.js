@@ -8,28 +8,12 @@ export const activityMarqueeItems = [
     actor: "NILESKAMARCANO",
   },
   {
-    store: "The Good and the Beautiful",
-    action: "Code submitted",
-    code: "SPRING26",
-    statusLabel: "New code",
-    statusTone: "warning",
-    actor: "NILESKAMARCANO",
-  },
-  {
     store: "Music Plaza",
     action: "Code submitted",
     code: "SOUND24",
     statusLabel: "Pending review",
     statusTone: "muted",
     actor: "COUPONCHY TEAM",
-  },
-  {
-    store: "Hostinger",
-    action: "Deal activated",
-    code: "HOSTNOW",
-    statusLabel: "Live deal",
-    statusTone: "success",
-    actor: "EDITORIAL DESK",
   },
   {
     store: "Nike",

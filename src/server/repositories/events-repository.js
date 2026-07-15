@@ -22,6 +22,7 @@ function normalizeEvent(input, currentEvent) {
     name,
     slug,
     keyword: String(input.keyword || name).trim().toLowerCase(),
+    tag: String(input.tag || "").trim(),
     seoTitle: String(input.seoTitle || "").trim(),
     seoDescription: String(input.seoDescription || "").trim(),
     shortDescription: String(input.shortDescription || "").trim(),

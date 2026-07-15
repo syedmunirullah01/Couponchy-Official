@@ -1,6 +1,7 @@
 import { getBlogPostBySlug } from "@/server/repositories/blog-repository";
 import { resolveRequestCountryCode } from "@/server/resolve-request-country";
 import { getTranslatedBlog, getTranslatedBlogUI, COUNTRY_TO_LANG } from "@/server/services/translation-service";
+import { getHomePageData } from "@/server/services/catalog-service";
 import BlogPostClient from "./BlogPostClient";
 import { notFound } from "next/navigation";
 import { getMetadataDefaults } from "@/server/services/settings-service";
@@ -146,9 +147,10 @@ export default async function Page({ params }) {
   }
 
   const lang = COUNTRY_TO_LANG[String(countryCode || "").toUpperCase()] || "en";
-  const [translatedPost, translatedUI] = await Promise.all([
+  const [translatedPost, translatedUI, homepageData] = await Promise.all([
     getTranslatedBlog(post, lang),
-    getTranslatedBlogUI(lang)
+    getTranslatedBlogUI(lang),
+    getHomePageData(countryCode)
   ]);
 
   return (
@@ -157,6 +159,8 @@ export default async function Page({ params }) {
       countryCode={countryCode}
       initialArticle={translatedPost}
       initialUi={translatedUI}
+      featuredProducts={homepageData.featuredProducts || []}
+      featuredCoupons={homepageData.featuredCoupons || []}
     />
   );
 }

@@ -543,6 +543,7 @@ export async function getTranslatedEvent(event, lang) {
     };
 
     if (event.name) result.name = await translateKey("name", event.name);
+    if (event.tag) result.tag = await translateKey("tag", event.tag);
     if (event.shortDescription) result.shortDescription = await translateKey("shortDescription", event.shortDescription);
     if (event.longDescription) result.longDescription = await translateKey("longDescription", event.longDescription);
     if (event.seoTitle) result.seoTitle = await translateKey("seoTitle", event.seoTitle);
@@ -638,7 +639,7 @@ export async function translateEventOnSave(event, passedLangs = null) {
 
     const eventId = event.id || event.slug;
 
-    const fieldsToTranslate = ["name", "shortDescription", "longDescription", "seoTitle", "seoDescription"];
+    const fieldsToTranslate = ["name", "tag", "shortDescription", "longDescription", "seoTitle", "seoDescription"];
     for (const field of fieldsToTranslate) {
       if (event[field]) {
         const hash = getHash(event[field]);
@@ -1426,6 +1427,10 @@ const DEFAULT_ABOUT = {
   heroTitleLine1: "We killed the",
   heroTitleAccent: "expired code.",
   heroDescription: "Couponchy was built out of frustration. Every other coupon site was full of dead links and fake discounts. We built the infrastructure to verify every code — automatically, in real time, at scale.",
+  statVerifiedStores: "",
+  statMonthlyUsers: "4.6M+",
+  statCodeAccuracy: "98%",
+  statActiveDeals: "",
   statMonthlyUsersLabel: "Monthly Users",
   statCodeAccuracyLabel: "Code Accuracy",
   statVerifiedStoresLabel: "Verified Stores",

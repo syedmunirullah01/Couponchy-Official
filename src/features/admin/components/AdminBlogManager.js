@@ -312,7 +312,7 @@ export default function AdminBlogManager() {
 
     try {
       const [blogRes, countriesRes] = await Promise.all([
-        fetch("/api/blog", { cache: "no-store" }),
+        fetch("/api/blog?raw=true", { cache: "no-store" }),
         fetch("/api/public/countries", { cache: "no-store" }),
       ]);
       const [blogPayload, countriesPayload] = await Promise.all([

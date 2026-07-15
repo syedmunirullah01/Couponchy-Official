@@ -102,12 +102,82 @@ export async function generateMetadata({ params }) {
   const event = await getEventBySlug(resolvedParams?.event);
   const translatedEvent = await getTranslatedEvent(event, lang);
   const eventName = translatedEvent?.name || formatEventName(resolvedParams?.event || "Event");
-  const defaults = await getMetadataDefaults(`${eventName} Event`);
+
+  const titles = {
+    en: `${eventName} Deals, Coupons & Offers | CouponChy`,
+    de: `${eventName} Angebote, Gutscheine & Deals | CouponChy`,
+    fr: `Offres, coupons et réductions ${eventName} | CouponChy`,
+    nl: `${eventName} Aanbiedingen, Coupons & Deals | CouponChy`,
+    pl: `Oferty, kupony i promocje ${eventName} | CouponChy`,
+    it: `Offerte, coupon e sconti ${eventName} | CouponChy`,
+    es: `Ofertas, cupones y descuentos ${eventName} | CouponChy`,
+    ar: `عروض وكوبونات ${eventName} | CouponChy`,
+    ja: `${eventName} セール、クーポン＆オファー | CouponChy`,
+    pt: `Ofertas, cupons e descontos ${eventName} | CouponChy`,
+    sv: `${eventName} erbjudanden, kuponger & deals | CouponChy`
+  };
+
+  const descriptions = {
+    en: `Find the latest ${eventName} deals, verified coupons, promo codes, and exclusive discounts from top brands. Save more with regularly updated offers on CouponChy.`,
+    de: `Finden Sie die neuesten ${eventName} Angebote, verifizierten Gutscheine, Rabattcodes und exklusiven Rabatte von Top-Marken. Sparen Sie mehr mit regelmäßig aktualisierten Angeboten auf CouponChy.`,
+    fr: `Retrouvez les dernières offres, coupons vérifiés, codes promo et réductions exclusives pour ${eventName} auprès des meilleures marques. Économisez plus avec des offres régulièrement mises à jour sur CouponChy.`,
+    nl: `Vind de nieuwste ${eventName} deals, geverifieerde kortingscodes, coupons en exclusieve kortingen van topmerken. Bespaar meer met regelmatig bijgewerkte aanbiedingen op CouponChy.`,
+    pl: `Znajdź najnowsze oferty, zweryfikowane kupony, kody rabatowe i ekskluzywne zniżki na ${eventName} od najlepszych marek. Oszczędzaj więcej dzięki regularnie aktualizowanym promocjom na CouponChy.`,
+    it: `Trova le ultime offerte, i coupon verificati, i codici promozionali e gli sconti esclusivi per ${eventName} dei migliori marchi. Risparmia di più con offerte aggiornate regolarmente su CouponChy.`,
+    es: `Encuentre las últimas ofertas de ${eventName}, cupones verificados, códigos promocionales y descuentos exclusivos de las principales marcas. Ahorre más con ofertas actualizadas regularmente en CouponChy.`,
+    ar: `احصل على أحدث عروض وكوبونات وأكواد خصم ${eventName} الموثقة والتخفيضات الحصرية من أشهر الماركات. وفر أكثر مع العروض المتجددة باستمرار على CouponChy.`,
+    ja: `最新の${eventName}セール、確認済みクーポン、プロモーションコード、人気ブランドの限定割引をご覧ください。CouponChyで定期的に更新されるオファーでお得に節約。`,
+    pt: `Encontre as melhores ofertas de ${eventName}, cupons verificados, códigos promocionais e descontos exclusivos das principais marcas. Economize mais com ofertas atualizadas regularmente no CouponChy.`,
+    sv: `Hitta de senaste ${eventName}-erbjudandena, verifierade kupongerna, rabattkoderna och exklusiva rabatterna från populära varumärken. Spara mer med uppdaterade deals på CouponChy.`
+  };
+
+  const title = titles[lang] || titles.en;
+  const description = descriptions[lang] || descriptions.en;
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://couponchy.com";
+  const segment = countryCode && countryCode.toUpperCase() !== "US" ? `/${countryCode.toLowerCase()}` : "";
+  const canonicalUrl = `${baseUrl}${segment}/events/${resolvedParams?.event}`;
+
+  const supportedLanguages = ["en", "de", "fr", "nl", "pl", "it", "es", "ar", "ja", "pt", "sv"];
+  const languageToCountry = {
+    en: "us",
+    de: "de",
+    fr: "fr",
+    nl: "nl",
+    pl: "pl",
+    it: "it",
+    es: "es",
+    ar: "sa",
+    ja: "jp",
+    pt: "pt",
+    sv: "se"
+  };
+
+  const hreflangs = {};
+  supportedLanguages.forEach((l) => {
+    const cc = languageToCountry[l];
+    const pathSeg = cc === "us" ? "" : `/${cc}`;
+    hreflangs[l] = `${baseUrl}${pathSeg}/events/${resolvedParams?.event}`;
+  });
+  hreflangs["x-default"] = `${baseUrl}/events/${resolvedParams?.event}`;
 
   return {
-    ...defaults,
-    title: translatedEvent?.seoTitle || defaults.title,
-    description: translatedEvent?.seoDescription || defaults.description,
+    title,
+    description,
+    alternates: {
+      canonical: canonicalUrl,
+      languages: hreflangs,
+    },
+    openGraph: {
+      title,
+      description,
+      url: canonicalUrl,
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+    },
   };
 }
 
@@ -119,9 +189,6 @@ export default async function EventPage({ params }) {
   const currentCountry = String(countryCode || "US").toUpperCase();
 
   if (eventConfig) {
-    if (eventConfig.status !== "enabled") {
-      notFound();
-    }
     const eventCountry = String(eventConfig.countryCode || "GLOBAL").toUpperCase();
     if (eventCountry !== "GLOBAL" && eventCountry !== currentCountry) {
       notFound();

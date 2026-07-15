@@ -138,3 +138,33 @@ input {
 .bg-ambient-glow {
   background-image: radial-gradient(circle at top left, rgba(139, 92, 246, 0.08), transparent 25%), radial-gradient(circle at top right, rgba(217, 70, 239, 0.08), transparent 28%);
 }
+
+@keyframes dynamicBadgePulse {
+  0%, 100% {
+    transform: scale(1) rotate(-12deg);
+    box-shadow: 0 3px 12px rgba(255, 46, 147, 0.45);
+  }
+  50% {
+    transform: scale(1.08) rotate(-10deg);
+    box-shadow: 0 5px 20px rgba(255, 46, 147, 0.75);
+  }
+}
+
+@keyframes dynamicBadgePulseMobile {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 3px 12px rgba(255, 46, 147, 0.3);
+  }
+  50% {
+    transform: scale(1.06);
+    box-shadow: 0 5px 18px rgba(255, 46, 147, 0.55);
+  }
+}
+
+.animate-badge-pulse {
+  animation: dynamicBadgePulse 2s infinite ease-in-out;
+}
+
+.animate-badge-pulse-mobile {
+  animation: dynamicBadgePulseMobile 2s infinite ease-in-out;
+}

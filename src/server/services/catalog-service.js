@@ -294,50 +294,47 @@ export async function getHomePageData(countryCode) {
   // Translate offers for the active language
   const translatedOffers = await getTranslatedOffers(scopedOffers, lang);
 
-  const marqueeItems = translatedOffers.slice(0, 15).map((offer, idx) => {
-    const isCoupon = offer.type === "Coupon";
-    
+  // Filter only Coupons and ensure one coupon per brand/store
+  const marqueeCoupons = [];
+  const seenStoresForMarquee = new Set();
+  for (const offer of translatedOffers) {
+    if (offer.type === "Coupon") {
+      const storeSlug = offer.storeSlug || offer.storeName;
+      if (storeSlug && !seenStoresForMarquee.has(storeSlug)) {
+        seenStoresForMarquee.add(storeSlug);
+        marqueeCoupons.push(offer);
+      }
+    }
+  }
+
+  const marqueeItems = marqueeCoupons.slice(0, 15).map((offer, idx) => {
     // Create some variety in activity labels
-    let action = isCoupon ? "Code verified" : "Deal activated";
-    let statusLabel = isCoupon ? "Verified" : "Live deal";
+    let action = "Code verified";
+    let statusLabel = "Verified";
     let statusTone = "success";
     let actor = "COUPONCHY LAB";
 
-    if (isCoupon) {
-      if (idx % 3 === 0) {
-        action = "Code verified";
-        statusLabel = "Verified";
-        statusTone = "success";
-        actor = "COUPONCHY LAB";
-      } else if (idx % 3 === 1) {
-        action = "Code submitted";
-        statusLabel = "New code";
-        statusTone = "warning";
-        actor = "COUPONCHY TEAM";
-      } else {
-        action = "Coupon updated";
-        statusLabel = "Fresh update";
-        statusTone = "warning";
-        actor = "SAVINGS TEAM";
-      }
+    if (idx % 3 === 0) {
+      action = "Code verified";
+      statusLabel = "Verified";
+      statusTone = "success";
+      actor = "COUPONCHY LAB";
+    } else if (idx % 3 === 1) {
+      action = "Code submitted";
+      statusLabel = "New code";
+      statusTone = "warning";
+      actor = "COUPONCHY TEAM";
     } else {
-      if (idx % 2 === 0) {
-        action = "Deal activated";
-        statusLabel = "Live deal";
-        statusTone = "success";
-        actor = "EDITORIAL DESK";
-      } else {
-        action = "Coupon updated";
-        statusLabel = "Fresh update";
-        statusTone = "warning";
-        actor = "COUPONCHY TEAM";
-      }
+      action = "Coupon updated";
+      statusLabel = "Fresh update";
+      statusTone = "warning";
+      actor = "SAVINGS TEAM";
     }
 
     return {
       store: offer.storeName || "Brand",
       action,
-      code: isCoupon ? (offer.code || "SAVE") : "GET DEAL",
+      code: offer.code || "SAVE",
       statusLabel,
       statusTone,
       actor,

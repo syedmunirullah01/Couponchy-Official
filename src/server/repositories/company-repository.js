@@ -11,9 +11,11 @@ const defaultContent = {
     heroTitleLine1: "We killed the",
     heroTitleAccent: "expired code.",
     heroDescription: "Couponchy was built out of frustration. Every other coupon site was full of dead links and fake discounts. We built the infrastructure to verify every code — automatically, in real time, at scale.",
-    // Stats (Stores & Deals counts are auto from DB)
+    // Stats (Stores & Deals counts are auto from DB unless overridden)
+    statVerifiedStores: "",
     statMonthlyUsers: "4.6M+",
     statCodeAccuracy: "98%",
+    statActiveDeals: "",
     // Mission section
     missionQuote: "Nobody should waste money on a coupon that doesn't work.",
     missionParagraph1: "We started Couponchy because we kept getting burned — coupon code after coupon code failing at checkout. The problem wasn't a lack of deals. The problem was a lack of honesty.",

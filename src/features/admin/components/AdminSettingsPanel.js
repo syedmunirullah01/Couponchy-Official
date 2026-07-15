@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { toast } from "sonner";
 import { ConfirmModal } from "@/components/ui/AppModal";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -136,6 +136,8 @@ export default function AdminSettingsPanel() {
   const [isUploading, setIsUploading] = useState(false);
   const [deleteTargetFile, setDeleteTargetFile] = useState(null);
   const [uploadingAsset, setUploadingAsset] = useState("");
+  const [updatingFile, setUpdatingFile] = useState(null);
+  const updateFileInputRef = useRef(null);
 
   async function handleBrandingUpload(e, type) {
     const file = e.target.files?.[0];
@@ -265,6 +267,73 @@ export default function AdminSettingsPanel() {
     } finally {
       setIsUploading(false);
       setDeleteTargetFile(null);
+    }
+  }
+
+  async function handleDownloadFile(fileName) {
+    try {
+      const response = await fetch(`/${fileName}`);
+      if (!response.ok) throw new Error("Failed to download file");
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      toast.error("Failed to download file.");
+    }
+  }
+
+  function triggerUpdateFile(file) {
+    setUpdatingFile(file);
+    if (updateFileInputRef.current) {
+      updateFileInputRef.current.click();
+    }
+  }
+
+  async function handleUpdateFileChange(e) {
+    const file = e.target.files?.[0];
+    if (!file || !updatingFile) return;
+
+    const getExtension = (name) => {
+      const parts = name.split(".");
+      return parts.length > 1 ? `.${parts[parts.length - 1].toLowerCase()}` : "";
+    };
+
+    if (getExtension(file.name) !== getExtension(updatingFile.name)) {
+      toast.error(`File extension must match the original: ${getExtension(updatingFile.name)}`);
+      setUpdatingFile(null);
+      e.target.value = "";
+      return;
+    }
+
+    const renamedFile = new File([file], updatingFile.name, { type: file.type });
+    const formData = new FormData();
+    formData.append("file", renamedFile);
+
+    setIsUploading(true);
+    try {
+      const res = await fetch("/api/settings/verification", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success(`File "${updatingFile.name}" updated successfully.`);
+        loadVerificationFiles();
+      } else {
+        toast.error(data.error || "Failed to update file.");
+      }
+    } catch (err) {
+      toast.error("Failed to update file.");
+    } finally {
+      setIsUploading(false);
+      setUpdatingFile(null);
+      e.target.value = "";
     }
   }
 
@@ -945,6 +1014,79 @@ export default function AdminSettingsPanel() {
               </label>
             </div>
 
+            <div className="space-y-3 pb-4 border-b border-[var(--border)]">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--text)]">
+                System SEO & LLM Files
+              </h4>
+              <div className="grid gap-2">
+                {/* sitemap.xml */}
+                <div className="flex items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 hover:bg-[var(--surface-soft)]/30 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-lg bg-[var(--surface-soft)] flex items-center justify-center text-[var(--color-primary)] shrink-0">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-4 w-4">
+                        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+                        <polyline points="14 2 14 8 20 8" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-[var(--text)]">sitemap.xml</p>
+                      <p className="text-[10px] text-[var(--muted)]">Dynamic SEO Site Index · Auto-Generated</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <a
+                      href="/sitemap.xml"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex h-8 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--surface-soft)] px-3 text-xs font-bold text-[var(--text)] transition hover:bg-[var(--surface-soft)]"
+                    >
+                      Open
+                    </a>
+                    <button
+                      type="button"
+                      className="inline-flex h-8 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--surface-soft)] px-3 text-xs font-bold text-[var(--text)] transition hover:bg-[var(--surface-soft)] cursor-pointer"
+                      onClick={() => handleDownloadFile("sitemap.xml")}
+                    >
+                      Download
+                    </button>
+                  </div>
+                </div>
+
+                {/* llms.txt */}
+                <div className="flex items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 hover:bg-[var(--surface-soft)]/30 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-lg bg-[var(--surface-soft)] flex items-center justify-center text-[var(--color-primary)] shrink-0">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-4 w-4">
+                        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+                        <polyline points="14 2 14 8 20 8" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-[var(--text)]">llms.txt</p>
+                      <p className="text-[10px] text-[var(--muted)]">AI / LLM Search Index · Static</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <a
+                      href="/llms.txt"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex h-8 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--surface-soft)] px-3 text-xs font-bold text-[var(--text)] transition hover:bg-[var(--surface-soft)]"
+                    >
+                      Open
+                    </a>
+                    <button
+                      type="button"
+                      className="inline-flex h-8 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--surface-soft)] px-3 text-xs font-bold text-[var(--text)] transition hover:bg-[var(--surface-soft)] cursor-pointer"
+                      onClick={() => handleDownloadFile("llms.txt")}
+                    >
+                      Download
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div className="space-y-3">
               <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--text)]">
                 Uploaded verification files
@@ -992,6 +1134,21 @@ export default function AdminSettingsPanel() {
                         </a>
                         <button
                           type="button"
+                          className="inline-flex h-8 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--surface-soft)] px-3 text-xs font-bold text-[var(--text)] transition hover:bg-[var(--surface-soft)] cursor-pointer"
+                          onClick={() => handleDownloadFile(file.name)}
+                        >
+                          Download
+                        </button>
+                        <button
+                          type="button"
+                          className="inline-flex h-8 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--surface-soft)] px-3 text-xs font-bold text-[var(--text)] transition hover:bg-[var(--surface-soft)] cursor-pointer disabled:opacity-50"
+                          onClick={() => triggerUpdateFile(file)}
+                          disabled={isUploading}
+                        >
+                          Update
+                        </button>
+                        <button
+                          type="button"
                           className="inline-flex h-8 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--surface-soft)] px-3 text-xs font-bold text-[var(--muted)] transition hover:text-red-600 hover:bg-red-500/5 hover:border-red-500/20 cursor-pointer"
                           onClick={() => setDeleteTargetFile(file)}
                         >
@@ -1003,6 +1160,16 @@ export default function AdminSettingsPanel() {
                 </div>
               )}
             </div>
+
+            {/* Hidden File Input for Updates */}
+            <input
+              type="file"
+              accept=".html,.txt"
+              ref={updateFileInputRef}
+              onChange={handleUpdateFileChange}
+              disabled={isUploading}
+              className="hidden"
+            />
           </CardContent>
         </Card>
       ) : null}

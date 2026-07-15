@@ -423,17 +423,17 @@ export default function AdminEventsManager() {
                   </label>
                 </div>
 
-                <div className="grid gap-5 md:grid-cols-3">
-                  <label className="grid gap-2 text-xs text-[var(--muted)]">
-                    <span className="font-bold uppercase tracking-wider text-[var(--text)]">Event Keyword</span>
-                    <Input placeholder="christmas" className="rounded-xl bg-[var(--surface-soft)] h-11 px-4 text-sm" {...register("keyword")} />
-                    <span className="text-[10px] text-[var(--muted)] leading-tight">Used to find matching active offers on the event page.</span>
-                    {errors.keyword ? <span className="text-xs text-red-500">{errors.keyword.message}</span> : null}
-                  </label>
+                <label className="grid gap-2 text-xs text-[var(--muted)]">
+                  <span className="font-bold uppercase tracking-wider text-[var(--text)]">Event Keyword</span>
+                  <Input placeholder="christmas" className="rounded-xl bg-[var(--surface-soft)] h-11 px-4 text-sm" {...register("keyword")} />
+                  <span className="text-[10px] text-[var(--muted)] leading-tight">Used to find matching active offers on the event page.</span>
+                  {errors.keyword ? <span className="text-xs text-red-500">{errors.keyword.message}</span> : null}
+                </label>
 
+                <div className="grid gap-5 md:grid-cols-2">
                   <label className="grid gap-2 text-xs text-[var(--muted)]">
                     <span className="font-bold uppercase tracking-wider text-[var(--text)]">Status</span>
-                    <select className="h-11 rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 text-sm text-[var(--text)] outline-none" {...register("status")}>
+                    <select className="h-11 rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 text-sm text-[var(--text)] outline-none w-full" {...register("status")}>
                       <option value="enabled">Enabled</option>
                       <option value="disabled">Disabled</option>
                     </select>
@@ -441,7 +441,7 @@ export default function AdminEventsManager() {
 
                   <label className="grid gap-2 text-xs text-[var(--muted)]">
                     <span className="font-bold uppercase tracking-wider text-[var(--text)]">Country Target</span>
-                    <select className="h-11 rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 text-sm text-[var(--text)] outline-none" {...register("countryCode")}>
+                    <select className="h-11 rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 text-sm text-[var(--text)] outline-none w-full" {...register("countryCode")}>
                       <option value="GLOBAL">Global (All Countries)</option>
                       {countries.map((c) => (
                         <option key={c.code} value={c.code}>
@@ -452,6 +452,7 @@ export default function AdminEventsManager() {
                     {errors.countryCode ? <span className="text-xs text-red-500">{errors.countryCode.message}</span> : null}
                   </label>
                 </div>
+
 
                 <label className="grid gap-2 text-xs text-[var(--muted)]">
                   <span className="font-bold uppercase tracking-wider text-[var(--text)]">SEO Title</span>

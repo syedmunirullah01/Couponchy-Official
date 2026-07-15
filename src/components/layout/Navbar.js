@@ -60,6 +60,15 @@ function CloseIcon({ className = "h-5 w-5" }) {
   );
 }
 
+function LockIcon({ className = "h-4 w-4" }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </svg>
+  );
+}
+
 function MenuIcon({ className = "h-5 w-5" }) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -247,14 +256,7 @@ export default function Navbar({
     };
   }, [t]);
 
-  const navItems = useMemo(() => {
-    return [
-      { label: navbarT.findMerchants, href: "/stores", kind: "mega" },
-      { label: navbarT.events, href: "#", kind: "events" },
-      { label: navbarT.exclusive, href: "/exclusive", kind: "exclusive" },
-      { label: navbarT.blog, href: "/blog", kind: "blog" },
-    ];
-  }, [navbarT]);
+
 
   const menuRef = useRef(null);
   const countryDropdownRef = useRef(null);
@@ -305,6 +307,38 @@ export default function Navbar({
     return initialCountryCode || getCountryCodeFromPathname(pathname) || DEFAULT_COUNTRY_CODE;
   });
   const selectedCountry = getCountryByCode(selectedCountryCode, countries);
+
+  const enabledEvents = useMemo(() => {
+    return events.filter((e) => e.status === "enabled");
+  }, [events]);
+
+  const navItems = useMemo(() => {
+    const items = [
+      { label: navbarT.findMerchants, href: "/stores", kind: "mega" },
+    ];
+
+    if (enabledEvents.length === 1) {
+      items.push({
+        label: enabledEvents[0].name,
+        href: `/events/${enabledEvents[0].slug}`,
+        kind: "single-event",
+        status: "enabled",
+      });
+    } else if (events.length > 0) {
+      items.push({
+        label: navbarT.events || "Events",
+        href: "#",
+        kind: "events",
+      });
+    }
+
+    items.push(
+      { label: navbarT.exclusive, href: "/exclusive", kind: "exclusive" },
+      { label: navbarT.blog, href: "/blog", kind: "blog" }
+    );
+
+    return items;
+  }, [navbarT, events, enabledEvents]);
 
   useEffect(() => {
     const countryFromPath = getCountryCodeFromPathname(pathname);
@@ -618,9 +652,35 @@ export default function Navbar({
               const isActive =
                 item.kind === "mega"
                   ? isDealsActive
-                  : item.kind === "events"
+                  : (item.kind === "events" || item.kind === "single-event")
                     ? pathWithoutCountry.startsWith("/events")
                     : pathWithoutCountry === item.href;
+
+              if (item.kind === "single-event") {
+                const isDisabled = item.status === "disabled";
+                if (isDisabled) {
+                  return (
+                    <div
+                      key={item.label}
+                      className="flex items-center gap-1.5 font-sans text-sm font-bold text-white/35 cursor-not-allowed"
+                      title="Locked Event"
+                    >
+                      <span>{item.label}</span>
+                      <LockIcon className="h-3.5 w-3.5 text-white/20" />
+                    </div>
+                  );
+                }
+                return (
+                  <div key={item.label} className="relative flex items-center">
+                    <Link
+                      href={buildCountryPath(item.href, selectedCountryCode)}
+                      className="flex items-center gap-1.5 font-sans text-sm font-bold text-white transition hover:text-white/80"
+                    >
+                      {item.label}
+                    </Link>
+                  </div>
+                );
+              }
 
               if (item.kind === "events") {
                 return (
@@ -647,17 +707,32 @@ export default function Navbar({
                         <div
                           className="w-[200px] overflow-hidden rounded-[16px] border border-white/10 bg-[#0c0c0c] p-2 shadow-[0_20px_50px_rgba(0,0,0,0.85)]"
                         >
-                          <div className="grid gap-1">
-                            {events.map((event) => (
-                              <Link
-                                key={event.id || event.slug}
-                                href={buildCountryPath(`/events/${event.slug}`, selectedCountryCode)}
-                                className="flex items-center justify-between rounded-[10px] px-3.5 py-2.5 text-left text-white/80 transition hover:bg-white/5 hover:text-white"
-                              >
-                                <span className="text-[0.88rem] font-medium">{event.name}</span>
-                                <ChevronRightIcon className="h-3.5 w-3.5 text-white/30" />
-                              </Link>
-                            ))}
+                           <div className="grid gap-1">
+                            {events.map((event) => {
+                              const isDisabled = event.status === "disabled";
+                              if (isDisabled) {
+                                return (
+                                  <div
+                                    key={event.id || event.slug}
+                                    className="flex items-center justify-between rounded-[10px] px-3.5 py-2.5 text-left text-white/35 cursor-not-allowed bg-white/[0.01]"
+                                    title="Locked Event"
+                                  >
+                                    <span className="text-[0.88rem] font-medium">{event.name}</span>
+                                    <LockIcon className="h-3.5 w-3.5 text-white/20" />
+                                  </div>
+                                );
+                              }
+                              return (
+                                <Link
+                                  key={event.id || event.slug}
+                                  href={buildCountryPath(`/events/${event.slug}`, selectedCountryCode)}
+                                  className="flex items-center justify-between rounded-[10px] px-3.5 py-2.5 text-left text-white/80 transition hover:bg-white/5 hover:text-white"
+                                >
+                                  <span className="text-[0.88rem] font-medium">{event.name}</span>
+                                  <ChevronRightIcon className="h-3.5 w-3.5 text-white/30" />
+                                </Link>
+                              );
+                            })}
                           </div>
                         </div>
                       </div>
@@ -1480,35 +1555,63 @@ export default function Navbar({
           </div>
 
           {/* Mobile Events Menu */}
-          <div className="border-b border-white/8 py-5">
-            <button
-              type="button"
-              onClick={() => setMobileEventsOpen((current) => !current)}
-              className="flex w-full items-center justify-between text-left font-sans text-[1.05rem] font-bold text-white"
-            >
-              <span>{navbarT.events}</span>
-              <ChevronDownIcon className={cn("h-4 w-4 transition-transform", mobileEventsOpen ? "rotate-180" : "rotate-0")} />
-            </button>
-
-            {mobileEventsOpen ? (
-              <div className="mt-4 grid gap-1">
-                {events.map((event) => (
-                  <Link
-                    key={event.id || event.slug}
-                    href={buildCountryPath(`/events/${event.slug}`, selectedCountryCode)}
-                    onClick={() => {
-                      setMobileOpen(false);
-                      setMobileEventsOpen(false);
-                    }}
-                    className="flex items-center justify-between py-3 pl-4 pr-2 border-t border-white/6 text-white/80 transition hover:text-white"
-                  >
-                    <span className="text-[0.98rem] font-semibold">{event.name}</span>
-                    <ChevronRightIcon className="h-4 w-4 text-white/45" />
-                  </Link>
-                ))}
+          {enabledEvents.length === 1 ? (
+            <div className="border-b border-white/8 py-5">
+              <div className="flex items-center gap-2.5">
+                <Link
+                  href={buildCountryPath(`/events/${enabledEvents[0].slug}`, selectedCountryCode)}
+                  onClick={() => setMobileOpen(false)}
+                  className="block font-sans text-[1.05rem] font-bold text-white"
+                >
+                  {enabledEvents[0].name}
+                </Link>
               </div>
-            ) : null}
-          </div>
+            </div>
+          ) : events.length > 0 ? (
+            <div className="border-b border-white/8 py-5">
+              <button
+                type="button"
+                onClick={() => setMobileEventsOpen((current) => !current)}
+                className="flex w-full items-center justify-between text-left font-sans text-[1.05rem] font-bold text-white"
+              >
+                <span>{navbarT.events || "Events"}</span>
+                <ChevronDownIcon className={cn("h-4 w-4 transition-transform", mobileEventsOpen ? "rotate-180" : "rotate-0")} />
+              </button>
+
+              {mobileEventsOpen ? (
+                <div className="mt-4 grid gap-1">
+                  {events.map((event) => {
+                    const isDisabled = event.status === "disabled";
+                    if (isDisabled) {
+                      return (
+                        <div
+                          key={event.id || event.slug}
+                          className="flex items-center justify-between py-3 pl-4 pr-2 border-t border-white/6 text-white/35 cursor-not-allowed"
+                        >
+                          <span className="text-[0.98rem] font-semibold">{event.name}</span>
+                          <LockIcon className="h-4 w-4 text-white/20" />
+                        </div>
+                      );
+                    }
+                    return (
+                      <Link
+                        key={event.id || event.slug}
+                        href={buildCountryPath(`/events/${event.slug}`, selectedCountryCode)}
+                        onClick={() => {
+                          setMobileOpen(false);
+                          setMobileEventsOpen(false);
+                        }}
+                        className="flex items-center justify-between py-3 pl-4 pr-2 border-t border-white/6 text-white/80 transition hover:text-white"
+                      >
+                        <span className="text-[0.98rem] font-semibold">{event.name}</span>
+                        <ChevronRightIcon className="h-4 w-4 text-white/45" />
+                      </Link>
+                    );
+                  })}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
 
           <div className="border-b border-white/8 py-5">
             <Link href={buildCountryPath("/exclusive", selectedCountryCode)} onClick={() => setMobileOpen(false)} className="block font-sans text-[1.05rem] font-bold text-white">

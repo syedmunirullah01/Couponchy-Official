@@ -20,8 +20,10 @@ const defaultContent = {
     heroTitleLine1: "We killed the",
     heroTitleAccent: "expired code.",
     heroDescription: "",
+    statVerifiedStores: "",
     statMonthlyUsers: "",
     statCodeAccuracy: "",
+    statActiveDeals: "",
     missionQuote: "",
     missionParagraph1: "",
     missionParagraph2: "",
@@ -253,11 +255,17 @@ export default function AdminCompanyManager() {
             <div className="md:col-span-2 border-b border-[var(--border)] pb-4 mt-4">
               <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--color-primary)]">Stats Section</h3>
             </div>
-            <FieldRow label="Monthly Users count" hint="The dynamic store and deal counts are pulled automatically from your database.">
-              <StyledInput value={content.aboutUs.statMonthlyUsers} onChange={(e) => update("aboutUs", "statMonthlyUsers", e.target.value)} placeholder="4.6M+" />
+            <FieldRow label="Verified Stores count" hint="Leave blank to pull dynamically from database.">
+              <StyledInput value={content.aboutUs.statVerifiedStores || ""} onChange={(e) => update("aboutUs", "statVerifiedStores", e.target.value)} placeholder="e.g. 263+" />
+            </FieldRow>
+            <FieldRow label="Monthly Users count">
+              <StyledInput value={content.aboutUs.statMonthlyUsers || ""} onChange={(e) => update("aboutUs", "statMonthlyUsers", e.target.value)} placeholder="e.g. 1.34M+" />
             </FieldRow>
             <FieldRow label="Code Accuracy percentage">
-              <StyledInput value={content.aboutUs.statCodeAccuracy} onChange={(e) => update("aboutUs", "statCodeAccuracy", e.target.value)} placeholder="98%" />
+              <StyledInput value={content.aboutUs.statCodeAccuracy || ""} onChange={(e) => update("aboutUs", "statCodeAccuracy", e.target.value)} placeholder="e.g. 98%" />
+            </FieldRow>
+            <FieldRow label="Active Deals count" hint="Leave blank to pull dynamically from database.">
+              <StyledInput value={content.aboutUs.statActiveDeals || ""} onChange={(e) => update("aboutUs", "statActiveDeals", e.target.value)} placeholder="e.g. 654+" />
             </FieldRow>
 
             {/* MISSION SECTION */}
