@@ -4,15 +4,20 @@ import { getAppSession } from "@/server/auth";
 
 export const dynamic = "force-dynamic";
 
-async function getCountryFromRequest(request) {
-  // 1. Read from couponchy_country cookie (set by middleware — most reliable on custom servers)
+async function getCountryFromRequest(request, bodyCountryCode) {
+  // 1. Use countryCode sent directly from client in POST body (most accurate)
+  if (bodyCountryCode && bodyCountryCode.length === 2) {
+    return bodyCountryCode.toUpperCase();
+  }
+
+  // 2. Read from couponchy_country cookie (set by middleware)
   const cookieHeader = request.headers.get("cookie") || "";
   const cookieMatch = cookieHeader.match(/(?:^|;\s*)couponchy_country=([A-Za-z]{2})/);
   if (cookieMatch && cookieMatch[1]) {
     return cookieMatch[1].toUpperCase();
   }
 
-  // 2. Use CDN/proxy country header (Vercel, Cloudflare, etc.)
+  // 3. Use CDN/proxy country header (Vercel, Cloudflare, etc.)
   const countryHeader =
     request.headers.get("x-vercel-ip-country") ||
     request.headers.get("cf-ipcountry") ||
@@ -22,46 +27,12 @@ async function getCountryFromRequest(request) {
     return countryHeader.toUpperCase();
   }
 
-  // 3. Fallback: GeoIP on real client IP (only when proxy correctly forwards it)
-  const clientIp =
-    request.headers.get("x-real-ip")?.trim() ||
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    "";
-
-  const isLocal =
-    !clientIp ||
-    clientIp === "127.0.0.1" ||
-    clientIp === "::1" ||
-    clientIp.startsWith("127.") ||
-    clientIp.startsWith("192.168.") ||
-    clientIp.startsWith("10.") ||
-    clientIp.startsWith("172.");
-
-  if (!isLocal) {
-    try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 4000);
-      const res = await fetch(`https://freeipapi.com/api/json/${clientIp}`, {
-        signal: controller.signal,
-      }).catch(() => null);
-      clearTimeout(timeout);
-      if (res && res.ok) {
-        const data = await res.json();
-        if (data && data.countryCode && data.countryCode.length === 2) {
-          return data.countryCode.toUpperCase();
-        }
-      }
-    } catch (err) {
-      console.error("GeoIP lookup failed:", err.message);
-    }
-  }
-
   return "US";
 }
 
 export async function POST(request) {
   try {
-    const { storeName, offerTitle } = await request.json();
+    const { storeName, offerTitle, countryCode: bodyCountryCode } = await request.json();
 
     // 1. Auto-exclude logged-in admin clicks
     const session = await getAppSession();
@@ -79,7 +50,8 @@ export async function POST(request) {
       return NextResponse.json({ success: true, ignored: true, reason: "ignored_ip" });
     }
 
-    const countryCode = await getCountryFromRequest(request);
+    const countryCode = await getCountryFromRequest(request, bodyCountryCode);
+
 
     const notifications = await readCollection("notifications.json", []);
     const now = Date.now();
