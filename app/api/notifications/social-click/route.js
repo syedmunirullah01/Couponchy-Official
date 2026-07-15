@@ -4,12 +4,14 @@ import { readCollection, writeCollection } from "@/server/database/json-store";
 export const dynamic = "force-dynamic";
 
 async function getCountryFromRequest(request) {
-  const clientIp =
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    request.headers.get("x-real-ip")?.trim() ||
-    "127.0.0.1";
+  // 1. Read from couponchy_country cookie (set by middleware — most reliable on custom servers)
+  const cookieHeader = request.headers.get("cookie") || "";
+  const cookieMatch = cookieHeader.match(/(?:^|;\s*)couponchy_country=([A-Za-z]{2})/);
+  if (cookieMatch && cookieMatch[1]) {
+    return cookieMatch[1].toUpperCase();
+  }
 
-  // 1. Use CDN/proxy country header if available (Vercel sets this automatically in production)
+  // 2. Use CDN/proxy country header (Vercel, Cloudflare, etc.)
   const countryHeader =
     request.headers.get("x-vercel-ip-country") ||
     request.headers.get("cf-ipcountry") ||
@@ -19,7 +21,14 @@ async function getCountryFromRequest(request) {
     return countryHeader.toUpperCase();
   }
 
+  // 3. Fallback: GeoIP on real client IP (only when proxy correctly forwards it)
+  const clientIp =
+    request.headers.get("x-real-ip")?.trim() ||
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    "";
+
   const isLocal =
+    !clientIp ||
     clientIp === "127.0.0.1" ||
     clientIp === "::1" ||
     clientIp.startsWith("127.") ||
@@ -27,25 +36,23 @@ async function getCountryFromRequest(request) {
     clientIp.startsWith("10.") ||
     clientIp.startsWith("172.");
 
-  // 2. For local/LAN IPs (dev only), lookup server's own public IP — no caching to avoid cross-user pollution
-  // 3. For real public IPs, do direct per-IP lookup
-  const lookupUrl = isLocal
-    ? "https://freeipapi.com/api/json"
-    : `https://freeipapi.com/api/json/${clientIp}`;
-
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 4000);
-    const res = await fetch(lookupUrl, { signal: controller.signal }).catch(() => null);
-    clearTimeout(timeout);
-    if (res && res.ok) {
-      const data = await res.json();
-      if (data && data.countryCode && data.countryCode.length === 2) {
-        return data.countryCode.toUpperCase();
+  if (!isLocal) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 4000);
+      const res = await fetch(`https://freeipapi.com/api/json/${clientIp}`, {
+        signal: controller.signal,
+      }).catch(() => null);
+      clearTimeout(timeout);
+      if (res && res.ok) {
+        const data = await res.json();
+        if (data && data.countryCode && data.countryCode.length === 2) {
+          return data.countryCode.toUpperCase();
+        }
       }
+    } catch (err) {
+      console.error("GeoIP lookup failed:", err.message);
     }
-  } catch (err) {
-    console.error("GeoIP lookup failed:", err.message);
   }
 
   return "US";
