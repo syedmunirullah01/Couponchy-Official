@@ -133,6 +133,26 @@ export default function BulkStoreImportDialog({ open, onOpenChange, stores, cate
     URL.revokeObjectURL(url);
   }
 
+  function readFileAsText(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const text = reader.result;
+        if (text.includes("\uFFFD")) {
+          // If UTF-8 parsing produced replacement characters, re-read with windows-1252 (common Excel encoding)
+          const fallbackReader = new FileReader();
+          fallbackReader.onload = () => resolve(fallbackReader.result);
+          fallbackReader.onerror = () => reject(fallbackReader.error);
+          fallbackReader.readAsText(file, "windows-1252");
+        } else {
+          resolve(text);
+        }
+      };
+      reader.onerror = () => reject(reader.error);
+      reader.readAsText(file, "UTF-8");
+    });
+  }
+
   async function selectFile(file) {
     if (!file) {
       return;
@@ -145,7 +165,7 @@ export default function BulkStoreImportDialog({ open, onOpenChange, stores, cate
     }
 
     try {
-      const content = await file.text();
+      const content = await readFileAsText(file);
 
       setSelectedFile(file);
       setSelectedFileContent(content);

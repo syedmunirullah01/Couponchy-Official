@@ -305,7 +305,7 @@ export default function OfferCard({ offer, store, isFirst, t }) {
 
   const handleGetDeal = (e) => {
     if (e && typeof e.preventDefault === "function") e.preventDefault();
-    
+
     handleAffiliateClick();
 
     if (isExternal && actionHref !== "#") {

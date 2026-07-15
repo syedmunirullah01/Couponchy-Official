@@ -323,6 +323,26 @@ export default function BulkCouponImportDialog({ open, onOpenChange, stores, off
     URL.revokeObjectURL(url);
   }
 
+  function readFileAsText(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const text = reader.result;
+        if (text.includes("\uFFFD")) {
+          // If UTF-8 parsing produced replacement characters, re-read with windows-1252 (common Excel encoding)
+          const fallbackReader = new FileReader();
+          fallbackReader.onload = () => resolve(fallbackReader.result);
+          fallbackReader.onerror = () => reject(fallbackReader.error);
+          fallbackReader.readAsText(file, "windows-1252");
+        } else {
+          resolve(text);
+        }
+      };
+      reader.onerror = () => reject(reader.error);
+      reader.readAsText(file, "UTF-8");
+    });
+  }
+
   async function selectFile(file) {
     if (!file) {
       return;
@@ -335,7 +355,7 @@ export default function BulkCouponImportDialog({ open, onOpenChange, stores, off
     }
 
     try {
-      const content = await file.text();
+      const content = await readFileAsText(file);
       setSelectedFile(file);
       setSelectedFileContent(content);
       setSummaryState();
@@ -482,7 +502,7 @@ export default function BulkCouponImportDialog({ open, onOpenChange, stores, off
           />
 
           {/* Coupons CSV File Slot */}
-          <div 
+          <div
             className={cn(
               "rounded-xl border p-4 transition-all duration-200",
               isDragging ? "border-[var(--color-primary)] bg-[var(--surface-soft)]/40 shadow-sm" : "border-[var(--border)] bg-[var(--surface-soft)]/10 hover:border-[var(--border)]/80"
@@ -515,9 +535,9 @@ export default function BulkCouponImportDialog({ open, onOpenChange, stores, off
                   </p>
                 </div>
               </div>
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 className="rounded-lg text-[10px] font-bold px-3 h-7.5 border-[var(--border)] bg-[var(--surface)] text-[var(--text)] shrink-0 cursor-pointer"
                 onClick={() => fileInputRef.current?.click()}
               >
@@ -527,19 +547,19 @@ export default function BulkCouponImportDialog({ open, onOpenChange, stores, off
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 pt-2">
-            <Button 
-              type="button" 
-              variant="outline" 
-              className="w-full rounded-xl text-xs font-bold h-9.5 border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-soft)] text-[var(--text)] cursor-pointer disabled:opacity-50" 
-              disabled={isValidating || isUploading} 
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full rounded-xl text-xs font-bold h-9.5 border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-soft)] text-[var(--text)] cursor-pointer disabled:opacity-50"
+              disabled={isValidating || isUploading}
               onClick={runDryValidation}
             >
               {isValidating ? "Validating..." : "Run Validation"}
             </Button>
-            <Button 
-              type="button" 
-              className="w-full rounded-xl text-xs font-bold h-9.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white shadow-sm cursor-pointer disabled:opacity-50" 
-              disabled={!selectedFile || isUploading || isValidating} 
+            <Button
+              type="button"
+              className="w-full rounded-xl text-xs font-bold h-9.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white shadow-sm cursor-pointer disabled:opacity-50"
+              disabled={!selectedFile || isUploading || isValidating}
               onClick={handleImport}
             >
               {isUploading ? "Importing..." : "Import Coupons"}
@@ -551,11 +571,10 @@ export default function BulkCouponImportDialog({ open, onOpenChange, stores, off
           <div className="mt-6 border-t border-[var(--border)] pt-5 space-y-4">
             <div className="flex items-center justify-between gap-3">
               <p className="text-[10px] font-bold text-[var(--text)] uppercase tracking-wider">{finalSummary ? "Import Summary" : "Dry Run Summary"}</p>
-              <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[8px] font-bold uppercase tracking-wider border ${
-                finalSummary 
-                  ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-400" 
+              <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[8px] font-bold uppercase tracking-wider border ${finalSummary
+                  ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-400"
                   : "bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400"
-              }`}>
+                }`}>
                 {finalSummary ? "Success" : "Verified"}
               </span>
             </div>
@@ -611,9 +630,9 @@ export default function BulkCouponImportDialog({ open, onOpenChange, stores, off
         ) : null}
 
         <div className="mt-6 flex justify-center border-t border-[var(--border)] pt-4">
-          <button 
-            type="button" 
-            onClick={downloadTemplate} 
+          <button
+            type="button"
+            onClick={downloadTemplate}
             className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-[var(--color-primary)] hover:underline cursor-pointer bg-transparent border-0 outline-none p-0"
           >
             <svg viewBox="0 0 24 24" className="h-3 w-3 stroke-current" fill="none" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
