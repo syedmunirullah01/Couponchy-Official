@@ -155,7 +155,6 @@ export default function OfferCard({ offer, store, isFirst, t }) {
   const submitFeedback = async (val) => {
     setFeedback(val);
     try {
-      const countryCode = document.cookie.match(/(?:^|;\s*)couponchy_country=([A-Za-z]{2})/)?.[1]?.toUpperCase() || "US";
       await fetch("/api/offers/feedback", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -163,7 +162,6 @@ export default function OfferCard({ offer, store, isFirst, t }) {
           storeName: store.name,
           offerTitle: offer.title,
           feedback: val,
-          countryCode,
         }),
       });
     } catch (err) {
@@ -184,14 +182,12 @@ export default function OfferCard({ offer, store, isFirst, t }) {
 
   const handleSocialClick = async (platform) => {
     try {
-      const countryCode = document.cookie.match(/(?:^|;\s*)couponchy_country=([A-Za-z]{2})/)?.[1]?.toUpperCase() || "US";
       await fetch("/api/notifications/social-click", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           storeName: store.name,
           platform: platform,
-          countryCode,
         }),
       });
     } catch (err) {
@@ -201,14 +197,12 @@ export default function OfferCard({ offer, store, isFirst, t }) {
 
   const handleAffiliateClick = async () => {
     try {
-      const countryCode = document.cookie.match(/(?:^|;\s*)couponchy_country=([A-Za-z]{2})/)?.[1]?.toUpperCase() || "US";
       await fetch("/api/notifications/affiliate-click", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           storeName: store.name,
           offerTitle: offer.title,
-          countryCode,
         }),
       });
     } catch (err) {

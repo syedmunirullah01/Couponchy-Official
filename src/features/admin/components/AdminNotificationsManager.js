@@ -413,19 +413,9 @@ export default function AdminNotificationsManager() {
                   }`}
                 >
                   {!n.read && <span className="absolute top-3 right-3 h-2 w-2 rounded-full bg-[#8b5cf6] animate-pulse" />}
-                  <div className="flex items-center justify-between pr-4">
-                    <p className="text-xs font-bold text-[var(--text)]">
-                      Visited <span className="text-[#8b5cf6]">{n.platform}</span>
-                    </p>
-                    {n.countryCode && (
-                      <img
-                        src={`https://flagcdn.com/w40/${n.countryCode.toLowerCase()}.png`}
-                        alt={n.countryCode}
-                        className="h-3 w-5 object-cover rounded-sm shadow-sm inline-block shrink-0"
-                        title={`Visitor IP Country: ${n.countryCode}`}
-                      />
-                    )}
-                  </div>
+                  <p className="text-xs font-bold text-[var(--text)] pr-4">
+                    Visited <span className="text-[#8b5cf6]">{n.platform}</span>
+                  </p>
                   <p className="text-[11px] text-[var(--muted)] mt-1">
                     Store: <span className="font-semibold text-[var(--text)]">{n.storeName}</span>
                   </p>
@@ -471,19 +461,9 @@ export default function AdminNotificationsManager() {
                   }`}
                 >
                   {!n.read && <span className="absolute top-3 right-3 h-2 w-2 rounded-full bg-[#3b82f6] animate-pulse" />}
-                  <div className="flex items-center justify-between pr-4">
-                    <p className="text-xs font-bold text-[var(--text)]">
-                      Affiliate Redirect to Brand
-                    </p>
-                    {n.countryCode && (
-                      <img
-                        src={`https://flagcdn.com/w40/${n.countryCode.toLowerCase()}.png`}
-                        alt={n.countryCode}
-                        className="h-3 w-5 object-cover rounded-sm shadow-sm inline-block shrink-0"
-                        title={`Visitor IP Country: ${n.countryCode}`}
-                      />
-                    )}
-                  </div>
+                  <p className="text-xs font-bold text-[var(--text)] pr-4">
+                    Affiliate Redirect to Brand
+                  </p>
                   <p className="text-[11px] text-[var(--muted)] mt-1">
                     Store: <span className="font-semibold text-[var(--text)]">{n.storeName}</span>
                   </p>
@@ -532,25 +512,15 @@ export default function AdminNotificationsManager() {
                   }`}
                 >
                   {!n.read && <span className="absolute top-3 right-3 h-2 w-2 rounded-full bg-[#10b981] animate-pulse" />}
-                  <div className="flex items-center justify-between pr-4">
-                    <div className="flex items-center gap-1.5 truncate">
-                      <span className={`inline-flex rounded px-1.5 py-0.5 text-[9px] font-black uppercase ${
-                        n.feedback === "yes" 
-                          ? "bg-emerald-500/10 text-emerald-500" 
-                          : "bg-red-500/10 text-red-500"
-                      }`}>
-                        {n.feedback === "yes" ? "WORKED" : "FAILED"}
-                      </span>
-                      <span className="text-xs font-bold text-[var(--text)] truncate">{n.storeName}</span>
-                    </div>
-                    {n.countryCode && (
-                      <img
-                        src={`https://flagcdn.com/w40/${n.countryCode.toLowerCase()}.png`}
-                        alt={n.countryCode}
-                        className="h-3 w-5 object-cover rounded-sm shadow-sm inline-block shrink-0"
-                        title={`Visitor IP Country: ${n.countryCode}`}
-                      />
-                    )}
+                  <div className="flex items-center gap-1.5">
+                    <span className={`inline-flex rounded px-1.5 py-0.5 text-[9px] font-black uppercase ${
+                      n.feedback === "yes" 
+                        ? "bg-emerald-500/10 text-emerald-500" 
+                        : "bg-red-500/10 text-red-500"
+                    }`}>
+                      {n.feedback === "yes" ? "WORKED" : "FAILED"}
+                    </span>
+                    <span className="text-xs font-bold text-[var(--text)] truncate pr-4">{n.storeName}</span>
                   </div>
                   <p className="text-[10px] text-[var(--muted)] mt-1.5 line-clamp-2 leading-relaxed">
                     Offer: <span className="font-semibold text-[var(--text)]">{n.offerTitle}</span>

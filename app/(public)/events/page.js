@@ -6,6 +6,7 @@ import {
   getTranslatedEvents,
   COUNTRY_TO_LANG,
 } from "@/server/services/translation-service";
+import Link from "next/svg"; // wait, let's use standard import Link from "next/link";
 import LinkNext from "next/link";
 
 export const dynamic = "force-dynamic";
