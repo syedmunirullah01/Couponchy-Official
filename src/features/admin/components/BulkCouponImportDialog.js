@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, us
 import { cn } from "@/lib/utils";
 
 const TEMPLATE_HEADERS = [
-  "Store",
+  "Store Slug",
   "Title",
   "Description",
   "Type",
@@ -20,7 +20,7 @@ const TEMPLATE_HEADERS = [
   "Position/Sort Order",
   "Coupon Code",
 ];
-const REQUIRED_FIELDS = ["Store", "Title", "Type"];
+const REQUIRED_FIELDS = ["Store Slug", "Title", "Type"];
 
 function Spinner() {
   return (
@@ -158,8 +158,9 @@ async function validateCsv(file, fileContent, storesBySlug, existingDuplicateKey
 
   parsedRows.forEach((row, index) => {
     const rowNumber = index + 2;
-    const storeVal = normalizeCsvValue(row["Store"]);
-    const storeSlug = slugify(storeVal) || fallbackStoreSlug;
+    // Accept both "Store Slug" (new) and "Store" (legacy) column names
+    const storeVal = normalizeCsvValue(row["Store Slug"] ?? row["Store"] ?? "");
+    const storeSlug = storeVal || fallbackStoreSlug; // use value directly as slug — no conversion
     const title = normalizeCsvValue(row["Title"]);
     const description = normalizeCsvValue(row["Description"]);
     const type = normalizeType(row["Type"]);
@@ -307,8 +308,8 @@ export default function BulkCouponImportDialog({ open, onOpenChange, stores, off
   function downloadTemplate() {
     const csv = [
       TEMPLATE_HEADERS.join(","),
-      // Description column is optional — leave it blank if not needed
-      "nike-store,Spring launch coupon,,Coupon,https://example.com/track/nike,2026-04-30,Active,1,NIKE20",
+      // Store Slug must exactly match the store's slug in the system (e.g. "nike" not "Nike Store")
+      "nike,Spring launch coupon,,Coupon,https://example.com/track/nike,2026-04-30,Active,1,NIKE20",
     ].join("\n");
 
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -465,7 +466,7 @@ export default function BulkCouponImportDialog({ open, onOpenChange, stores, off
           </span>
           <DialogTitle id={titleId} className="text-base font-bold tracking-tight text-[var(--text)] mt-3">Bulk Import Coupons</DialogTitle>
           <DialogDescription id={descriptionId} className="text-xs text-[var(--muted)] mt-1.5 leading-relaxed">
-            Attach your coupons CSV spreadsheet to batch-populate offers. Make sure storeSlug matching is accurate. <span className="font-semibold text-[var(--text)]">Description column is optional</span> — you may leave it blank.
+            Attach your CSV file to import coupons in bulk. The <span className="font-semibold text-[var(--text)]">Store Slug</span> column must exactly match the store&apos;s slug in the system (e.g. <code className="text-[9px] bg-white/10 rounded px-1">nike</code>, not &quot;Nike Store&quot;). Description column is optional.
           </DialogDescription>
         </DialogHeader>
 
