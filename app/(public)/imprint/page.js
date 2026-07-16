@@ -2,6 +2,7 @@ import { getCompanyContent } from "@/server/repositories/company-repository";
 import { getPublicSiteSettings } from "@/server/services/settings-service";
 import { resolveRequestCountryCode } from "@/server/resolve-request-country";
 import { COUNTRY_TO_LANG } from "@/server/services/translation-service";
+import { getSeoAlternates } from "@/server/services/seo-alternates";
 
 export const dynamic = "force-dynamic";
 
@@ -165,39 +166,16 @@ export async function generateMetadata() {
   const lang = COUNTRY_TO_LANG[String(countryCode || "").toUpperCase()] || "en";
   const selected = localization[lang] || localization.en;
 
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://couponchy.com";
-  const canonicalUrl = `${baseUrl}${countryCode ? `/${countryCode.toLowerCase()}` : ""}/imprint`;
-
-  const supportedLanguages = ["en", "de", "fr", "nl", "pl", "it", "es", "ar"];
-  const languageToCountry = {
-    en: "us",
-    de: "de",
-    fr: "fr",
-    nl: "nl",
-    pl: "pl",
-    it: "it",
-    es: "es",
-    ar: "sa"
-  };
-
-  const hreflangs = {};
-  supportedLanguages.forEach((l) => {
-    const cc = languageToCountry[l];
-    hreflangs[l] = `${baseUrl}/${cc}/imprint`;
-  });
-  hreflangs["x-default"] = `${baseUrl}/us/imprint`;
+  const alternates = await getSeoAlternates("/imprint", countryCode);
 
   return {
     title: `${selected.title} | Couponchy`,
     description: selected.subtitle,
-    alternates: {
-      canonical: canonicalUrl,
-      languages: hreflangs,
-    },
+    alternates,
     openGraph: {
       title: `${selected.title} | Couponchy`,
       description: selected.subtitle,
-      url: canonicalUrl,
+      url: alternates.canonical,
       type: "website",
     },
     twitter: {

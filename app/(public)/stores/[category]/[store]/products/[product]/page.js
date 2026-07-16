@@ -6,15 +6,22 @@ import { buildCountryPath } from "@/lib/countries";
 import { getProductPageData, getProductPageMetadata } from "@/server/services/catalog-service";
 import { resolveRequestCountryCode } from "@/server/resolve-request-country";
 import { getMetadataDefaults } from "@/server/services/settings-service";
+import { getSeoAlternates } from "@/server/services/seo-alternates";
 
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }) {
-  const { store, product } = await params;
+  const { category, store, product } = await params;
   const countryCode = await resolveRequestCountryCode();
   const productMetadata = await getProductPageMetadata(store, product, countryCode);
 
-  return getMetadataDefaults(productMetadata?.title || "Product", productMetadata || {});
+  const defaults = await getMetadataDefaults(productMetadata?.title || "Product", productMetadata || {});
+  const alternates = await getSeoAlternates(`/stores/${category}/${store}/products/${product}`, countryCode);
+
+  return {
+    ...defaults,
+    alternates,
+  };
 }
 
 export default async function Page({ params }) {

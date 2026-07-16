@@ -3,6 +3,7 @@ import { getPublicSiteSettings } from "@/server/services/settings-service";
 import { getCompanyContent } from "@/server/repositories/company-repository";
 import { resolveRequestCountryCode } from "@/server/resolve-request-country";
 import { COUNTRY_TO_LANG, getTranslatedContact } from "@/server/services/translation-service";
+import { getSeoAlternates } from "@/server/services/seo-alternates";
 
 export const dynamic = "force-dynamic";
 
@@ -59,42 +60,16 @@ export async function generateMetadata() {
 
   const selected = templates[lang] || templates.en;
 
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://couponchy.com";
-  const canonicalUrl = `${baseUrl}${countryCode ? `/${countryCode.toLowerCase()}` : ""}/contact`;
-
-  const supportedLanguages = ["en", "de", "fr", "nl", "pl", "it", "es", "ar", "ja", "pt", "sv"];
-  const languageToCountry = {
-    en: "us",
-    de: "de",
-    fr: "fr",
-    nl: "nl",
-    pl: "pl",
-    it: "it",
-    es: "es",
-    ar: "sa",
-    ja: "jp",
-    pt: "pt",
-    sv: "se"
-  };
-
-  const hreflangs = {};
-  supportedLanguages.forEach((l) => {
-    const cc = languageToCountry[l];
-    hreflangs[l] = `${baseUrl}/${cc}/contact`;
-  });
-  hreflangs["x-default"] = `${baseUrl}/us/contact`;
+  const alternates = await getSeoAlternates("/contact", countryCode);
 
   return {
     title: selected.title,
     description: selected.description,
-    alternates: {
-      canonical: canonicalUrl,
-      languages: hreflangs,
-    },
+    alternates,
     openGraph: {
       title: selected.title,
       description: selected.description,
-      url: canonicalUrl,
+      url: alternates.canonical,
       type: "website",
     },
     twitter: {

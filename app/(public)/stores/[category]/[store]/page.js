@@ -3,11 +3,12 @@ import { notFound } from "next/navigation";
 import { getStorePageData, getStorePageMetadata } from "@/server/services/catalog-service";
 import { resolveRequestCountryCode } from "@/server/resolve-request-country";
 import { getMetadataDefaults } from "@/server/services/settings-service";
+import { getSeoAlternates } from "@/server/services/seo-alternates";
 
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }) {
-  const { store } = await params;
+  const { category, store } = await params;
   const countryCode = await resolveRequestCountryCode();
   const storePageMetadata = await getStorePageMetadata(store, countryCode);
 
@@ -16,13 +17,15 @@ export async function generateMetadata({ params }) {
     storePageMetadata
   );
 
+  const alternates = await getSeoAlternates(`/stores/${category}/${store}`, countryCode);
+
   return {
     ...defaults,
     openGraph: {
       ...defaults.openGraph,
       title: storePageMetadata?.title || defaults.openGraph?.title,
       description: storePageMetadata?.description || defaults.openGraph?.description,
-      url: storePageMetadata?.openGraph?.url,
+      url: alternates.canonical,
       type: "website",
     },
     twitter: {
@@ -30,9 +33,7 @@ export async function generateMetadata({ params }) {
       title: storePageMetadata?.title || defaults.openGraph?.title,
       description: storePageMetadata?.description || defaults.openGraph?.description,
     },
-    alternates: {
-      ...storePageMetadata?.alternates,
-    },
+    alternates,
   };
 }
 
@@ -40,6 +41,8 @@ export default async function Page({ params }) {
   const { category, store } = await params;
   const countryCode = await resolveRequestCountryCode();
   const storePageData = await getStorePageData(store, countryCode);
+
+
 
   if (!storePageData || storePageData.singleStore.categorySlug !== category) {
     notFound();

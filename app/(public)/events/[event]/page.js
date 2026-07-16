@@ -8,6 +8,7 @@ import { getAllStores } from "@/server/repositories/stores-repository";
 import { getEventBySlug } from "@/server/repositories/events-repository";
 import { resolveRequestCountryCode } from "@/server/resolve-request-country";
 import { getMetadataDefaults } from "@/server/services/settings-service";
+import { getSeoAlternates } from "@/server/services/seo-alternates";
 import { normalizeCountryCode } from "@/lib/countries";
 import {
   getTranslatedEvent,
@@ -209,44 +210,16 @@ export async function generateMetadata({ params }) {
 
   const title = titles[lang] || titles.en;
   const description = descriptions[lang] || descriptions.en;
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://couponchy.com";
-  const segment = countryCode && countryCode.toUpperCase() !== "US" ? `/${countryCode.toLowerCase()}` : "";
-  const canonicalUrl = `${baseUrl}${segment}/events/${resolvedParams?.event}`;
-
-  const supportedLanguages = ["en", "de", "fr", "nl", "pl", "it", "es", "ar", "ja", "pt", "sv"];
-  const languageToCountry = {
-    en: "us",
-    de: "de",
-    fr: "fr",
-    nl: "nl",
-    pl: "pl",
-    it: "it",
-    es: "es",
-    ar: "sa",
-    ja: "jp",
-    pt: "pt",
-    sv: "se"
-  };
-
-  const hreflangs = {};
-  supportedLanguages.forEach((l) => {
-    const cc = languageToCountry[l];
-    const pathSeg = cc === "us" ? "" : `/${cc}`;
-    hreflangs[l] = `${baseUrl}${pathSeg}/events/${resolvedParams?.event}`;
-  });
-  hreflangs["x-default"] = `${baseUrl}/events/${resolvedParams?.event}`;
+  const alternates = await getSeoAlternates(`/events/${resolvedParams?.event}`, countryCode);
 
   return {
     title,
     description,
-    alternates: {
-      canonical: canonicalUrl,
-      languages: hreflangs,
-    },
+    alternates,
     openGraph: {
       title,
       description,
-      url: canonicalUrl,
+      url: alternates.canonical,
       type: "website",
     },
     twitter: {

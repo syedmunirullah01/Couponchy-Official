@@ -5,6 +5,7 @@ import { getHomePageData } from "@/server/services/catalog-service";
 import BlogPostClient from "./BlogPostClient";
 import { notFound } from "next/navigation";
 import { getMetadataDefaults } from "@/server/services/settings-service";
+import { getSeoAlternates } from "@/server/services/seo-alternates";
 
 export const dynamic = "force-dynamic";
 
@@ -71,30 +72,7 @@ export async function generateMetadata({ params }) {
   }
 
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://couponchy.com";
-  const canonicalUrl = `${baseUrl}${countryCode ? `/${countryCode.toLowerCase()}` : ""}/blog/${slug}`;
-
-  // Multi-locale alternates configuration (hreflang)
-  const supportedLanguages = ["en", "de", "fr", "nl", "pl", "it", "es", "ar", "ja", "pt", "sv"];
-  const languageToCountry = {
-    en: "us",
-    de: "de",
-    fr: "fr",
-    nl: "nl",
-    pl: "pl",
-    it: "it",
-    es: "es",
-    ar: "sa",
-    ja: "jp",
-    pt: "pt",
-    sv: "se"
-  };
-
-  const hreflangs = {};
-  supportedLanguages.forEach((l) => {
-    const cc = languageToCountry[l];
-    hreflangs[l] = `${baseUrl}/${cc}/blog/${slug}`;
-  });
-  hreflangs["x-default"] = `${baseUrl}/us/blog/${slug}`;
+  const alternates = await getSeoAlternates(`/blog/${slug}`, countryCode);
 
   // Use featured/cover image if available, else static default
   const image = translatedPost.image || `${baseUrl}/images/blog-placeholder.jpg`;
@@ -102,14 +80,11 @@ export async function generateMetadata({ params }) {
   return {
     title: normalizeMetadataText(title),
     description: normalizeMetadataText(description),
-    alternates: {
-      canonical: canonicalUrl,
-      languages: hreflangs,
-    },
+    alternates,
     openGraph: {
       title: normalizeMetadataText(title),
       description: normalizeMetadataText(description),
-      url: canonicalUrl,
+      url: alternates.canonical,
       type: "article",
       images: [
         {
