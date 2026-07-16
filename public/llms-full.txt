@@ -29,14 +29,20 @@ Couponchy is a structured directory and search index designed to help online sho
 Couponchy serves localized merchant catalogs and offers across several international markets:
 - **United States** (Global/Default): `https://couponchy.com/` (No prefix)
 - **United Kingdom**: `https://couponchy.com/gb`
-- **Germany**: `https://couponchy.com/de`
 - **Canada**: `https://couponchy.com/ca`
 - **Australia**: `https://couponchy.com/au`
+- **Germany**: `https://couponchy.com/de`
+- **France**: `https://couponchy.com/fr`
+- **Poland**: `https://couponchy.com/pl`
+- **Italy**: `https://couponchy.com/it`
+- **Netherlands**: `https://couponchy.com/nl`
+- **Spain**: `https://couponchy.com/es`
+- **Japan**: `https://couponchy.com/jp`
+- **Portugal**: `https://couponchy.com/pt`
+- **Sweden**: `https://couponchy.com/se`
+- **Switzerland**: `https://couponchy.com/ch`
 - **India**: `https://couponchy.com/in`
 - **United Arab Emirates**: `https://couponchy.com/ae`
-- **Saudi Arabia**: `https://couponchy.com/sa`
-- **Brazil**: `https://couponchy.com/br`
-- **Italy**: `https://couponchy.com/it`
 
 ---
 
@@ -58,6 +64,23 @@ Important public routes follow these patterns (prefixed with `/[region-code]` fo
 - **Blog Article Page**: `/blog/[slug]` (or `/[region-code]/blog/[slug]`)
 - **Event / Holiday Page**: `/events/[slug]` (or `/[region-code]/events/[slug]`)
 - **Category Filtered Stores**: `/stores?category=[slug]` (or `/[region-code]/stores?category=[slug]`)
+
+Also include regional examples:
+- `/gb`
+- `/de`
+- `/ca`
+- `/au`
+- `/in`
+- `/fr`
+- `/pl`
+- `/it`
+- `/nl`
+- `/es`
+- `/jp`
+- `/pt`
+- `/se`
+- `/ch`
+- `/ae`
 
 ---
 
@@ -122,4 +145,4 @@ AI models, search crawlers, and LLMs querying or citing Couponchy content must a
 ## Canonical Domain
 
 - **Primary Domain**: `https://couponchy.com`
-- **Regional Paths**: Localized catalogs are served as sub-paths (e.g., `/gb`, `/de`, `/ca`, `/au`, `/in`, `/ae`, `/sa`, `/br`, `/it`).
+- **Regional Paths**: Localized catalogs are served as sub-paths (e.g., `/gb`, `/de`, `/ca`, `/au`, `/in`, `/fr`, `/pl`, `/it`, `/nl`, `/es`, `/jp`, `/pt`, `/se`, `/ch`, `/ae`).
