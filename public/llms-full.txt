@@ -1,0 +1,185 @@
+# Couponchy — Full Developer & LLM Context Guide
+
+Welcome to the comprehensive architecture, routing, database, and API document for **Couponchy**. This document is designed for AI developers and software engineers to understand the system A-to-Z.
+
+---
+
+## 1. Project Stack & Core Libraries
+
+- **Framework**: Next.js 16 (App Router)
+- **Runtime**: Node.js / React 19
+- **Styling**: Tailwind CSS v4
+- **Database / Storage**: Hybrid JSON-Store backed by **Supabase Storage** (bucket: `couponchy`)
+- **Authentication**: NextAuth.js v4
+- **Asset Storage**: Cloudinary (for store logos, favicons, event banners, and affiliate uploads)
+- **Deployment**: Vercel
+
+---
+
+## 2. Directory Layout & Structure
+
+```
+Couponchy-new/
+├── app/                      # Next.js App Router (Routes & API endpoints)
+│   ├── (auth)/               # Login & authentication routes
+│   ├── (public)/             # Main public pages (Home, Stores, Categories, Blog, etc.)
+│   │   ├── [filename]/       # Dynamic file serving (e.g. sitemap, robots, dynamic static routes)
+│   │   ├── stores/           # Merchant directory & store pages
+│   │   ├── blog/             # Shopping articles & saving guides
+│   │   └── page.js           # Homepage
+│   ├── admin/                # Admin Panel pages (Dashboard, Store manager, Offer manager, etc.)
+│   ├── api/                  # API routes (Admin, Auth, Public data, Uploads, Cron, etc.)
+│   ├── layout.js             # Root layout (dynamic metadata generation, Providers wrapper)
+│   └── globals.css           # Global CSS variables & Tailwind directives
+├── src/                      # Business logic, helpers, and features
+│   ├── components/           # Reusable UI & layout elements (buttons, cards, banners, scrollbars)
+│   ├── features/             # Feature-based components (About, Admin, Contact, Home, Stores)
+│   ├── lib/                  # Helper utilities, access control rules, country lists, and auth options
+│   └── server/               # Server-only services, repositories, and database connectors
+│       ├── database/         # JSON-store connector with local caching & Supabase synchronization
+│       ├── repositories/     # Domain data access layers (settings, stores, offers, blogs)
+│       └── services/         # Orchestration layers (translating, catalog loading, metadata parsing)
+├── data/
+│   └── database/             # Baseline read-only JSON collection files (seeded to Supabase on first run)
+├── messages/                 # Dictionaries for translation (ar.json, de.json, es.json, fr.json)
+└── public/                   # Static assets (original SVGs, rasterized logos, LLM context guides)
+```
+
+---
+
+## 3. Database Architecture & Persistence (Hybrid JSON-Store)
+
+To bypass traditional database cost structures, Couponchy implements a hybrid JSON-Store backend managed in `src/server/database/json-store.js`.
+
+### How It Works:
+1. **Reads (`readCollection`):**
+   - **Step 1**: Attempts to download the collection file (`.json`) from the Supabase Storage bucket (`couponchy`) under `database/[filename].json`.
+   - **Step 2**: If successful, it parses the JSON and writes it to a fast local cache in `/tmp/couponchy-db/[filename].json` for fallback.
+   - **Step 3**: If Supabase download fails, it falls back to the `/tmp/couponchy-db` local file cache.
+   - **Step 4**: If local cache is empty, it falls back to the read-only bundled file in `data/database/[filename].json` and uploads it to Supabase to seed the cloud database.
+2. **Writes (`writeCollection`):**
+   - Writes are atomic. The JSON string is formatted and saved to the local `/tmp/couponchy-db/` cache.
+   - The file is concurrently uploaded to Supabase Storage (`upsert: true`) so that all serverless functions across Vercel regions share the same up-to-date JSON data.
+
+### Core Collections (`data/database/`):
+- `settings.json`: Site branding, active countries, custom tracking codes, home layout slides, custom home stats.
+- `stores.json`: Retail merchant definitions (slug, name, title, description, affiliate links, logos).
+- `offers.json`: Store discount deals & coupon codes (status, discount details, expirations, copy counts).
+- `categories.json`: Industry/product categories (name, description, active store count, slugs).
+- `blog.json`: Article content, slugs, SEO meta description, read-times, body copy.
+- `products.json`: Curated featured products (associated store, price, buy link, images).
+- `translations.json`: Dynamically translated content caches.
+- `contacts.json`: Contact form submissions.
+
+---
+
+## 4. Multi-Regional Routing Model (Middleware-Driven)
+
+Couponchy is dynamically localized. The system avoids duplicate routing trees by using dynamic rewrites in `middleware.js` to manage regional prefixes.
+
+### Supported Regions:
+- **Default (United States)**: `https://couponchy.com/` (No prefix)
+- **United Kingdom**: `/gb`
+- **Germany**: `/de`
+- **Canada**: `/ca`
+- **Australia**: `/au`
+- **India**: `/in`
+- **UAE**: `/ae`
+- **Saudi Arabia**: `/sa`
+- **Brazil**: `/br`
+- **Italy**: `/it`
+
+### Routing Mechanism:
+1. **Prefix Detection**: When a user visits `/gb/stores/nike`, `middleware.js` parses the prefix (`gb`), injects a custom request header `x-couponchy-country: gb`, and performs a Next.js rewrite internally to `/stores/nike`.
+2. **Cookie Persistence**: The country code is saved in a long-lived cookie (`couponchy_country`).
+3. **No Prefix Redirection**: If a user visits `/stores/nike` without a prefix, the middleware checks the `couponchy_country` cookie. If it contains a non-US code (e.g. `gb`), the user is redirected via HTTP 307 to `/gb/stores/nike`. If it's `us` or missing, the header is set to `us` and the page renders without redirection.
+4. **Data Resolution**: Inside server components, `resolveRequestCountryCode()` reads the `x-couponchy-country` header to filter stores, offers, and metadata specific to the requested country.
+
+---
+
+## 5. Authentication & Access Control
+
+Authentication is built on **NextAuth.js** utilizing JWT tokens and credential validation.
+
+### Roles and Permissions (`src/lib/access-control.js`):
+The platform supports modular access privileges assigned to specific user roles:
+- `superadmin`: Access to all database sections, settings, sitemaps, system configurations, and user creation.
+- `editor`: Can manage offers, stores, categories, and products. Cannot modify system settings, sitemaps, or users.
+- `viewer`: Read-only access to admin panels.
+
+### Middleware Interception:
+Any route starting with `/admin` is intercepted. The JWT session token is decrypted. If invalid, the user is redirected to `/login`. If the token role is insufficient to access the page's route (defined in `getPermissionForPath`), they are redirected to `/admin` with a `denied` parameter.
+
+---
+
+## 6. Comprehensive API Routes Index
+
+All API routes live under the `app/api/` folder and process REST requests:
+
+### Public / Utility APIs:
+- `GET /api/public/stores`: Fetch all active stores.
+- `GET /api/public/categories`: Fetch categories.
+- `POST /api/contact`: Handles contact form submissions (saved in `contacts.json`).
+- `POST /api/newsletter`: Adds users to the newsletter subscription list.
+
+### Auth APIs:
+- `/api/auth/[...nextauth]`: NextAuth endpoints (credentials log in, sessions, refresh tokens).
+
+### Admin-Only Modifying APIs (Authorized by JWT Session):
+- `GET/POST/PUT/DELETE /api/stores`: Manage merchants and brand directories.
+- `GET/POST/PUT/DELETE /api/offers`: Create, verify, expire, or delete discount coupons/deals.
+- `GET/POST/PUT/DELETE /api/categories`: Category management.
+- `GET/POST/PUT/DELETE /api/products`: Manage featured retail items.
+- `GET/POST/PUT/DELETE /api/settings`: Read and update general configurations, affiliate configurations, social links, and SEO templates.
+- `GET/POST/PUT/DELETE /api/users`: Manage platform accounts (Superadmin only).
+- `POST /api/uploads/branding`: Receives image streams for website favicon and logo updates, uploads to Cloudinary, and returns URL.
+- `POST /api/translate`: Automatic translating tool for localized store information.
+
+### Maintenance & Automation APIs:
+- `GET /api/cron/sync-affiliates`: Synchronizes active deals from connected networks (CJ, Impact, Rakuten).
+- `POST /api/setup`: Initializes the database on clean installations.
+
+---
+
+## 7. Branding & Asset Uploads
+
+Uploads are routed to Cloudinary in `src/server/cloudinary.js`. 
+- **Favicon**: When updated in the Admin Settings panel, the SVG or ICO file is processed and set in `general.faviconUrl`. If empty, the system automatically falls back to `app/favicon.ico` (which points to Couponchy's custom-built percentage-symbol badge).
+- **Logos & Banner Images**: Dynamically uploaded through Cloudinary API and stored as high-performance optimized web assets.
+
+---
+
+## 8. Development Workflow & Commands
+
+### Prerequisites:
+Make sure a `.env.local` file is present in the project root containing:
+```ini
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+NEXTAUTH_SECRET=your_nextauth_jwt_signing_secret
+NEXTAUTH_URL=http://localhost:3000
+
+# Cloudinary (Optional, for brand uploads to work)
+CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+CLOUDINARY_API_KEY=your_cloudinary_api_key
+CLOUDINARY_API_SECRET=your_cloudinary_api_secret
+
+DEEPSEEK_API_KEY=your_translation_api_key
+```
+
+### Installation:
+```bash
+npm install
+```
+
+### Run Locally (Dev Mode):
+```bash
+npm run dev
+```
+
+### Production Build:
+```bash
+npm run build
+npm run start
+```
