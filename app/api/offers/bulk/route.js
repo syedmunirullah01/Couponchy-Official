@@ -54,22 +54,12 @@ function isValidDateString(value) {
   return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
 }
 
-// Default expiry: days 1–15 → 15th of month; days 16–31 → last day of month
-function defaultMonthCycleExpiry() {
-  const now = new Date();
-  const day = now.getUTCDate();
-  const year = now.getUTCFullYear();
-  const month = now.getUTCMonth();
-  const targetDay = day <= 15 ? 15 : new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
-  return new Date(Date.UTC(year, month, targetDay)).toISOString().slice(0, 10);
-}
-
 function normalizeExpiryDate(value) {
   const normalized = normalizeCsvValue(value);
 
-  // No expiry provided — default to monthly cycle
+  // No expiry provided — return empty string so repository sets auto_renew=true
   if (!normalized) {
-    return defaultMonthCycleExpiry();
+    return "";
   }
 
   if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(normalized)) {

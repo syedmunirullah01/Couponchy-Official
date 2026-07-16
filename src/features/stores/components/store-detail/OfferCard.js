@@ -6,10 +6,53 @@ import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { copyToClipboard } from "@/lib/copyToClipboard";
 
-function getOfferValue(offer) {
+const COUNTRY_CURRENCY_MAP = {
+  US: "$",
+  GB: "£",
+  CA: "$",
+  AU: "$",
+  IN: "₹",
+  DE: "€",
+  FR: "€",
+  IT: "€",
+  ES: "€",
+  NL: "€",
+  BE: "€",
+  AE: "AED",
+  SA: "SAR",
+  PL: "zł",
+  PK: "Rs",
+};
+
+function getOfferValue(offer, countryCode = "US") {
+  const defaultSymbol = COUNTRY_CURRENCY_MAP[String(countryCode).toUpperCase()] || "$";
   const title = offer.title || "";
   const description = offer.description || "";
   const combined = `${title} ${description}`.toLowerCase();
+
+  // Price decimals indicate pricing, not discount (e.g. $19.99, Rs. 499.00)
+  const hasDecimals = /(?:\$|£|€|¥|₹|zł|د\.إ|SR|TL|Rs\.?)\s*\d+\.\d{2}|\d+\.\d{2}\s*(?:\$|£|€|¥|₹|zł|د\.إ|SR|TL|Rs\.?|usd|gbp|eur|pkr)/i.test(combined);
+
+  // If the offer is an entry-level price point (e.g. "Starting from $50" or "As low as $1,950"),
+  // do not show a discount badge. Show the store name instead.
+  const isStartingPrice =
+    combined.includes("as low as") ||
+    combined.includes("starting for") ||
+    combined.includes("starting at") ||
+    combined.includes("starts at") ||
+    combined.includes("starts from") ||
+    combined.includes("low price") ||
+    /\bfrom\s*(?:\$|£|€|¥|₹|zł|Rs)/i.test(combined) ||
+    /\bstarting\s*(?:\$|£|€|¥|₹|zł|Rs)/i.test(combined) ||
+    /\bfor\s*(?:\$|£|€|¥|₹|zł|Rs)\s*\d+/i.test(combined) ||
+    /\bjust\s*(?:\$|£|€|¥|₹|zł|Rs)\s*\d+/i.test(combined) ||
+    /\bonly\s*(?:\$|£|€|¥|₹|zł|Rs)\s*\d+/i.test(combined) ||
+    /(?:\$|£|€|¥|₹|zł|Rs)\s*\d+\s+for\b/i.test(combined) ||
+    hasDecimals;
+
+  if (isStartingPrice) {
+    return offer.storeName || "Deal";
+  }
 
   if (combined.includes("free shipping")) {
     return "Free Shipping";
@@ -22,15 +65,17 @@ function getOfferValue(offer) {
   const percentMatch = source.match(/(\d{1,3})\s*%/);
   if (percentMatch) return `${percentMatch[1]}% Off`;
 
-  // Currency extraction (e.g. $10, £20, €5, etc. or 15$)
-  const currencyMatch = source.match(/(?:\$|£|€|¥|₹)\s*(\d{1,4})|(\d{1,4})\s*(?:\$|£|€|¥|₹|usd|gbp|eur)/i);
+  // Currency extraction (e.g. $10, £20, €5, Rs 500, etc. or 15$)
+  const currencyRegex = /(?:\$|£|€|¥|₹|zł|د\.إ|SR|TL|Rs\.?)\s*(\d{1,4})|(\d{1,4})\s*(?:\$|£|€|¥|₹|zł|د\.إ|SR|TL|Rs\.?|\busd\b|\bgbp\b|\beur\b|\bpkr\b|\baed\b|\bsar\b|\bcad\b|\baud\b|\binr\b|\bpln\b|\btry\b)/i;
+  const currencyMatch = source.match(currencyRegex);
   if (currencyMatch) {
+    const matchedText = currencyMatch[0];
     if (currencyMatch[1]) {
-      const symbol = source.match(/(\$|£|€|¥|₹)/)?.[1] || "$";
+      const symbol = matchedText.match(/(\$|£|€|¥|₹|zł|د\.إ|SR|TL|Rs\.?)/i)?.[1] || defaultSymbol;
       return `${symbol}${currencyMatch[1]} Off`;
     }
     if (currencyMatch[2]) {
-      const symbol = source.match(/(\$|£|€|¥|₹|usd|gbp|eur)/i)?.[0] || "$";
+      const symbol = matchedText.match(/(\$|£|€|¥|₹|zł|د\.إ|SR|TL|Rs\.?|\busd\b|\bgbp\b|\beur\b|\bpkr\b|\baed\b|\bsar\b|\bcad\b|\baud\b|\binr\b|\bpln\b|\btry\b)/i)?.[0] || defaultSymbol;
       return `${currencyMatch[2]}${symbol.toUpperCase()} Off`;
     }
   }
@@ -38,7 +83,7 @@ function getOfferValue(offer) {
   // Digit flat off (e.g. "10 Off")
   const flatOffMatch = source.match(/(\d{1,3})\s*(?:off|discount)/i);
   if (flatOffMatch) {
-    return `$${flatOffMatch[1]} Off`;
+    return `${defaultSymbol}${flatOffMatch[1]} Off`;
   }
 
   return offer.type === "Deal" ? "Deal" : "Code";

@@ -29,19 +29,9 @@ function serializeOfferForDb(offer) {
   const now = new Date().toISOString();
   const storeSlug = offer.storeSlug.trim().toLowerCase();
 
-  // If no expiry date provided, default to monthly cycle:
-  // Days 1–15 → expire on the 15th; Days 16–31 → expire on the last day of the month
+  // If expiry date is provided manually, use it. Otherwise store NULL (auto_renew=true).
   const hadManualExpiry = Boolean(offer.expiryDate?.trim());
-  let expiryDate = offer.expiryDate?.trim() || "";
-  if (!expiryDate) {
-    const now = new Date();
-    const day = now.getUTCDate();
-    const year = now.getUTCFullYear();
-    const month = now.getUTCMonth(); // 0-indexed
-    const targetDay = day <= 15 ? 15 : new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
-    const target = new Date(Date.UTC(year, month, targetDay));
-    expiryDate = target.toISOString().slice(0, 10); // YYYY-MM-DD
-  }
+  const expiryDate = hadManualExpiry ? offer.expiryDate.trim() : null;
 
   return {
     id: offer.id || `offer_${storeSlug}_${Math.random().toString(36).slice(2, 10)}`,

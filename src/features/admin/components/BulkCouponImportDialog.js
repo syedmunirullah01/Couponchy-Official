@@ -15,7 +15,6 @@ const TEMPLATE_HEADERS = [
   "Description",
   "Type",
   "Affiliate Link",
-  "Expiry Date",
   "Status",
   "Position/Sort Order",
   "Coupon Code",
@@ -309,7 +308,7 @@ export default function BulkCouponImportDialog({ open, onOpenChange, stores, off
     const csv = [
       TEMPLATE_HEADERS.join(","),
       // Store Slug must exactly match the store's slug in the system (e.g. "nike" not "Nike Store")
-      "nike,Spring launch coupon,,Coupon,https://example.com/track/nike,2026-04-30,Active,1,NIKE20",
+      "nike,Spring launch coupon,,Coupon,https://example.com/track/nike,Active,1,NIKE20",
     ].join("\n");
 
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });

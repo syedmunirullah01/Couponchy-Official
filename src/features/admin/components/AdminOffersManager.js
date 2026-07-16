@@ -402,7 +402,12 @@ export default function AdminOffersManager() {
                     <TableCell className="px-4 py-3 text-xs font-semibold text-[var(--muted)]">{offer.type}</TableCell>
                     <TableCell className="px-4 py-3 text-xs font-semibold text-[var(--text)]">{offer.storeName}</TableCell>
                     <TableCell className="px-4 py-3 text-xs text-[var(--muted)]">{offer.source}</TableCell>
-                    <TableCell className="px-4 py-3 text-xs font-mono text-[var(--muted)]">{offer.expiryDate}</TableCell>
+                    <TableCell className="px-4 py-3 text-xs font-mono text-[var(--muted)]">
+                      {offer.expiryDate
+                        ? offer.expiryDate
+                        : <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold bg-purple-500/10 text-purple-500 border border-purple-500/20">Auto-renew</span>
+                      }
+                    </TableCell>
                     <TableCell className="px-4 py-3 text-xs">
                       <span className={cn(
                         "inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold border",
