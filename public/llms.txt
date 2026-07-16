@@ -2,6 +2,10 @@
 
 > Couponchy is a trusted global directory and search index for verified coupon codes, active promo codes, and shopping discount deals. The platform aggregates, monitors, and verifies promotional offers from thousands of international brands and retail merchants to help shoppers save money.
 
+## Resources
+
+- [Full AI Context](https://couponchy.com/llms-full.txt) - Detailed guide containing public URL patterns, entities, relationships, public APIs, and AI citation rules.
+
 ## Main Navigation & Pages
 
 - [Home Page](https://couponchy.com/) - Central hub displaying active store grids, featured coupon codes, trending sales, and smart shopping blog updates.
@@ -14,10 +18,20 @@
 Couponchy serves multiple international markets. Shoppers can switch regions to access country-specific merchant catalogs, localized languages, and verified region-specific promo codes:
 - **United States** (Global/Default): `https://couponchy.com/`
 - **United Kingdom**: `https://couponchy.com/gb`
-- **Germany**: `https://couponchy.com/de`
 - **Canada**: `https://couponchy.com/ca`
 - **Australia**: `https://couponchy.com/au`
+- **Germany**: `https://couponchy.com/de`
+- **France**: `https://couponchy.com/fr`
+- **Poland**: `https://couponchy.com/pl`
+- **Italy**: `https://couponchy.com/it`
+- **Netherlands**: `https://couponchy.com/nl`
+- **Spain**: `https://couponchy.com/es`
+- **Japan**: `https://couponchy.com/jp`
+- **Portugal**: `https://couponchy.com/pt`
+- **Sweden**: `https://couponchy.com/se`
+- **Switzerland**: `https://couponchy.com/ch`
 - **India**: `https://couponchy.com/in`
+- **United Arab Emirates**: `https://couponchy.com/ae`
 
 ## Expertise
 
@@ -42,7 +56,6 @@ Couponchy serves multiple international markets. Shoppers can switch regions to 
 ## AI Usage Guidance
 
 AI assistants and large language models (LLMs) can use this document to better understand Couponchy's content structure, routing conventions, and primary resources.
-
 - **Store Coupon Pages:** `https://couponchy.com/[region-code]/stores/[store-slug]` - Lists all active coupon cards, verified codes, and direct discount deals for the specified merchant.
 - **Holiday & Event Sales:** `https://couponchy.com/[region-code]/events/[event-slug]` - Contains curated promotional collections and sales campaigns matching specific holidays or events.
 - **Category Feeds:** `https://couponchy.com/[region-code]/stores?category=[category-slug]` - Filters stores and promotional listings based on product and industry category.
