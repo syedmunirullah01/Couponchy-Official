@@ -33,11 +33,10 @@ export default function StoreCard({ store }) {
       {/* Styled Active Offer Count Badge */}
       <div className="mt-5 flex justify-center">
         <span
-          className={`inline-flex items-center rounded-full px-3.5 py-1.5 text-[10px] font-black uppercase tracking-wider border transition-all duration-300 ${
-            hasDeals
+          className={`inline-flex items-center rounded-full px-3.5 py-1.5 text-[10px] font-black uppercase tracking-wider border transition-all duration-300 ${hasDeals
               ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-[0_0_12px_rgba(16,185,129,0.06)]"
               : "bg-white/[0.02] text-white/40 border-white/5"
-          }`}
+            }`}
         >
           {store.count || "No Offers"}
         </span>

@@ -59,23 +59,43 @@ function getOfferValue(offer, countryCode = "US") {
     combined.includes("starts at") ||
     combined.includes("starts from") ||
     combined.includes("low price") ||
-    /\bfrom\s*(?:\$|£|€|¥|₹|zł|Rs)/i.test(combined) ||
-    /\bstarting\s*(?:\$|£|€|¥|₹|zł|Rs)/i.test(combined) ||
+    combined.includes("à partir de") ||
     /\bfor\s*(?:\$|£|€|¥|₹|zł|Rs)\s*\d+/i.test(combined) ||
     /\bjust\s*(?:\$|£|€|¥|₹|zł|Rs)\s*\d+/i.test(combined) ||
     /\bonly\s*(?:\$|£|€|¥|₹|zł|Rs)\s*\d+/i.test(combined) ||
     /(?:\$|£|€|¥|₹|zł|Rs)\s*\d+\s+for\b/i.test(combined) ||
+    // Prepositions meaning "from" or "starting" followed by price/digits (multi-lingual)
+    /\b(ab|von|od|da|desde|vanaf|from|starting|starts)\s*(?:nur|only|just|at|for|to|a|à)?\s*(?:\$|£|€|¥|₹|zł|Rs|\d)/i.test(combined) ||
     hasDecimals;
 
   if (isStartingPrice) {
     return offer.storeName || "Deal";
   }
 
-  if (combined.includes("free shipping")) {
+  // Multi-lingual Free Shipping detection
+  const isFreeShipping =
+    combined.includes("free shipping") ||
+    combined.includes("free delivery") ||
+    combined.includes("kostenloser versand") ||
+    combined.includes("kostenlose lieferung") ||
+    combined.includes("livraison gratuite") ||
+    combined.includes("envoi gratuit") ||
+    combined.includes("envío gratis") ||
+    combined.includes("entrega gratis") ||
+    combined.includes("darmowa dostawa") ||
+    combined.includes("darmowa wysyłka") ||
+    combined.includes("gratis verzending") ||
+    combined.includes("gratis bezorging") ||
+    combined.includes("spedizione gratuita") ||
+    combined.includes("consegna gratuita");
+
+  if (isFreeShipping) {
+    if (combined.includes("versand") || combined.includes("lieferung")) return "Gratis Versand";
+    if (combined.includes("livraison") || combined.includes("envoi")) return "Livraison Gratuite";
+    if (combined.includes("envío") || combined.includes("entrega")) return "Envío Gratis";
+    if (combined.includes("dostawa") || combined.includes("wysyłka")) return "Darmowa Dostawa";
+    if (combined.includes("spedizione") || combined.includes("consegna")) return "Spedizione Gratis";
     return "Free Shipping";
-  }
-  if (combined.includes("free delivery")) {
-    return "Free Delivery";
   }
 
   const source = [offer.title, offer.description, offer.code].filter(Boolean).join(" ");

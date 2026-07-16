@@ -808,10 +808,10 @@ export default function AdminStoresManager() {
                     </TableCell>
                     <TableCell className="py-3 px-4">
                       <span className={`inline-flex items-center rounded px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider border ${store.trustStatus === "Verified" || store.trustStatus === "Active"
-                          ? "bg-purple-500/10 text-purple-600 border-purple-500/20 dark:text-purple-400"
-                          : store.trustStatus === "Trusted"
-                            ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-400"
-                            : "bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400"
+                        ? "bg-purple-500/10 text-purple-600 border-purple-500/20 dark:text-purple-400"
+                        : store.trustStatus === "Trusted"
+                          ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-400"
+                          : "bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400"
                         }`}>
                         {store.trustStatus}
                       </span>
@@ -869,7 +869,7 @@ export default function AdminStoresManager() {
                 >
                   Previous
                 </button>
-                
+
                 {getPageNumbers().map((pageNum, idx) => {
                   if (pageNum === "...") {
                     return (
@@ -878,7 +878,7 @@ export default function AdminStoresManager() {
                       </span>
                     );
                   }
-                  
+
                   const isCurrent = currentPage === pageNum;
                   return (
                     <button
@@ -945,7 +945,7 @@ export default function AdminStoresManager() {
                   <div className="relative rounded-2xl border border-[var(--border)]/70 bg-[var(--surface)] p-4 shadow-md overflow-hidden group">
                     {/* Banner background decor */}
                     <div className="absolute top-0 left-0 right-0 h-14 bg-gradient-to-r from-purple-500/10 via-violet-500/5 to-blue-500/10 border-b border-[var(--border)]/30" />
-                    
+
                     {/* Floating Logo */}
                     <div className="relative mt-4 flex items-end gap-3.5 z-10">
                       {watchedLogoImage ? (
@@ -978,8 +978,8 @@ export default function AdminStoresManager() {
                         watchedTrustStatus === "Verified" || watchedTrustStatus === "Active"
                           ? "bg-purple-500/10 text-purple-600 border-purple-500/20 dark:text-purple-400"
                           : watchedTrustStatus === "Trusted"
-                          ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-400"
-                          : "bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400"
+                            ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-400"
+                            : "bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400"
                       )}>
                         {watchedTrustStatus}
                       </span>
@@ -1025,7 +1025,7 @@ export default function AdminStoresManager() {
             {/* Right Column - Tabbed Forms */}
             <div className="flex flex-col h-full bg-[var(--surface)] overflow-hidden">
               <form className="flex flex-col h-full overflow-hidden" onSubmit={handleSubmit(submitStore)}>
-                
+
                 {/* Tab Controls Row */}
                 <div className="border-b border-[var(--border)] bg-[var(--surface-soft)]/20 px-6 pt-4 flex gap-1 overflow-x-auto scrollbar-none shrink-0">
                   {[
@@ -1051,7 +1051,7 @@ export default function AdminStoresManager() {
 
                 {/* Tab content panel wrapper */}
                 <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                  
+
                   {/* General Tab */}
                   {activeTab === "general" && (
                     <div className="space-y-4">
@@ -1169,7 +1169,7 @@ export default function AdminStoresManager() {
                             aria-label="Upload store logo"
                           />
                           <input type="hidden" {...register("logoImage")} />
-                          
+
                           <div
                             className={cn(
                               "rounded-xl border border-dashed p-4 transition-all duration-200 flex flex-col items-center justify-center text-center",
@@ -1191,7 +1191,7 @@ export default function AdminStoresManager() {
                             </svg>
                             <p className="text-[11px] font-bold text-[var(--text)]">Drag & drop logo file here</p>
                             <p className="text-[10px] text-[var(--muted)] mt-0.5">Supports PNG, JPG, WEBP, SVG up to 2MB (Recommended: Square 200x200 px)</p>
-                            
+
                             <div className="flex gap-2 mt-3">
                               <Button type="button" variant="outline" className="rounded-lg h-7 text-[10px] px-3 bg-[var(--surface)] hover:bg-[var(--surface-soft)] cursor-pointer" onClick={() => fileInputRef.current?.click()}>
                                 {isUploadingLogo ? "Uploading..." : "Browse Logo"}
@@ -1223,7 +1223,7 @@ export default function AdminStoresManager() {
                             onChange={handleBannerFileInputChange}
                             aria-label="Upload sidebar banner"
                           />
-                           <div
+                          <div
                             className={cn(
                               "rounded-xl border border-dashed p-4 transition-all duration-200 flex flex-col items-center justify-center text-center",
                               isDraggingBanner
@@ -1254,7 +1254,7 @@ export default function AdminStoresManager() {
                             )}
                             <p className="text-[11px] font-bold text-[var(--text)]">Drag & drop banner file here</p>
                             <p className="text-[10px] text-[var(--muted)] mt-0.5">Supports PNG, JPG, WEBP, SVG up to 2MB (Recommended: Vertical Ratio, e.g. 300x600 px)</p>
-                            
+
                             <div className="flex gap-2 mt-3">
                               <Button type="button" variant="outline" className="rounded-lg h-7 text-[10px] px-3 bg-[var(--surface)] hover:bg-[var(--surface-soft)] cursor-pointer" onClick={() => bannerFileInputRef.current?.click()}>
                                 {isUploadingBanner ? "Uploading..." : "Browse Banner"}
@@ -1390,7 +1390,7 @@ export default function AdminStoresManager() {
                         {/* FAQs Section */}
                         <div className="border-t border-[var(--border)] pt-4 space-y-4">
                           <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">Frequently Asked Questions</span>
-                          
+
                           <div className="grid gap-3">
                             <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-soft)]/20 p-3 space-y-2">
                               <label className="grid gap-1 text-[11px] font-bold text-[var(--text)]">

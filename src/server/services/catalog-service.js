@@ -140,7 +140,7 @@ function extractHighestDiscountOffer(offers) {
 }
 
 function normalizeMetadataText(value) {
-  return value.replace(/\s+/g, " ").replace(/\s+([&|,.\-])/g, "$1").trim();
+  return value.replace(/\s+/g, " ").replace(/\s+([,.])/g, "$1").trim();
 }
 
 function doesStoreMatchSearch(store, query) {
@@ -524,127 +524,371 @@ export async function getProductPageMetadata(storeSlug, productSlug, countryCode
   };
 }
 
-function generateLocalizedStoreMetadata(store, offers, lang) {
+const COUNTRY_CURRENCY_MAP = {
+  US: "$",
+  GB: "£",
+  CA: "$",
+  AU: "$",
+  IN: "₹",
+  DE: "€",
+  FR: "€",
+  IT: "€",
+  ES: "€",
+  NL: "€",
+  BE: "€",
+  AE: "AED",
+  SA: "SAR",
+  PL: "zł",
+  PK: "Rs",
+};
+
+const FREEBIE_LOCALIZATION = {
+  en: { trial: "Free Trial", shipping: "Free Shipping" },
+  de: { trial: "Kostenlose Testversion", shipping: "Gratis Versand" },
+  fr: { trial: "Essai Gratuit", shipping: "Livraison Gratuite" },
+  es: { trial: "Prueba Gratuita", shipping: "Envío Gratis" },
+  nl: { trial: "Gratis Proefversie", shipping: "Gratis Verzending" },
+  pl: { trial: "Darmowy Okres Próbny", shipping: "Darmowa Dostawa" },
+  it: { trial: "Prova Gratuita", shipping: "Spedizione Gratis" },
+  ja: { trial: "無料トライアル", shipping: "送料無料" },
+  pt: { trial: "Teste Grátis", shipping: "Envio Grátis" },
+  sv: { trial: "Gratis Testperiod", shipping: "Gratis Frakt" },
+  ar: { trial: "تجربة مجانية", shipping: "شحن مجاني" }
+};
+
+const monthLocaleMap = {
+  en: "en-US",
+  de: "de-DE",
+  fr: "fr-FR",
+  es: "es-ES",
+  nl: "nl-NL",
+  pl: "pl-PL",
+  it: "it-IT",
+  ja: "ja-JP",
+  pt: "pt-PT",
+  sv: "sv-SE",
+  ar: "ar-SA"
+};
+
+function getLocalizedMonthYear(lang) {
+  const now = new Date();
+  const locale = monthLocaleMap[lang] || "en-US";
+  const rawMonth = now.toLocaleString(locale, { month: "long" });
+  const month = rawMonth.charAt(0).toUpperCase() + rawMonth.slice(1);
+  const year = now.getFullYear();
+  return { month, year };
+}
+
+function extractHighestOffer(offers, countryCode = "US", lang = "en") {
+  if (!offers || offers.length === 0) return null;
+
+  const defaultSymbol = COUNTRY_CURRENCY_MAP[String(countryCode).toUpperCase()] || "$";
+
+  let bestOfferStr = null;
+  let bestDiscountPercent = 0;
+  let bestDiscountAmount = 0;
+  let bestFreebie = null;
+
+  for (const offer of offers) {
+    const title = offer.title || "";
+    const description = offer.description || "";
+    const combined = `${title} ${description}`.toLowerCase();
+
+    // 1. Free Shipping / Trial Check
+    const isFreeShipping =
+      combined.includes("free shipping") ||
+      combined.includes("free delivery") ||
+      combined.includes("kostenloser versand") ||
+      combined.includes("kostenlose lieferung") ||
+      combined.includes("livraison gratuite") ||
+      combined.includes("envoi gratuit") ||
+      combined.includes("envío gratis") ||
+      combined.includes("entrega gratis") ||
+      combined.includes("darmowa dostawa") ||
+      combined.includes("darmowa wysyłka") ||
+      combined.includes("gratis verzending") ||
+      combined.includes("gratis bezorging") ||
+      combined.includes("spedizione gratuita") ||
+      combined.includes("consegna gratuita");
+
+    const isFreeTrial = combined.includes("free trial") || combined.includes("kostenlose testversion") || combined.includes("essai gratuit") || combined.includes("prueba gratuita") || combined.includes("okres próbny");
+
+    // 2. Decimal / Price check (ignore decimals as they are prices, not discounts)
+    const hasDecimals = /(?:\$|£|€|¥|₹|zł|د\.إ|SR|TL|Rs\.?)\s*\d+\.\d{2}|\d+\.\d{2}\s*(?:\$|£|€|¥|₹|zł|د\.إ|SR|TL|Rs\.?|usd|gbp|eur|pkr)/i.test(combined);
+
+    // Starting prices are prices, not discounts, so ignore them
+    const isStartingPrice =
+      combined.includes("as low as") ||
+      combined.includes("starting for") ||
+      combined.includes("starting at") ||
+      combined.includes("starts at") ||
+      combined.includes("starts from") ||
+      combined.includes("low price") ||
+      combined.includes("à partir de") ||
+      /\bfor\s*(?:\$|£|€|¥|₹|zł|Rs)\s*\d+/i.test(combined) ||
+      /\bjust\s*(?:\$|£|€|¥|₹|zł|Rs)\s*\d+/i.test(combined) ||
+      /\bonly\s*(?:\$|£|€|¥|₹|zł|Rs)\s*\d+/i.test(combined) ||
+      /(?:\$|£|€|¥|₹|zł|Rs)\s*\d+\s+for\b/i.test(combined) ||
+      /\b(ab|von|od|da|desde|vanaf|from|starting|starts)\s*(?:nur|only|just|at|for|to|a|à)?\s*(?:\$|£|€|¥|₹|zł|Rs|\d)/i.test(combined) ||
+      hasDecimals;
+
+    if (isStartingPrice) continue;
+
+    // 3. Percent Match
+    const percentMatch = combined.match(/(\d{1,3})\s*%/);
+    if (percentMatch) {
+      const pct = parseInt(percentMatch[1], 10);
+      if (pct > bestDiscountPercent && pct <= 100) {
+        bestDiscountPercent = pct;
+        bestOfferStr = `${pct}% Off`;
+      }
+      continue;
+    }
+
+    // If it is a Free Shipping or Free Trial offer, do not parse currency amounts (they are minimum thresholds, not discounts)
+    if (isFreeShipping || isFreeTrial) {
+      if (isFreeTrial) {
+        bestFreebie = "Free Trial";
+      } else {
+        bestFreebie = "Free Shipping";
+      }
+      continue;
+    }
+
+    // 4. Currency Amount Match
+    // e.g. $100, €50, Rs 500
+    const currencyRegex = /(?:\$|£|€|¥|₹|zł|د\.إ|SR|TL|Rs\.?)\s*(\d{1,4})|(\d{1,4})\s*(?:\$|£|€|¥|₹|zł|د\.إ|SR|TL|Rs\.?|\busd\b|\bgbp\b|\beur\b|\bpkr\b|\baed\b|\bsar\b|\bcad\b|\baud\b|\binr\b|\bpln\b|\btry\b)/i;
+    const currencyMatch = combined.match(currencyRegex);
+    if (currencyMatch) {
+      const matchedText = currencyMatch[0];
+      const numStr = (currencyMatch[1] || currencyMatch[2]).replace(/,/g, "");
+      const amt = parseInt(numStr, 10);
+      if (amt > bestDiscountAmount) {
+        bestDiscountAmount = amt;
+        const symbol = currencyMatch[1] 
+          ? (matchedText.match(/(\$|£|€|¥|₹|zł|د\.إ|SR|TL|Rs\.?)/i)?.[1] || defaultSymbol)
+          : (matchedText.match(/(\$|£|€|¥|₹|zł|د\.إ|SR|TL|Rs\.?|\busd\b|\bgbp\b|\beur\b|\bpkr\b|\baed\b|\bsar\b|\bcad\b|\baud\b|\binr\b|\bpln\b|\btry\b)/i)?.[0] || defaultSymbol);
+        
+        // If symbol is abbreviation like "EUR" or "USD", format nicely
+        const isPrefix = currencyMatch[1];
+        if (isPrefix) {
+          bestOfferStr = `${symbol}${amt} Off`;
+        } else {
+          bestOfferStr = `${amt}${symbol.toUpperCase()} Off`;
+        }
+      }
+      continue;
+    }
+
+    // 5. Flat Off Match (e.g. 50 Off)
+    const flatOffMatch = combined.match(/(\d{1,3})\s*(?:off|discount)/i);
+    if (flatOffMatch) {
+      const amt = parseInt(flatOffMatch[1], 10);
+      if (amt > bestDiscountAmount) {
+        bestDiscountAmount = amt;
+        bestOfferStr = `${defaultSymbol}${amt} Off`;
+      }
+      continue;
+    }
+
+    if (isFreeTrial) {
+      bestFreebie = "Free Trial";
+    } else if (isFreeShipping) {
+      bestFreebie = "Free Shipping";
+    }
+  }
+
+  // Priority: Percent > Amount > Freebie
+  if (bestDiscountPercent > 0) {
+    return bestOfferStr;
+  }
+  if (bestDiscountAmount > 0) {
+    return bestOfferStr;
+  }
+  if (bestFreebie) {
+    const loc = FREEBIE_LOCALIZATION[lang] || FREEBIE_LOCALIZATION.en;
+    return bestFreebie === "Free Trial" ? loc.trial : loc.shipping;
+  }
+
+  return null;
+}
+
+function generateLocalizedTitle(brandName, highestOffer, lang) {
+  const { month, year } = getLocalizedMonthYear(lang);
+
+  if (highestOffer) {
+    switch (lang) {
+      case "de":
+        return `${highestOffer} ${brandName} Gutscheine & Rabattcodes - Verifizierte ${month} Codes ${year}`;
+      case "fr":
+        return `${highestOffer} ${brandName} Coupons et Codes Promo - Codes Vérifiés de ${month} ${year}`;
+      case "es":
+        return `${highestOffer} ${brandName} Cupones y Códigos de Descuento - Códigos Verificados de ${month} ${year}`;
+      case "nl":
+        return `${highestOffer} ${brandName} Kortingscodes & Actiecodes - Geverifieerde ${month} Codes ${year}`;
+      case "pl":
+        return `${highestOffer} ${brandName} Kody rabatowe i kupony - Zweryfikowane kody na ${month} ${year}`;
+      case "it":
+        return `${highestOffer} ${brandName} Codici Sconto & Coupon - Codici Verificati di ${month} ${year}`;
+      case "ja":
+        return `${highestOffer} ${brandName} クーポン＆割引コード - ${month}確認済みコード ${year}`;
+      case "pt":
+        return `${highestOffer} ${brandName} Cupons e Códigos de Desconto - Códigos Verificados de ${month} ${year}`;
+      case "sv":
+        return `${highestOffer} ${brandName} Rabattkoder & Kuponger - Verifierade ${month} Koder ${year}`;
+      case "ar":
+        return `${highestOffer} كوبونات وأكواد خصم ${brandName} - كوبونات موثقة لـ ${month} ${year}`;
+      default: // en
+        return `${highestOffer} ${brandName} Coupons & Discount Codes - Verified ${month} Codes ${year}`;
+    }
+  } else {
+    switch (lang) {
+      case "de":
+        return `${brandName} Gutscheine & Rabattcodes - Verifizierte ${month} Codes ${year}`;
+      case "fr":
+        return `${brandName} Coupons et Codes Promo - Codes Vérifiés de ${month} ${year}`;
+      case "es":
+        return `${brandName} Cupones y Códigos de Descuento - Códigos Verificados de ${month} ${year}`;
+      case "nl":
+        return `${brandName} Kortingscodes & Actiecodes - Geverifieerde ${month} Codes ${year}`;
+      case "pl":
+        return `${brandName} Kody rabatowe i kupony - Zweryfikowane kody na ${month} ${year}`;
+      case "it":
+        return `${brandName} Codici Sconto & Coupon - Codici Verificati di ${month} ${year}`;
+      case "ja":
+        return `${brandName} クーポン＆割引コード - ${month}確認済みコード ${year}`;
+      case "pt":
+        return `${brandName} Cupons e Códigos de Desconto - Códigos Verificados de ${month} ${year}`;
+      case "sv":
+        return `${brandName} Rabattkoder & Kuponger - Verifierade ${month} Koder ${year}`;
+      case "ar":
+        return `كوبونات وأكواد خصم ${brandName} - كوبونات موثقة لـ ${month} ${year}`;
+      default: // en
+        return `${brandName} Coupons & Discount Codes - Verified ${month} Codes ${year}`;
+    }
+  }
+}
+
+function generateLocalizedDescription(brandName, highestOffer, counts, lang, storeDesc = "") {
+  const { month, year } = getLocalizedMonthYear(lang);
+  const firstSentence = storeDesc && storeDesc.trim() ? storeDesc.trim().split(/[.!?]/)[0].trim() : "";
+  const baseIntro = firstSentence && firstSentence.length > 15 && firstSentence.length < 120 ? `${firstSentence}. ` : "";
+
+  if (highestOffer) {
+    switch (lang) {
+      case "de":
+        return `${baseIntro}Sparen Sie bis zu ${highestOffer} mit ${counts.offers} verifizierten ${brandName} Gutscheinen und Rabattcodes. Entdecken Sie geprüfte Angebote und exklusive Deals für ${month} ${year} auf CouponChy.`;
+      case "fr":
+        return `${baseIntro}Économisez jusqu'à ${highestOffer} avec ${counts.offers} coupons et codes de réduction ${brandName} vérifiés. Découvrez des offres exclusives et des sconti mis à jour pour ${month} ${year} sur CouponChy.`;
+      case "es":
+        return `${baseIntro}Ahorra hasta un ${highestOffer} con ${counts.offers} cupones y códigos de descuento verificados de ${brandName}. Explora ofertas exclusivas y ahorros reales actualizados para ${month} ${year} en CouponChy.`;
+      case "nl":
+        return `${baseIntro}Bespaar tot ${highestOffer} met ${counts.offers} geverifieerde ${brandName} kortingscodes en coupons. Ontdek de beste actieve deals en exclusieve kortingen voor ${month} ${year} op CouponChy.`;
+      case "pl":
+        return `${baseIntro}Oszczędź do ${highestOffer} dzięki ${counts.offers} zweryfikowanym kodom rabatowym i kuponom ${brandName}. Odkryj aktywne promocje i zniżki na ${month} ${year} w CouponChy.`;
+      case "it":
+        return `${baseIntro}Risparmia fino a ${highestOffer} con ${counts.offers} codici sconto e coupon verificati di ${brandName}. Scopri le migliori offerte attive e sconti aggiornati per ${month} ${year} su CouponChy.`;
+      case "ja":
+        return `${baseIntro}確認済みの${brandName}クーポンとプロモーションコード（全${counts.offers}件）で、最大${highestOffer}オフの割引。${year}年${month}月最新の限定セールとお得な情報をCouponChyでチェック！`;
+      case "pt":
+        return `${baseIntro}Economize até ${highestOffer} com ${counts.offers} cupons e códigos de desconto verificados da ${brandName}. Explore ofertas ativas e descontos imperdíveis para ${month} ${year} no CouponChy.`;
+      case "sv":
+        return `${baseIntro}Spara upp till ${highestOffer} med ${counts.offers} verifierade ${brandName} rabattkoder och kuponger. Hitta de bästa aktiva erbjudandena och rabatterna för ${month} ${year} på CouponChy.`;
+      case "ar":
+        return `${baseIntro}وفر حتى ${highestOffer} مع ${counts.offers} كوبون وكود خصم موثق لـ ${brandName}. اكتشف أفضل العروض الحصرية والخصومات النشطة لـ ${month} ${year} على CouponChy.`;
+      default: // en
+        return `${baseIntro}Save up to ${highestOffer} with ${counts.offers} verified ${brandName} coupons and discount codes. Find the best active deals, promo codes, and exclusive savings for ${month} ${year} at CouponChy.`;
+    }
+  } else {
+    switch (lang) {
+      case "de":
+        return `${baseIntro}Sparen Sie mit ${counts.offers} verifizierten ${brandName} Gutscheinen, Rabattcodes und Deals. Entdecken Sie geprüfte Sparmöglichkeiten und exklusive Rabatte für ${month} ${year} auf CouponChy.`;
+      case "fr":
+        return `${baseIntro}Économisez avec ${counts.offers} coupons, codes de réduction et offres ${brandName} vérifiés. Découvrez des offres exclusives et des économies mises à jour pour ${month} ${year} sur CouponChy.`;
+      case "es":
+        return `${baseIntro}Ahorra con ${counts.offers} cupones, códigos de descuento y ofertas verificadas de ${brandName}. Explora oportunidades de ahorro reales actualizadas para ${month} ${year} en CouponChy.`;
+      case "nl":
+        return `${baseIntro}Bespaar met ${counts.offers} geverifieerde ${brandName} kortingscodes, coupons en aanbiedingen. Ontdek de beste actieve deals en exclusieve kortingen voor ${month} ${year} op CouponChy.`;
+      case "pl":
+        return `${baseIntro}Oszczędzaj dzięki ${counts.offers} zweryfikowanym kodom rabatowym, kuponom i promocjom ${brandName}. Odkryj aktywne oferty i zniżki na ${month} ${year} w CouponChy.`;
+      case "it":
+        return `${baseIntro}Risparmia con ${counts.offers} codici sconto, coupon e offerte verificate di ${brandName}. Scopri le migliori promozioni attive e sconti aggiornati per ${month} ${year} su CouponChy.`;
+      case "ja":
+        return `${baseIntro}確認済みの${brandName}クーポンと割引セール（全${counts.offers}件）でお得にショッピング。${year}年${month}月最新のプロモーションコードと限定キャンペーン情報をCouponChyでチェック！`;
+      case "pt":
+        return `${baseIntro}Economize com ${counts.offers} cupons, códigos de desconto e promoções verificadas da ${brandName}. Explore ofertas ativas e descontos atualizados para ${month} ${year} no CouponChy.`;
+      case "sv":
+        return `${baseIntro}Spara med ${counts.offers} verifierade ${brandName} rabattkoder, kuponger och deals. Hitta de bästa aktiva erbjudandena och rabatterna för ${month} ${year} på CouponChy.`;
+      case "ar":
+        return `${baseIntro}وفر أكثر مع ${counts.offers} كوبون وكود خصم وعرض موثق لـ ${brandName}. اكتشف أفضل العروض الحصرية والخصومات النشطة لـ ${month} ${year} على CouponChy.`;
+      default: // en
+        return `${baseIntro}Save with ${counts.offers} verified ${brandName} coupons, discount codes, and deals. Find active promo codes, community verified offers, and exclusive savings for ${month} ${year} at CouponChy.`;
+    }
+  }
+}
+
+function generateLocalizedStoreMetadata(store, offers, lang, countryCode) {
   const brandName = store.name || "Brand";
-  const year = new Date().getFullYear();
   const counts = {
     offers: offers.length,
     coupons: offers.filter((offer) => offer.type === "Coupon").length,
     deals: offers.filter((offer) => offer.type === "Deal").length,
   };
 
-  // Find highest discount if any
-  const bestDiscountMatch = extractHighestDiscountOffer(offers);
-  const bestDiscountVal = bestDiscountMatch?.discount ? `${bestDiscountMatch.discount}%` : "";
+  const highestOffer = extractHighestOffer(offers, countryCode, lang);
 
-  // Templates map matching characters count guidelines and dynamic locale-specific requirements
-  const templates = {
-    en: {
-      titleWithDiscount: `${brandName} Coupons & Promo Codes: ${bestDiscountVal} Off | Verified Discounts | CouponChy`,
-      titleNoDiscount: `${brandName} Coupons & Promo Codes | Verified Discounts & Deals | CouponChy`,
-      descWithDiscount: `Find the latest verified ${brandName} coupons, promo codes, and exclusive deals. Save up to ${bestDiscountVal} off your purchase with updated discounts at CouponChy.`,
-      descNoDiscount: `Find the latest verified ${brandName} coupons, promo codes, and exclusive deals. Save more with regularly updated discounts and trusted offers at CouponChy.`
-    },
-    de: {
-      titleWithDiscount: `${brandName} Gutscheine & Rabattcodes: ${bestDiscountVal} Rabatt | Geprüfte Angebote | CouponChy`,
-      titleNoDiscount: `${brandName} Gutscheine & Rabattcodes | Geprüfte Angebote & Rabatte | CouponChy`,
-      descWithDiscount: `Entdecken Sie die neuesten verifizierten ${brandName} Gutscheine, Rabattcodes und Angebote. Sparen Sie bis zu ${bestDiscountVal} mit regelmäßig aktualisierten Rabatten auf CouponChy.`,
-      descNoDiscount: `Entdecken Sie die neuesten verifizierten ${brandName} Gutscheine, Rabattcodes und Angebote. Sparen Sie mit regelmäßig aktualisierten Rabatten auf CouponChy.`
-    },
-    fr: {
-      titleWithDiscount: `Coupons et codes promo ${brandName} : ${bestDiscountVal} de réduction | Offres vérifiées | CouponChy`,
-      titleNoDiscount: `Coupons et codes promo ${brandName} | Offres et réductions vérifiées | CouponChy`,
-      descWithDiscount: `Découvrez les derniers coupons, codes promo et offres vérifiés de ${brandName}. Économisez jusqu'à ${bestDiscountVal} de réduction avec des offres mises à jour sur CouponChy.`,
-      descNoDiscount: `Découvrez les derniers coupons, codes promo et offres vérifiés de ${brandName}. Économisez davantage grâce à des réductions régulièrement mises à jour sur CouponChy.`
-    },
-    es: {
-      titleWithDiscount: `Cupones y códigos promocionales de ${brandName}: ${bestDiscountVal} Descuento | Ofertas verificadas | CouponChy`,
-      titleNoDiscount: `Cupones y códigos promocionales de ${brandName} | Ofertas y descuentos verificados | CouponChy`,
-      descWithDiscount: `Encuentra los últimos cupones, códigos promocionales y ofertas verificadas de ${brandName}. Ahorra hasta un ${bestDiscountVal} de descuento con ofertas actualizadas en CouponChy.`,
-      descNoDiscount: `Encuentra los últimos cupones, códigos promocionales y ofertas verificadas de ${brandName}. Ahorra más con descuentos actualizados en CouponChy.`
-    },
-    ar: {
-      titleWithDiscount: `كوبونات وأكواد خصم ${brandName}: خصم ${bestDiscountVal} | عروض وخصومات موثقة | CouponChy`,
-      titleNoDiscount: `كوبونات وأكواد خصم ${brandName} | عروض وخصومات موثقة | CouponChy`,
-      descWithDiscount: `اكتشف أحدث كوبونات وأكواد خصم وعروض ${brandName} الموثقة. وفر حتى ${bestDiscountVal} مع الخصومات المحدثة باستمرار على CouponChy.`,
-      descNoDiscount: `اكتشف أحدث كوبونات وأكواد خصم وعروض ${brandName} الموثقة ووفر أكثر مع العروض المحدثة باستمرار على CouponChy.`
-    },
-    nl: {
-      titleWithDiscount: `${brandName} Kortingscodes & Aanbiedingen: ${bestDiscountVal} Korting | Geverifieerde Deals | CouponChy`,
-      titleNoDiscount: `${brandName} Kortingscodes & Aanbiedingen | Geverifieerde Deals & Korting | CouponChy`,
-      descWithDiscount: `Vind de nieuwste geverifieerde ${brandName} kortingscodes, actiecodes en aanbiedingen. Bespaar tot ${bestDiscountVal} korting met actuele deals op CouponChy.`,
-      descNoDiscount: `Vind de nieuwste geverifieerde ${brandName} kortingscodes, actiecodes en aanbiedingen. Bespaar meer met regelmatig bijgewerkte kortingen op CouponChy.`
-    },
-    pl: {
-      titleWithDiscount: `Kody rabatowe i kupony ${brandName}: ${bestDiscountVal} Zniżki | Zweryfikowane promocje | CouponChy`,
-      titleNoDiscount: `Kody rabatowe i kupony ${brandName} | Zweryfikowane promocje i zniżki | CouponChy`,
-      descWithDiscount: `Znajdź najnowsze zweryfikowane kody rabatowe, kupony i promocje ${brandName}. Oszczędź do ${bestDiscountVal} zniżki dzięki aktualizowanym rabatom na CouponChy.`,
-      descNoDiscount: `Znajdź najnowsze zweryfikowane kody rabatowe, kupony i promocje ${brandName}. Oszczędzaj więcej dzięki regularnie aktualizowanym rabatom na CouponChy.`
-    },
-    it: {
-      titleWithDiscount: `Codici sconto e coupon ${brandName}: ${bestDiscountVal} Sconto | Offerte e sconti verificati | CouponChy`,
-      titleNoDiscount: `Codici sconto e coupon ${brandName} | Offerte e sconti verificati | CouponChy`,
-      descWithDiscount: `Trova i più recenti codici sconto, coupon e offerte verificate di ${brandName}. Risparmia fino al ${bestDiscountVal} di sconto con promozioni aggiornate su CouponChy.`,
-      descNoDiscount: `Trova i più recenti codici sconto, coupon e offerte verificate di ${brandName}. Risparmia di più con sconti aggiornati regolarmente su CouponChy.`
-    },
-    ja: {
-      titleWithDiscount: `${brandName} クーポン＆プロモーションコード: 最大 ${bestDiscountVal} 割引 | 確認済みセール | CouponChy`,
-      titleNoDiscount: `${brandName} クーポン＆プロモーションコード | 確認済みのセールと割引 | CouponChy`,
-      descWithDiscount: `最新の確認済み${brandName}クーポン、プロモーションコード、限定セールをご覧ください。最大${bestDiscountVal}の割引を活用してお得にショッピング。`,
-      descNoDiscount: `最新の確認済み${brandName}クーポン、プロモーションコード、限定セールをご覧ください。CouponChyで定期的に更新される割引を活用してお得にショッピング。`
-    },
-    pt: {
-      titleWithDiscount: `Cupons e códigos promocionais ${brandName}: ${bestDiscountVal} Desconto | Ofertas verificadas | CouponChy`,
-      titleNoDiscount: `Cupons e códigos promocionais ${brandName} | Ofertas e descontos verificados | CouponChy`,
-      descWithDiscount: `Encontre os cupons, códigos promocionais e ofertas verificadas mais recentes da ${brandName}. Economize até ${bestDiscountVal} de desconto com promoções atualizadas no CouponChy.`,
-      descNoDiscount: `Encontre os cupons, códigos promocionais e ofertas verificadas mais recentes da ${brandName}. Economize mais com descontos atualizados regularmente no CouponChy.`
-    },
-    sv: {
-      titleWithDiscount: `${brandName} Rabattkoder & Erbjudanden: ${bestDiscountVal} Rabatt | Verifierade rabatter | CouponChy`,
-      titleNoDiscount: `${brandName} Rabattkoder & Erbjudanden | Verifierade rabatter & deals | CouponChy`,
-      descWithDiscount: `Hitta de senaste verifierade rabattkoderna, kupongerna och erbjudandena från ${brandName}. Spara upp till ${bestDiscountVal} rabatt med uppdaterade deals på CouponChy.`,
-      descNoDiscount: `Hitta de senaste verifierade rabattkoderna, kupongerna och erbjudandena från ${brandName}. Spara mer med regelbundet uppdaterade rabatter på CouponChy.`
-    }
+  const title = generateLocalizedTitle(brandName, highestOffer, lang);
+  const description = generateLocalizedDescription(brandName, highestOffer, counts, lang, store.description);
+
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://couponchy.com";
+  const supportedLanguages = ["en", "de", "fr", "nl", "pl", "it", "es", "ar", "ja", "pt", "sv"];
+  const languageToCountry = {
+    en: "us",
+    de: "de",
+    fr: "fr",
+    nl: "nl",
+    pl: "pl",
+    it: "it",
+    es: "es",
+    ar: "sa",
+    ja: "jp",
+    pt: "pt",
+    sv: "se"
   };
 
-  const selected = templates[lang] || templates.en;
+  const isDefault = String(lang).toLowerCase() === "en";
+  const cc = languageToCountry[lang] || "us";
+  const countrySegment = isDefault ? "" : `/${cc}`;
+  const canonicalUrl = `${baseUrl}${countrySegment}/stores/${store.categorySlug}/${store.slug}`;
 
-  let title = bestDiscountVal ? selected.titleWithDiscount : selected.titleNoDiscount;
-  let description = bestDiscountVal ? selected.descWithDiscount : selected.descNoDiscount;
+  const hreflangs = {};
+  supportedLanguages.forEach((l) => {
+    const languageCc = languageToCountry[l];
+    const prefix = languageCc === "us" ? "" : `/${languageCc}`;
+    hreflangs[l] = `${baseUrl}${prefix}/stores/${store.categorySlug}/${store.slug}`;
+  });
+  hreflangs["x-default"] = `${baseUrl}/stores/${store.categorySlug}/${store.slug}`;
 
-  if (store.description && store.description.trim()) {
-    const cleanDesc = store.description.trim();
-    const firstSentence = cleanDesc.split(/[.!?]/)[0].trim();
-    if (firstSentence && firstSentence.length > 15 && firstSentence.length < 100) {
-      if (lang === "en") {
-        description = `${firstSentence}. Save more with ${counts.offers} verified ${brandName} coupons and promo codes at CouponChy.`;
-      } else if (lang === "de") {
-        description = `${firstSentence}. Sparen Sie mehr mit ${counts.offers} verifizierten ${brandName} Gutscheinen und Rabattcodes auf CouponChy.`;
-      } else if (lang === "fr") {
-        description = `${firstSentence}. Économisez plus avec ${counts.offers} coupons et codes promo vérifiés de ${brandName} sur CouponChy.`;
-      } else if (lang === "es") {
-        description = `${firstSentence}. Ahorra más con ${counts.offers} cupones y códigos promocionales verificados de ${brandName} en CouponChy.`;
-      } else if (lang === "ar") {
-        description = `${firstSentence}. وفر أكثر مع ${counts.offers} كوبون وكود خصم موثق لـ ${brandName} على CouponChy.`;
-      } else if (lang === "nl") {
-        description = `${firstSentence}. Bespaar meer met ${counts.offers} geverifieerde ${brandName} kortingscodes en coupons op CouponChy.`;
-      } else if (lang === "pl") {
-        description = `${firstSentence}. Oszczędzaj więcej dzięki ${counts.offers} zweryfikowanym kodom rabatowym i kuponom ${brandName} w CouponChy.`;
-      } else if (lang === "it") {
-        description = `${firstSentence}. Risparmia di più con ${counts.offers} codici sconto e coupon verificati per ${brandName} su CouponChy.`;
-      } else if (lang === "ja") {
-        description = `${firstSentence}。CouponChyで${counts.offers}個の確認済み${brandName}クーポンやプロモーションコードを利用してお得にショッピング。`;
-      } else if (lang === "pt") {
-        description = `${firstSentence}. Economize mais com ${counts.offers} cupons e códigos promocionais verificados da ${brandName} no CouponChy.`;
-      } else if (lang === "sv") {
-        description = `${firstSentence}. Spara mer med ${counts.offers} verifierade ${brandName} rabattkoder och kuponger på CouponChy.`;
-      }
-    }
-  }
+  const alternates = {
+    canonical: canonicalUrl,
+    languages: hreflangs,
+  };
 
   return {
     title: normalizeMetadataText(title),
     description: normalizeMetadataText(description),
+    alternates,
+    openGraph: {
+      title: normalizeMetadataText(title),
+      description: normalizeMetadataText(description),
+      url: canonicalUrl,
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: normalizeMetadataText(title),
+      description: normalizeMetadataText(description),
+    }
   };
 }
 
@@ -667,8 +911,7 @@ export async function getStorePageMetadata(slug, countryCode) {
     getTranslatedStore(store, lang),
     getTranslatedOffers(offers, lang),
   ]);
-
-  return generateLocalizedStoreMetadata(translatedStore, translatedOffers, lang);
+  return generateLocalizedStoreMetadata(translatedStore, translatedOffers, lang, resolvedCountryCode);
 }
 
 

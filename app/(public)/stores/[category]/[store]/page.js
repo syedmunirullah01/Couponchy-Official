@@ -11,10 +11,29 @@ export async function generateMetadata({ params }) {
   const countryCode = await resolveRequestCountryCode();
   const storePageMetadata = await getStorePageMetadata(store, countryCode);
 
-  return getMetadataDefaults(
+  const defaults = await getMetadataDefaults(
     storePageMetadata?.title || "Store",
     storePageMetadata
   );
+
+  return {
+    ...defaults,
+    openGraph: {
+      ...defaults.openGraph,
+      title: storePageMetadata?.title || defaults.openGraph?.title,
+      description: storePageMetadata?.description || defaults.openGraph?.description,
+      url: storePageMetadata?.openGraph?.url,
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: storePageMetadata?.title || defaults.openGraph?.title,
+      description: storePageMetadata?.description || defaults.openGraph?.description,
+    },
+    alternates: {
+      ...storePageMetadata?.alternates,
+    },
+  };
 }
 
 export default async function Page({ params }) {

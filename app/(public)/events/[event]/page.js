@@ -107,12 +107,13 @@ function getOfferValue(offer, eventName, countryCode = "US") {
     combined.includes("starts at") ||
     combined.includes("starts from") ||
     combined.includes("low price") ||
-    /\bfrom\s*(?:\$|£|€|¥|₹|zł|Rs)/i.test(combined) ||
-    /\bstarting\s*(?:\$|£|€|¥|₹|zł|Rs)/i.test(combined) ||
+    combined.includes("à partir de") ||
     /\bfor\s*(?:\$|£|€|¥|₹|zł|Rs)\s*\d+/i.test(combined) ||
     /\bjust\s*(?:\$|£|€|¥|₹|zł|Rs)\s*\d+/i.test(combined) ||
     /\bonly\s*(?:\$|£|€|¥|₹|zł|Rs)\s*\d+/i.test(combined) ||
     /(?:\$|£|€|¥|₹|zł|Rs)\s*\d+\s+for\b/i.test(combined) ||
+    // Prepositions meaning "from" or "starting" followed by price/digits (multi-lingual)
+    /\b(ab|von|od|da|desde|vanaf|from|starting|starts)\s*(?:nur|only|just|at|for|to|a|à)?\s*(?:\$|£|€|¥|₹|zł|Rs|\d)/i.test(combined) ||
     hasDecimals;
 
   if (isStartingPrice) {
