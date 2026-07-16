@@ -292,10 +292,29 @@ export default function OfferCard({ offer, store, isFirst, t }) {
   useEffect(() => {
     if (!isCoupon) return;
 
-    // Use the actual expiry date from the database
-    if (!offer.expiryDate) return;
+    const getTargetDate = () => {
+      if (offer.expiryDate) {
+        // Manual expiry date
+        return new Date(`${offer.expiryDate}T23:59:59Z`);
+      } else {
+        // Auto-renewing 15-day cycle:
+        // 1st to 15th -> ends on 15th of current month
+        // 16th to end of month -> ends on last day of current month
+        const now = new Date();
+        const year = now.getUTCFullYear();
+        const month = now.getUTCMonth(); // 0-indexed
+        const day = now.getUTCDate();
 
-    const targetDate = new Date(`${offer.expiryDate}T23:59:59Z`);
+        if (day <= 15) {
+          return new Date(Date.UTC(year, month, 15, 23, 59, 59));
+        } else {
+          const lastDay = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+          return new Date(Date.UTC(year, month, lastDay, 23, 59, 59));
+        }
+      }
+    };
+
+    const targetDate = getTargetDate();
 
     const updateTimer = () => {
       const difference = targetDate.getTime() - Date.now();
@@ -459,7 +478,7 @@ export default function OfferCard({ offer, store, isFirst, t }) {
             )}
 
             {/* Timer countdown (only for coupons) */}
-            {isCoupon && offer.expiryDate && (
+            {isCoupon && (
               <div className="mt-4 flex items-center gap-3">
                 <div className="flex items-center gap-1.5 text-white/40">
                   <svg className="h-4 w-4 text-white/30" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
@@ -622,7 +641,7 @@ export default function OfferCard({ offer, store, isFirst, t }) {
           </h3>
 
           {/* Mobile Timer row (only for coupons, compact version) */}
-          {isCoupon && offer.expiryDate && (
+          {isCoupon && (
             <div className="mt-3.5 flex items-center justify-between rounded-xl bg-white/[0.01] border border-white/5 p-3">
               <div className="flex items-center gap-1.5 text-white/40">
                 <svg className="h-4 w-4 text-[var(--color-primary)] animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
