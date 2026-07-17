@@ -103,6 +103,21 @@ console.log("NODE_ENV:", process.env.NODE_ENV);
 
   // ================= COUNTRY ROUTING =================
 
+  // 1. Check if the original request path from the browser already contains a country prefix.
+  // This prevents redirect loops during internal rewrites on platforms like Vercel.
+  const originalPathname = new URL(req.url).pathname;
+  const originalCountryCode = getCountryCodeFromPathname(originalPathname);
+
+  if (originalCountryCode && !getCountryCodeFromPathname(pathname)) {
+    const requestHeaders = new Headers(req.headers);
+    requestHeaders.set(COUNTRY_HEADER_KEY, originalCountryCode);
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
+  }
+
   const prefixedCountryCode = getCountryCodeFromPathname(pathname);
 
   if (prefixedCountryCode) {
