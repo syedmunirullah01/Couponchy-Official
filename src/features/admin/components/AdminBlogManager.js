@@ -30,6 +30,8 @@ const blogPostSchema = z.object({
   featured: z.boolean().default(false),
   countryCode: z.string().trim().min(1, "Country target is required."),
   date: z.string().trim().min(1, "Published date is required."),
+  selectedProductIds: z.array(z.string()).default([]),
+  selectedCouponIds: z.array(z.string()).default([]),
 });
 
 function formatDateToHuman(dateStr) {
@@ -62,6 +64,8 @@ const defaultValues = {
   featured: false,
   countryCode: "GLOBAL",
   date: new Date().toISOString().split("T")[0],
+  selectedProductIds: [],
+  selectedCouponIds: [],
 };
 
 function RefreshIcon() {
@@ -293,6 +297,32 @@ export default function AdminBlogManager() {
   const watchedCategory = watch("category");
   const watchedExcerpt = watch("excerpt");
   const watchedContent = watch("content");
+  const [allProducts, setAllProducts] = useState([]);
+  const [allOffers, setAllOffers] = useState([]);
+  const [productSearch, setProductSearch] = useState("");
+  const [couponSearch, setCouponSearch] = useState("");
+
+  const filteredProductsForSelect = useMemo(() => {
+    if (!productSearch.trim()) return allProducts;
+    const query = productSearch.toLowerCase();
+    return allProducts.filter(
+      (prod) =>
+        (prod.title || "").toLowerCase().includes(query) ||
+        (prod.storeName || "").toLowerCase().includes(query)
+    );
+  }, [allProducts, productSearch]);
+
+  const filteredCouponsForSelect = useMemo(() => {
+    if (!couponSearch.trim()) return allOffers;
+    const query = couponSearch.toLowerCase();
+    return allOffers.filter(
+      (off) =>
+        (off.title || "").toLowerCase().includes(query) ||
+        (off.brand || "").toLowerCase().includes(query) ||
+        (off.value || "").toLowerCase().includes(query)
+    );
+  }, [allOffers, couponSearch]);
+
   const watchedFeatured = watch("featured");
   const watchedCountryCode = watch("countryCode");
 
@@ -311,16 +341,22 @@ export default function AdminBlogManager() {
     }
 
     try {
-      const [blogRes, countriesRes] = await Promise.all([
+      const [blogRes, countriesRes, productsRes, offersRes] = await Promise.all([
         fetch("/api/blog?raw=true", { cache: "no-store" }),
         fetch("/api/public/countries", { cache: "no-store" }),
+        fetch("/api/products", { cache: "no-store" }),
+        fetch("/api/offers", { cache: "no-store" }),
       ]);
-      const [blogPayload, countriesPayload] = await Promise.all([
+      const [blogPayload, countriesPayload, productsPayload, offersPayload] = await Promise.all([
         blogRes.json(),
         countriesRes.json(),
+        productsRes.json(),
+        offersRes.json(),
       ]);
       setPosts(blogPayload.data || []);
       setCountries(countriesPayload.data || []);
+      setAllProducts(productsPayload.data || []);
+      setAllOffers(offersPayload.data || []);
     } catch {
       toast.error("Unable to load blog posts.");
     } finally {
@@ -342,6 +378,8 @@ export default function AdminBlogManager() {
   function openCreateModal() {
     slugEditedRef.current = false;
     setEditingPost(null);
+    setProductSearch("");
+    setCouponSearch("");
     reset({
       ...defaultValues,
       date: new Date().toISOString().split("T")[0],
@@ -352,6 +390,8 @@ export default function AdminBlogManager() {
   function openEditModal(post) {
     slugEditedRef.current = false;
     setEditingPost(post);
+    setProductSearch("");
+    setCouponSearch("");
     reset({
       title: post.title,
       slug: post.slug,
@@ -364,6 +404,8 @@ export default function AdminBlogManager() {
       featured: Boolean(post.featured),
       countryCode: post.countryCode || "GLOBAL",
       date: formatDateToInput(post.date),
+      selectedProductIds: post.selectedProductIds || [],
+      selectedCouponIds: post.selectedCouponIds || [],
     });
     setOpen(true);
   }
@@ -938,6 +980,95 @@ export default function AdminBlogManager() {
                         />
                       ) : (
                         <span className="italic text-[var(--muted)]/60 font-normal">Your formatted article body will render here in real-time as you write...</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Featured Products Selection */}
+                  <div className="grid gap-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold uppercase tracking-wider text-[var(--text)]">Select Products to Feature in Post</span>
+                      <input
+                        type="text"
+                        value={productSearch}
+                        onChange={(e) => setProductSearch(e.target.value)}
+                        placeholder="Search products..."
+                        className="h-8 rounded-lg border border-[var(--border)] bg-[var(--surface-soft)] px-2.5 text-[11px] text-[var(--text)] placeholder:text-[var(--muted)] outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]/10 max-w-[150px]"
+                      />
+                    </div>
+                    <div className="max-h-[150px] overflow-y-auto rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] p-3.5 space-y-2">
+                      {filteredProductsForSelect.length ? (
+                        filteredProductsForSelect.map((prod) => {
+                          const isChecked = (watch("selectedProductIds") || []).includes(prod.id);
+                          return (
+                            <label key={prod.id} className="flex items-center gap-3 text-xs text-[var(--text)] cursor-pointer hover:bg-[var(--border)]/10 p-1.5 rounded-lg transition-colors">
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={(e) => {
+                                  const current = watch("selectedProductIds") || [];
+                                  if (e.target.checked) {
+                                    setValue("selectedProductIds", [...current, prod.id]);
+                                  } else {
+                                    setValue("selectedProductIds", current.filter((id) => id !== prod.id));
+                                  }
+                                }}
+                                className="h-4 w-4 rounded border-[var(--border)] text-[var(--color-primary)] accent-[var(--color-primary)] focus:ring-[var(--color-primary)]"
+                              />
+                              <div className="flex flex-col">
+                                <span className="font-bold text-[var(--text)]">{prod.title}</span>
+                                <span className="text-[10px] text-[var(--muted)] font-mono">{prod.storeName} · {prod.currency}{prod.price}</span>
+                              </div>
+                            </label>
+                          );
+                        })
+                      ) : (
+                        <span className="text-xs text-[var(--muted)] italic">No matching products found.</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Featured Coupons Selection */}
+                  <div className="grid gap-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold uppercase tracking-wider text-[var(--text)]">Select Coupons/Deals to Feature in Post</span>
+                      <input
+                        type="text"
+                        value={couponSearch}
+                        onChange={(e) => setCouponSearch(e.target.value)}
+                        placeholder="Search coupons..."
+                        className="h-8 rounded-lg border border-[var(--border)] bg-[var(--surface-soft)] px-2.5 text-[11px] text-[var(--text)] placeholder:text-[var(--muted)] outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]/10 max-w-[150px]"
+                      />
+                    </div>
+                    <div className="max-h-[150px] overflow-y-auto rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] p-3.5 space-y-2">
+                      {filteredCouponsForSelect.length ? (
+                        filteredCouponsForSelect.map((off) => {
+                          const offId = off.id || `${off.brand}_${off.title}`;
+                          const isChecked = (watch("selectedCouponIds") || []).includes(offId);
+                          return (
+                            <label key={offId} className="flex items-center gap-3 text-xs text-[var(--text)] cursor-pointer hover:bg-[var(--border)]/10 p-1.5 rounded-lg transition-colors">
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={(e) => {
+                                  const current = watch("selectedCouponIds") || [];
+                                  if (e.target.checked) {
+                                    setValue("selectedCouponIds", [...current, offId]);
+                                  } else {
+                                    setValue("selectedCouponIds", current.filter((id) => id !== offId));
+                                  }
+                                }}
+                                className="h-4 w-4 rounded border-[var(--border)] text-[var(--color-primary)] accent-[var(--color-primary)] focus:ring-[var(--color-primary)]"
+                              />
+                              <div className="flex flex-col">
+                                <span className="font-bold text-[var(--text)]">{off.title}</span>
+                                <span className="text-[10px] text-[var(--muted)] font-mono">{off.brand} · Code: {off.value || "GET DEAL"}</span>
+                              </div>
+                            </label>
+                          );
+                        })
+                      ) : (
+                        <span className="text-xs text-[var(--muted)] italic">No matching coupons found.</span>
                       )}
                     </div>
                   </div>

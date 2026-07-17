@@ -87,10 +87,14 @@ function BrandMark({ countryCode, logoUrl, onClick }) {
         onClick={onClick}
         className="group inline-flex items-center transition duration-300"
       >
-        <img
+        <Image
           src={logoUrl}
           alt="Logo"
-          className="h-8 w-auto max-w-[200px] object-contain transition-transform duration-300 group-hover:scale-102"
+          width={160}
+          height={32}
+          priority
+          unoptimized={logoUrl && !logoUrl.includes("supabase.co") && !logoUrl.startsWith("/")}
+          className="h-8 w-auto object-contain transition-transform duration-300 group-hover:scale-102"
         />
       </Link>
     );
@@ -907,8 +911,8 @@ export default function Navbar({
                                               alt={store.name}
                                               width={56}
                                               height={56}
+                                              unoptimized={store.logoImage && !store.logoImage.includes("supabase.co") && !store.logoImage.startsWith("/")}
                                               className="h-full w-full object-contain"
-                                              unoptimized
                                             />
                                           ) : (
                                             <span className="px-2 text-center text-[11px] font-black uppercase tracking-[0.18em]">
@@ -957,8 +961,8 @@ export default function Navbar({
                                               alt={store.name}
                                               width={40}
                                               height={40}
+                                              unoptimized={store.logoImage && !store.logoImage.includes("supabase.co") && !store.logoImage.startsWith("/")}
                                               className="h-full w-full object-contain"
-                                              unoptimized
                                             />
                                           ) : (
                                             <span className="px-2 text-center text-[11px] font-black uppercase tracking-[0.18em]">

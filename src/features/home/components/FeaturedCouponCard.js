@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { copyToClipboard } from "@/lib/copyToClipboard";
 
@@ -129,11 +130,14 @@ export default function FeaturedCouponCard({ coupon, index = 0, t: propT }) {
         <div className="flex items-center justify-between">
           {coupon.logoImage ? (
             <div className="flex items-center gap-[14px]">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-[14px] bg-white p-1.5 shadow-sm border border-white/10">
-                <img
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-[14px] bg-white p-1.5 shadow-sm border border-white/10 relative">
+                <Image
                   src={coupon.logoImage}
                   alt=""
-                  className="h-full w-full object-contain"
+                  fill
+                  sizes="48px"
+                  unoptimized={coupon.logoImage && !coupon.logoImage.includes("supabase.co") && !coupon.logoImage.startsWith("/")}
+                  className="object-contain p-1.5"
                 />
               </div>
               <span className="text-[18px] font-black tracking-[-0.02em] text-white transition-colors duration-300 group-hover:text-[var(--color-primary-hover)]">

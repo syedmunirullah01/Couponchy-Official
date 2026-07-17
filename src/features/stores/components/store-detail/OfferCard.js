@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { buildCountryPath } from "@/lib/countries";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -581,8 +582,15 @@ export default function OfferCard({ offer, store, isFirst, t }) {
           <div className="flex items-start justify-between gap-3">
             {/* Logo */}
             {store.logoImage ? (
-              <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-white p-0.5 flex items-center justify-center shadow-md">
-                <img src={store.logoImage} alt={`${store.name} logo`} className="h-full w-full object-contain rounded-lg" />
+              <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-white p-0.5 flex items-center justify-center shadow-md relative">
+                <Image
+                  src={store.logoImage}
+                  alt={`${store.name} logo`}
+                  fill
+                  sizes="56px"
+                  unoptimized={store.logoImage && !store.logoImage.includes("supabase.co") && !store.logoImage.startsWith("/")}
+                  className="object-contain p-0.5 rounded-lg"
+                />
               </div>
             ) : (
               <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-black border border-white/10 text-sm font-black uppercase text-white">
@@ -774,9 +782,16 @@ export default function OfferCard({ offer, store, isFirst, t }) {
             </button>
 
             {/* Logo */}
-            <div className="mx-auto mb-3.5 sm:mb-5 h-14 w-14 sm:h-16 sm:w-16 overflow-hidden rounded-2xl border border-white/10 bg-white p-0.5 flex items-center justify-center shadow-md">
+            <div className="mx-auto mb-3.5 sm:mb-5 h-14 w-14 sm:h-16 sm:w-16 overflow-hidden rounded-2xl border border-white/10 bg-white p-0.5 flex items-center justify-center shadow-md relative">
               {store.logoImage ? (
-                <img src={store.logoImage} alt={`${store.name} logo`} className="h-full w-full object-contain rounded-xl" />
+                <Image
+                  src={store.logoImage}
+                  alt={`${store.name} logo`}
+                  fill
+                  sizes="64px"
+                  unoptimized={store.logoImage && !store.logoImage.includes("supabase.co") && !store.logoImage.startsWith("/")}
+                  className="object-contain rounded-xl"
+                />
               ) : (
                 <div className="flex h-full w-full items-center justify-center bg-black text-[11px] font-black uppercase text-white">
                   {store.logoText?.slice(0, 2) || store.name?.slice(0, 2)}

@@ -2,6 +2,7 @@ import "server-only";
 
 import { readCollection, writeCollection } from "@/server/database/json-store";
 import { sanitizeCountryList, SUPPORTED_COUNTRIES } from "@/lib/countries";
+import { unstable_cache, revalidateTag } from "next/cache";
 
 const SETTINGS_FILE = "settings.json";
 
@@ -188,7 +189,7 @@ export const defaultSettings = {
   },
 };
 
-export async function getSettings() {
+async function fetchSettings() {
   const settings = await readCollection(SETTINGS_FILE, defaultSettings);
   return {
     ...defaultSettings,
@@ -235,8 +236,16 @@ export async function getSettings() {
   };
 }
 
+export async function getSettings() {
+  return unstable_cache(
+    async () => fetchSettings(),
+    ["settings"],
+    { revalidate: 1800, tags: ["settings"] }
+  )();
+}
+
 export async function updateSettings(payload) {
-  const currentSettings = await getSettings();
+  const currentSettings = await fetchSettings();
   const nextSettings = {
     ...currentSettings,
     ...payload,
@@ -276,5 +285,6 @@ export async function updateSettings(payload) {
   };
 
   await writeCollection(SETTINGS_FILE, nextSettings);
+  revalidateTag("settings");
   return nextSettings;
 }

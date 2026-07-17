@@ -551,7 +551,7 @@ export default function HeroSection({ hero, countryCode = DEFAULT_COUNTRY_CODE, 
                               alt={`${store.name} logo`}
                               width={36}
                               height={36}
-                              unoptimized
+                              unoptimized={store.logoImage && !store.logoImage.includes("supabase.co") && !store.logoImage.startsWith("/")}
                               onError={() => setLogoErrors(prev => ({ ...prev, [store.slug]: true }))}
                               style={{
                                 objectFit: "contain",

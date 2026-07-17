@@ -19,7 +19,7 @@ export default function ProductsSection({ products }) {
           <article key={product.id} className="overflow-hidden rounded-[28px] border border-[var(--border)] bg-[var(--surface)]">
             <div className="relative aspect-[4/3] overflow-hidden bg-[var(--surface-soft)]">
               {product.image ? (
-                <Image src={product.image} alt={product.title} fill className="object-cover" unoptimized />
+                <Image src={product.image} alt={product.title} fill sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw" unoptimized={product.image && !product.image.includes("supabase.co") && !product.image.startsWith("/")} className="object-cover" />
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center text-sm text-[var(--muted)]">No image</div>
               )}

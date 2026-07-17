@@ -2,6 +2,8 @@ import { getBlogPostBySlug } from "@/server/repositories/blog-repository";
 import { resolveRequestCountryCode } from "@/server/resolve-request-country";
 import { getTranslatedBlog, getTranslatedBlogUI, COUNTRY_TO_LANG } from "@/server/services/translation-service";
 import { getHomePageData } from "@/server/services/catalog-service";
+import { getAllProducts } from "@/server/repositories/products-repository";
+import { getAllOffers } from "@/server/repositories/offers-repository";
 import BlogPostClient from "./BlogPostClient";
 import { notFound } from "next/navigation";
 import { getMetadataDefaults } from "@/server/services/settings-service";
@@ -122,11 +124,33 @@ export default async function Page({ params }) {
   }
 
   const lang = COUNTRY_TO_LANG[String(countryCode || "").toUpperCase()] || "en";
-  const [translatedPost, translatedUI, homepageData] = await Promise.all([
+  const [translatedPost, translatedUI, homepageData, allProducts, allOffers] = await Promise.all([
     getTranslatedBlog(post, lang),
     getTranslatedBlogUI(lang),
-    getHomePageData(countryCode)
+    getHomePageData(countryCode),
+    getAllProducts().catch(() => []),
+    getAllOffers().catch(() => []),
   ]);
+
+  // Resolve custom featured products and coupons
+  let featuredProducts = homepageData.featuredProducts || [];
+  if (post.selectedProductIds && post.selectedProductIds.length > 0) {
+    const selected = allProducts.filter((p) => post.selectedProductIds.includes(p.id));
+    if (selected.length > 0) {
+      featuredProducts = selected;
+    }
+  }
+
+  let featuredCoupons = homepageData.featuredCoupons || [];
+  if (post.selectedCouponIds && post.selectedCouponIds.length > 0) {
+    const selected = allOffers.filter((o) => {
+      const offId = o.id || `${o.brand}_${o.title}`;
+      return post.selectedCouponIds.includes(offId);
+    });
+    if (selected.length > 0) {
+      featuredCoupons = selected;
+    }
+  }
 
   return (
     <BlogPostClient
@@ -134,8 +158,8 @@ export default async function Page({ params }) {
       countryCode={countryCode}
       initialArticle={translatedPost}
       initialUi={translatedUI}
-      featuredProducts={homepageData.featuredProducts || []}
-      featuredCoupons={homepageData.featuredCoupons || []}
+      featuredProducts={featuredProducts}
+      featuredCoupons={featuredCoupons}
     />
   );
 }

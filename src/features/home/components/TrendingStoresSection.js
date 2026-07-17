@@ -317,7 +317,8 @@ export default function TrendingStoresSection({
                       src={store.logoImage}
                       alt={`${store.name} logo`}
                       fill
-                      unoptimized
+                      sizes="48px"
+                      unoptimized={store.logoImage && !store.logoImage.includes("supabase.co") && !store.logoImage.startsWith("/")}
                       onError={() => setLogoErrors(prev => ({ ...prev, [store.slug]: true }))}
                       style={{
                         objectFit: "contain",

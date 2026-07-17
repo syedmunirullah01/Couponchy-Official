@@ -38,7 +38,14 @@ export default function StoreSidebar({ singleStore, relatedStores, offers = [], 
               >
                 <div className="h-12 w-12 overflow-hidden rounded-xl border border-white/10 bg-white p-0.5 flex items-center justify-center shadow-sm">
                   {store.logoImage ? (
-                    <img src={store.logoImage} alt={store.name} className="h-full w-full object-contain rounded-lg" />
+                    <Image
+                      src={store.logoImage}
+                      alt={store.name}
+                      width={48}
+                      height={48}
+                      unoptimized={store.logoImage && !store.logoImage.includes("supabase.co") && !store.logoImage.startsWith("/")}
+                      className="h-full w-full object-contain rounded-lg"
+                    />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center text-[10px] font-black uppercase text-black">
                       {store.name?.slice(0, 2)}
@@ -63,10 +70,14 @@ export default function StoreSidebar({ singleStore, relatedStores, offers = [], 
             rel="noopener noreferrer"
             className="block relative w-full overflow-hidden rounded-[16px] cursor-pointer"
           >
-            <img
+            <Image
               src={singleStore.sidebarBannerImage}
               alt={`${singleStore.name} Promotion`}
-              className="w-full h-auto object-cover transition duration-700 hover:scale-[1.03]"
+              width={288}
+              height={500}
+              unoptimized={singleStore.sidebarBannerImage && !singleStore.sidebarBannerImage.includes("supabase.co") && !singleStore.sidebarBannerImage.startsWith("/")}
+              style={{ width: "100%", height: "auto" }}
+              className="object-cover transition duration-700 hover:scale-[1.03]"
             />
           </a>
         </div>

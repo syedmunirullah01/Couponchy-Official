@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import OfferSection from "./OfferSection";
 import StoreContent from "./StoreContent";
 import StoreHeader from "./StoreHeader";
@@ -156,10 +157,13 @@ export default function SingleStorePage({ singleStore, storeTabs, offerTabs, off
                           {/* Product Image Panel */}
                           <div className="relative min-h-[220px] sm:h-full overflow-hidden bg-[var(--surface-soft)]">
                             {product.image ? (
-                              <img
+                              <Image
                                 src={product.image}
                                 alt={product.title}
-                                className="absolute inset-0 h-full w-full object-cover transition duration-750 ease-out group-hover/card:scale-[1.04]"
+                                fill
+                                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                                unoptimized={product.image && !product.image.includes("supabase.co") && !product.image.startsWith("/")}
+                                className="object-cover transition duration-750 ease-out group-hover/card:scale-[1.04]"
                               />
                             ) : (
                               <div className="absolute inset-0 flex items-center justify-center text-sm text-[var(--muted)]">No image</div>
@@ -289,10 +293,13 @@ export default function SingleStorePage({ singleStore, storeTabs, offerTabs, off
                                 {/* Product Image Panel */}
                                 <div className="relative min-h-[220px] sm:h-full overflow-hidden bg-[var(--surface-soft)]">
                                   {product.image ? (
-                                    <img
+                                    <Image
                                       src={product.image}
                                       alt={product.title}
-                                      className="absolute inset-0 h-full w-full object-cover transition duration-750 ease-out group-hover/card:scale-[1.04]"
+                                      fill
+                                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                                      unoptimized={product.image && !product.image.includes("supabase.co") && !product.image.startsWith("/")}
+                                      className="object-cover transition duration-750 ease-out group-hover/card:scale-[1.04]"
                                     />
                                   ) : (
                                     <div className="absolute inset-0 flex items-center justify-center text-sm text-[var(--muted)]">No image</div>

@@ -15,7 +15,7 @@ export default function StoreCard({ store }) {
         <div className="mx-auto flex h-20 w-20 items-center justify-center overflow-hidden rounded-[20px] border border-white/8 bg-white shadow-md transition-all duration-300 group-hover:scale-105 group-hover:border-white/20">
           {store.logoImage ? (
             <div className="relative h-full w-full">
-              <Image src={store.logoImage} alt={`${store.name} logo`} fill className="object-cover" unoptimized />
+              <Image src={store.logoImage} alt={`${store.name} logo`} fill sizes="80px" unoptimized={store.logoImage && !store.logoImage.includes("supabase.co") && !store.logoImage.startsWith("/")} className="object-cover" />
             </div>
           ) : (
             <div className={cn("flex h-full w-full items-center justify-center rounded-[18px] text-center text-[10px] font-black uppercase tracking-wider leading-none", store.logoClassName || "bg-gradient-to-br from-violet-600 to-indigo-600 text-white")}>

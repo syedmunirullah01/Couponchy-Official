@@ -83,6 +83,7 @@ export async function writeCollection(fileName, records) {
       .upload(`database/${fileName}`, jsonStr, {
         contentType: "application/json",
         upsert: true,
+        cacheControl: "no-cache, no-store, must-revalidate",
       });
   } catch (err) {
     console.error(`Error uploading ${fileName} to Supabase storage:`, err);

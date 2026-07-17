@@ -1,6 +1,7 @@
 import "server-only";
 
 import { readCollection, writeCollection } from "@/server/database/json-store";
+import { unstable_cache, revalidateTag } from "next/cache";
 
 const FILE_NAME = "company.json";
 
@@ -59,15 +60,15 @@ const defaultContent = {
     useGrid2: "Verify coupon submissions and validate them using simulated headless browser checkouts.",
     useGrid3: "Process and resolve support requests submitted through our contact channels.",
     useGrid4: "Prevent fraud, security breaches, and coordinate automated abuse prevention.",
-    // Section 4
-    cookiesText: "We utilize cookies to remember your country preferences (e.g. storing your region preference in cookies) so that you do not need to select it again. These cookies do not track your browsing habits outside our domain. You can disable cookies in your browser settings, though some regional features may fall back to default configurations.",
     // Section 5
-    dataSecurityText: "We apply industry-standard security measures, including SSL encryption and secure database controls. We never lease, trade, or sell your personal details to outside marketing agencies or aggregators.",
+    cookiesText: "We utilize cookies to remember your country preferences (e.g. storing your region preference in cookies) so that you do not need to select it again. These cookies do not track your browsing habits outside our domain. You can disable cookies in your browser settings, though some regional features may fall back to default configurations.",
     // Section 6
-    thirdPartyText: "Our site lists deals and links to third-party brand websites. Once you click a link and navigate away, we do not have authority over their privacy structures. We strongly advise checking the individual privacy policies of any site you visit.",
+    dataSecurityText: "We apply industry-standard security measures, including SSL encryption and secure database controls. We never lease, trade, or sell your personal details to outside marketing agencies or aggregators.",
     // Section 7
-    userRightsText: "Depending on your localization, you possess rights under the GDPR or CCPA to view, modify, or erase any personal information we hold (e.g. deleting contact form requests). Reach out to us via email to request details.",
+    thirdPartyText: "Our site lists deals and links to third-party brand websites. Once you click a link and navigate away, we do not have authority over their privacy structures. We strongly advise checking the individual privacy policies of any site you visit.",
     // Section 8
+    userRightsText: "Depending on your localization, you possess rights under the GDPR or CCPA to view, modify, or erase any personal information we hold (e.g. deleting contact form requests). Reach out to us via email to request details.",
+    // Section 9
     policyUpdatesText: "We reserve the right to revise this Privacy Policy at any time. Any changes will be posted directly on this page with an updated modification date. We recommend checking back periodically to stay informed.",
   },
   termsOfService: {
@@ -104,7 +105,7 @@ const defaultContent = {
   },
 };
 
-export async function getCompanyContent() {
+async function fetchCompanyContent() {
   const stored = await readCollection(FILE_NAME);
 
   if (!stored || typeof stored !== "object") {
@@ -120,8 +121,16 @@ export async function getCompanyContent() {
   };
 }
 
+export async function getCompanyContent() {
+  return unstable_cache(
+    async () => fetchCompanyContent(),
+    ["company-content"],
+    { revalidate: 1800, tags: ["company-content"] }
+  )();
+}
+
 export async function updateCompanyContent(payload) {
-  const current = await getCompanyContent();
+  const current = await fetchCompanyContent();
 
   const next = {
     aboutUs: { ...current.aboutUs, ...payload.aboutUs },
@@ -132,5 +141,6 @@ export async function updateCompanyContent(payload) {
   };
 
   await writeCollection(FILE_NAME, next);
+  revalidateTag("company-content");
   return next;
 }

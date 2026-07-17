@@ -35,7 +35,7 @@ export default function StoreSpotlightCard({ store }) {
           <div className="absolute inset-0 rounded-[32px] bg-[var(--color-primary)]/10 blur-2xl opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
           {store.logoImage ? (
             <div className="relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-[28px] border border-white/10 bg-white transition-transform duration-500 group-hover:scale-110 group-hover:border-[var(--color-primary)]/20">
-              <Image src={store.logoImage} alt={`${store.name} logo`} fill className="object-contain p-3" unoptimized />
+              <Image src={store.logoImage} alt={`${store.name} logo`} fill sizes="96px" unoptimized={store.logoImage && !store.logoImage.includes("supabase.co") && !store.logoImage.startsWith("/")} className="object-contain p-3" />
             </div>
           ) : (
             <div className="relative flex h-24 w-24 items-center justify-center rounded-[28px] border border-white/10 bg-white/[0.03] text-2xl font-black transition-transform duration-500 group-hover:scale-110 group-hover:border-[var(--color-primary)]/20">

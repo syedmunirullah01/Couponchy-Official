@@ -195,8 +195,9 @@ export default function FeaturedProductsSection({ featuredProducts, title = "Fea
                           src={product.image}
                           alt={product.title}
                           fill
+                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                          unoptimized={product.image && !product.image.includes("supabase.co") && !product.image.startsWith("/")}
                           className="object-cover transition duration-750 ease-out group-hover/card:scale-[1.04]"
-                          unoptimized
                           draggable={false}
                         />
                       ) : (

@@ -1,8 +1,7 @@
 import "server-only";
 
-import { readCollection, writeCollection } from "@/server/database/json-store";
-
-const FILE_NAME = "blog.json";
+import { supabase } from "@/lib/supabase";
+import { unstable_cache, revalidateTag } from "next/cache";
 
 function slugify(value) {
   return String(value || "")
@@ -12,7 +11,30 @@ function slugify(value) {
     .replace(/^-+|-+$/g, "");
 }
 
-function normalizeBlogPost(input, currentPost) {
+function mapDbBlogPostToJs(dbPost) {
+  if (!dbPost) return null;
+  return {
+    id: dbPost.id,
+    title: dbPost.title,
+    slug: dbPost.slug,
+    excerpt: dbPost.excerpt || "",
+    category: dbPost.category || "Latest Data",
+    date: dbPost.display_date || "",
+    readTime: dbPost.read_time || "",
+    author: dbPost.author || "Admin",
+    authorRole: dbPost.author_role || "Editor",
+    thumbnailType: dbPost.thumbnail_type || "wave",
+    content: dbPost.content || "",
+    featured: Boolean(dbPost.featured),
+    countryCode: dbPost.country_code || "GLOBAL",
+    createdAt: dbPost.created_at,
+    updatedAt: dbPost.updated_at,
+    selectedProductIds: dbPost.selected_product_ids || [],
+    selectedCouponIds: dbPost.selected_coupon_ids || [],
+  };
+}
+
+function serializeBlogPostForDb(input, currentPost) {
   const now = new Date();
   const options = { year: "numeric", month: "short", day: "numeric" };
   const formattedDate = now.toLocaleDateString("en-US", options); // e.g., "Jun 27, 2026"
@@ -27,29 +49,54 @@ function normalizeBlogPost(input, currentPost) {
     readTime = `${computedMinutes} min read`;
   }
 
+  const createdAt = currentPost?.createdAt || input.createdAt || now.toISOString();
+
   return {
     id: currentPost?.id || input.id || `post_${slug}`,
     title,
     slug,
     excerpt: String(input.excerpt || "").trim(),
-    category: String(input.category || "Latest Data").trim(),
-    date: input.date || currentPost?.date || formattedDate,
-    readTime,
-    author: String(input.author || "Admin").trim(),
-    authorRole: String(input.authorRole || "Editor").trim(),
-    thumbnailType: String(input.thumbnailType || "wave").trim(),
     content: String(input.content || "").trim(),
+    featured_image: null,
+    author: String(input.author || "Admin").trim(),
+    author_role: String(input.authorRole || "Editor").trim(),
+    status: "published",
+    meta_title: title,
+    meta_description: String(input.excerpt || "").trim(),
+    canonical_url: null,
+    published_at: createdAt,
+    created_at: createdAt,
+    updated_at: now.toISOString(),
+    category: String(input.category || "Latest Data").trim(),
+    display_date: input.date || currentPost?.date || formattedDate,
+    read_time: readTime,
+    thumbnail_type: String(input.thumbnailType || "wave").trim(),
     featured: Boolean(input.featured),
-    countryCode: String(input.countryCode || "GLOBAL").trim().toUpperCase(),
-    createdAt: currentPost?.createdAt || input.createdAt || now.toISOString(),
-    updatedAt: now.toISOString(),
+    country_code: String(input.countryCode || "GLOBAL").trim().toUpperCase(),
+    selected_product_ids: input.selectedProductIds || [],
+    selected_coupon_ids: input.selectedCouponIds || [],
   };
 }
 
+async function fetchAllBlogPosts() {
+  const { data, error } = await supabase
+    .from("blogs")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    throw error;
+  }
+
+  return (data || []).map(mapDbBlogPostToJs);
+}
+
 export async function getAllBlogPosts() {
-  const posts = await readCollection(FILE_NAME, []);
-  // Sort posts by date or createdAt descending
-  return [...posts].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  return unstable_cache(
+    async () => fetchAllBlogPosts(),
+    ["blog-posts"],
+    { revalidate: 1800, tags: ["blog-posts"] }
+  )();
 }
 
 export async function getBlogPostBySlug(slug) {
@@ -58,45 +105,107 @@ export async function getBlogPostBySlug(slug) {
 }
 
 export async function createBlogPost(payload) {
-  const posts = await getAllBlogPosts();
-  const post = normalizeBlogPost(payload);
+  const post = serializeBlogPostForDb(payload);
 
-  if (posts.some((item) => item.slug === post.slug)) {
+  // Check if slug already exists
+  const { data: existing, error: checkError } = await supabase
+    .from("blogs")
+    .select("id")
+    .eq("slug", post.slug)
+    .maybeSingle();
+
+  if (checkError) {
+    throw checkError;
+  }
+  if (existing) {
     throw new Error("A blog post with this slug already exists.");
   }
 
-  const nextPosts = [...posts, post];
-  await writeCollection(FILE_NAME, nextPosts);
-  return post;
+  const { data, error } = await supabase
+    .from("blogs")
+    .insert(post)
+    .select()
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  revalidateTag("blog-posts");
+  return mapDbBlogPostToJs(data);
 }
 
 export async function updateBlogPost(slug, payload) {
-  const posts = await getAllBlogPosts();
-  const currentPost = posts.find((item) => item.slug === slug);
+  // Fetch current post directly to avoid stale merges
+  const { data: currentPost, error: fetchError } = await supabase
+    .from("blogs")
+    .select("*")
+    .eq("slug", slug)
+    .maybeSingle();
 
+  if (fetchError) {
+    throw fetchError;
+  }
   if (!currentPost) {
     return null;
   }
 
-  const merged = normalizeBlogPost({ ...currentPost, ...payload }, currentPost);
+  const currentJs = mapDbBlogPostToJs(currentPost);
+  const merged = serializeBlogPostForDb({ ...currentJs, ...payload }, currentJs);
 
-  if (posts.some((item) => item.slug === merged.slug && item.id !== currentPost.id)) {
+  // Check if new slug is taken by another post
+  const { data: existing, error: checkError } = await supabase
+    .from("blogs")
+    .select("id")
+    .eq("slug", merged.slug)
+    .not("id", "eq", currentPost.id)
+    .maybeSingle();
+
+  if (checkError) {
+    throw checkError;
+  }
+  if (existing) {
     throw new Error("Another blog post already uses this slug.");
   }
 
-  const nextPosts = posts.map((item) => (item.id === currentPost.id ? merged : item));
-  await writeCollection(FILE_NAME, nextPosts);
-  return merged;
+  const { data, error } = await supabase
+    .from("blogs")
+    .update(merged)
+    .eq("id", currentPost.id)
+    .select()
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  revalidateTag("blog-posts");
+  return mapDbBlogPostToJs(data);
 }
 
 export async function deleteBlogPost(slug) {
-  const posts = await getAllBlogPosts();
-  const nextPosts = posts.filter((item) => item.slug !== slug);
+  const { data: existing, error: fetchError } = await supabase
+    .from("blogs")
+    .select("id")
+    .eq("slug", slug)
+    .maybeSingle();
 
-  if (nextPosts.length === posts.length) {
+  if (fetchError) {
+    throw fetchError;
+  }
+  if (!existing) {
     return false;
   }
 
-  await writeCollection(FILE_NAME, nextPosts);
+  const { error } = await supabase
+    .from("blogs")
+    .delete()
+    .eq("id", existing.id);
+
+  if (error) {
+    throw error;
+  }
+
+  revalidateTag("blog-posts");
   return true;
 }

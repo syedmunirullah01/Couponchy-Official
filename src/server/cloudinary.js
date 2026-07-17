@@ -38,6 +38,7 @@ export async function uploadImageBuffer(buffer, options = {}) {
     .upload(filePath, buffer, {
       contentType: contentType,
       upsert: true,
+      cacheControl: "31536000",
     });
 
   if (uploadError) {

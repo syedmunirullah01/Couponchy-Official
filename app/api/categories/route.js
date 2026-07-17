@@ -5,6 +5,8 @@ import { requirePermission } from "@/server/auth";
 import { revalidatePath } from "next/cache";
 import { translateCategoryOnSave } from "@/server/services/translation-service";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const categories = await getAllCategories();
   return NextResponse.json({ data: categories });

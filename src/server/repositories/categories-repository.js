@@ -2,6 +2,7 @@ import "server-only";
 
 import { readCollection, writeCollection } from "@/server/database/json-store";
 import { getAllStores, syncStoresForCategoryChange } from "@/server/repositories/stores-repository";
+import { unstable_cache, revalidateTag } from "next/cache";
 
 const FILE_NAME = "categories.json";
 
@@ -53,7 +54,7 @@ async function getBootstrapCategoriesFromStores() {
   return [...uniqueCategories.values()].sort((a, b) => a.name.localeCompare(b.name));
 }
 
-export async function getAllCategories() {
+async function fetchAllCategories() {
   const categories = await readCollection(FILE_NAME, []);
 
   if (categories.length > 0) {
@@ -69,13 +70,21 @@ export async function getAllCategories() {
   return bootstrapped;
 }
 
+export async function getAllCategories() {
+  return unstable_cache(
+    async () => fetchAllCategories(),
+    ["categories"],
+    { revalidate: 1800, tags: ["categories"] }
+  )();
+}
+
 export async function getCategoryBySlug(slug) {
   const categories = await getAllCategories();
   return categories.find((category) => category.slug === slug) ?? null;
 }
 
 export async function createCategory(payload) {
-  const categories = await getAllCategories();
+  const categories = await fetchAllCategories();
   const category = normalizeCategory(payload);
 
   if (categories.some((item) => item.slug === category.slug)) {
@@ -84,11 +93,12 @@ export async function createCategory(payload) {
 
   const nextCategories = [...categories, category].sort((a, b) => a.name.localeCompare(b.name));
   await writeCollection(FILE_NAME, nextCategories);
+  revalidateTag("categories");
   return category;
 }
 
 export async function updateCategory(slug, payload) {
-  const categories = await getAllCategories();
+  const categories = await fetchAllCategories();
   const currentCategory = categories.find((item) => item.slug === slug);
 
   if (!currentCategory) {
@@ -106,6 +116,7 @@ export async function updateCategory(slug, payload) {
     .sort((a, b) => a.name.localeCompare(b.name));
 
   await writeCollection(FILE_NAME, nextCategories);
+  revalidateTag("categories");
 
   if (currentCategory.name !== merged.name || currentCategory.slug !== merged.slug) {
     await syncStoresForCategoryChange({
@@ -120,7 +131,7 @@ export async function updateCategory(slug, payload) {
 }
 
 export async function deleteCategory(slug) {
-  const categories = await getAllCategories();
+  const categories = await fetchAllCategories();
   const category = categories.find((item) => item.slug === slug);
 
   if (!category) {
@@ -136,6 +147,7 @@ export async function deleteCategory(slug) {
 
   const nextCategories = categories.filter((item) => item.id !== category.id);
   await writeCollection(FILE_NAME, nextCategories);
+  revalidateTag("categories");
 
   return { deleted: true, linkedStores: 0 };
 }

@@ -43,7 +43,7 @@ export default async function Page({ params }) {
       <div className="mt-6 grid gap-8 lg:grid-cols-[0.95fr_1.05fr]">
         <div className="relative aspect-[4/3] overflow-hidden rounded-[28px] border border-[var(--border)] bg-[var(--surface)]">
           {productItem.image ? (
-            <Image src={productItem.image} alt={productItem.title} fill className="object-cover" unoptimized />
+            <Image src={productItem.image} alt={productItem.title} fill sizes="(max-width: 1024px) 100vw, 600px" unoptimized={productItem.image && !productItem.image.includes("supabase.co") && !productItem.image.startsWith("/")} className="object-cover" />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center text-sm text-[var(--muted)]">No image</div>
           )}

@@ -8,7 +8,7 @@ function StoreBadge({ size = "large", logoText, logoClassName, logoImage, name }
     <div className={`grid ${base} place-items-center overflow-hidden rounded-xl sm:rounded-2xl border border-white/10 bg-white shadow-[0_10px_30px_rgba(139,92,246,0.15)] sm:shadow-[0_15px_40px_rgba(139,92,246,0.25)] transition-all duration-300 hover:scale-[1.03] shrink-0 ${logoImage ? "p-0" : "p-1.5 sm:p-2"}`}>
       {logoImage ? (
         <div className="relative h-full w-full overflow-hidden rounded-xl sm:rounded-2xl bg-white p-0.5 sm:p-1">
-          <Image src={logoImage} alt={`${name} logo`} fill className="object-contain" unoptimized />
+          <Image src={logoImage} alt={`${name} logo`} fill sizes="(max-width: 640px) 64px, 80px" unoptimized={logoImage && !logoImage.includes("supabase.co") && !logoImage.startsWith("/")} className="object-contain" />
         </div>
       ) : (
         <div className={`flex h-full w-full items-center justify-center rounded-lg sm:rounded-xl text-center text-black ${logoClassName}`}>

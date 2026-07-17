@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -306,11 +307,14 @@ export default function ExclusiveClientPage({ exclusiveOffers, relatedStores, t,
                             </span>
                             <span className="inline-flex items-center gap-2">
                               {matchedStore?.logoImage ? (
-                                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white p-1 border border-white/10 overflow-hidden">
-                                  <img
+                                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white p-1 border border-white/10 overflow-hidden relative">
+                                  <Image
                                     src={matchedStore.logoImage}
                                     alt=""
-                                    className="h-full w-full object-contain"
+                                    fill
+                                    sizes="40px"
+                                    unoptimized={matchedStore.logoImage && !matchedStore.logoImage.includes("supabase.co") && !matchedStore.logoImage.startsWith("/")}
+                                    className="object-contain p-1"
                                   />
                                 </span>
                               ) : (
