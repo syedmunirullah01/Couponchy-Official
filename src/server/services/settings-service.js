@@ -24,7 +24,7 @@ export async function getMetadataDefaults(pageTitle, overrides = {}) {
   const description = overrides.description || seo.metaDescription || "";
   const openGraphTitle = overrides.openGraph?.title || overrides.title || seo.ogTitle || title;
   const openGraphDescription = overrides.openGraph?.description || description || seo.ogDescription || "";
-  const favicon = general.faviconUrl || "/favicon.ico";
+  const favicon = general.faviconUrl || "/favicon.png";
 
   return {
     title: overrides.title || title,
@@ -32,7 +32,7 @@ export async function getMetadataDefaults(pageTitle, overrides = {}) {
     icons: {
       icon: favicon,
       shortcut: favicon,
-      apple: favicon,
+      apple: "/favicon.png",
     },
     openGraph: {
       title: openGraphTitle,
