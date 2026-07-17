@@ -127,6 +127,11 @@ console.log("NODE_ENV:", process.env.NODE_ENV);
     const rewriteUrl = req.nextUrl.clone();
     rewriteUrl.pathname = removeCountryPrefix(pathname);
 
+    // Fix protocol mismatch when running behind a reverse proxy (e.g. Nginx on VPS proxying to localhost)
+    if (rewriteUrl.hostname === "localhost" || rewriteUrl.hostname === "127.0.0.1") {
+      rewriteUrl.protocol = "http";
+    }
+
     const response = NextResponse.rewrite(rewriteUrl, {
       request: {
         headers: requestHeaders,
