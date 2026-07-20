@@ -815,6 +815,24 @@ function generateLocalizedDescription(brandName, highestOffer, counts, lang, sto
   }
 }
 
+function shouldRegenerateMetaTitle(metaTitle, brandName) {
+  if (!metaTitle || !metaTitle.trim()) return true;
+  const t = metaTitle.trim();
+  if (/\b0\s*(verified|gütig|véri|verific|zweryf|moath|mofath)\b/i.test(t) || /\(0\s*[a-z]*\)/i.test(t)) return true;
+  if (t.includes(`${brandName} Promo Codes -`) || t.includes(`${brandName} Promo Codes & Coupons`) || t.includes(`${brandName} Discount & Coupons Code`)) {
+    if (!t.includes('{totaloffers}') && !t.includes('{highest%}')) return true;
+  }
+  return false;
+}
+
+function shouldRegenerateMetaDescription(metaDesc, brandName) {
+  if (!metaDesc || !metaDesc.trim()) return true;
+  const d = metaDesc.trim();
+  if (/\b0\s*(verified|coupons|deals|gutscheinen|cupones|kodom|codici|rabattkoder)\b/i.test(d) || /with 0 verified/i.test(d)) return true;
+  if (d.includes("updated by Couponchy. Save with") || d.includes("at CouponChy.")) return true;
+  return false;
+}
+
 export function generateLocalizedStoreMetadata(store, offers, lang, countryCode) {
   const brandName = store.name || "Brand";
   const counts = {
@@ -825,11 +843,14 @@ export function generateLocalizedStoreMetadata(store, offers, lang, countryCode)
 
   const highestOffer = extractHighestOffer(offers, countryCode, lang);
 
-  const rawTitle = store.metaTitle?.trim() || generateLocalizedTitle(brandName, highestOffer, lang, counts);
-  const rawDescription = store.metaDescription?.trim() || generateLocalizedDescription(brandName, highestOffer, counts, lang, store.description);
+  const useGeneratedTitle = shouldRegenerateMetaTitle(store.metaTitle, brandName);
+  const useGeneratedDesc = shouldRegenerateMetaDescription(store.metaDescription, brandName);
 
-  const title = replaceDynamicDatePlaceholders(rawTitle, countryCode, lang);
-  const description = replaceDynamicDatePlaceholders(rawDescription, countryCode, lang);
+  const rawTitle = useGeneratedTitle ? generateLocalizedTitle(brandName, highestOffer, lang, counts) : store.metaTitle.trim();
+  const rawDescription = useGeneratedDesc ? generateLocalizedDescription(brandName, highestOffer, counts, lang, store.description) : store.metaDescription.trim();
+
+  const title = replaceDynamicDatePlaceholders(rawTitle, countryCode, lang, counts, highestOffer);
+  const description = replaceDynamicDatePlaceholders(rawDescription, countryCode, lang, counts, highestOffer);
 
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://couponchy.com";
   const supportedLanguages = ["en", "de", "fr", "nl", "pl", "it", "es", "ar", "ja", "pt", "sv"];
