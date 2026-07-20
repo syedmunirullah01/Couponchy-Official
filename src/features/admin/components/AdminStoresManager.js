@@ -51,6 +51,7 @@ const storeSchema = z.object({
   logoImage: z.string().optional().or(z.literal("")),
   sidebarBannerImage: z.string().optional().or(z.literal("")),
   sidebarBannerUrl: z.string().trim().optional().or(z.literal("")),
+  aboutText: z.string().trim().optional().or(z.literal("")),
   contentIntroTitle: z.string().trim().optional().or(z.literal("")),
   contentIntroParagraph1: z.string().trim().optional().or(z.literal("")),
   contentIntroParagraph2: z.string().trim().optional().or(z.literal("")),
@@ -62,6 +63,12 @@ const storeSchema = z.object({
   faq2Answer: z.string().trim().optional().or(z.literal("")),
   faq3Question: z.string().trim().optional().or(z.literal("")),
   faq3Answer: z.string().trim().optional().or(z.literal("")),
+  faq4Question: z.string().trim().optional().or(z.literal("")),
+  faq4Answer: z.string().trim().optional().or(z.literal("")),
+  faq5Question: z.string().trim().optional().or(z.literal("")),
+  faq5Answer: z.string().trim().optional().or(z.literal("")),
+  metaTitle: z.string().trim().optional().or(z.literal("")),
+  metaDescription: z.string().trim().optional().or(z.literal("")),
 });
 
 const defaultValues = {
@@ -76,6 +83,7 @@ const defaultValues = {
   logoImage: "",
   sidebarBannerImage: "",
   sidebarBannerUrl: "",
+  aboutText: "",
   contentIntroTitle: "",
   contentIntroParagraph1: "",
   contentIntroParagraph2: "",
@@ -87,6 +95,12 @@ const defaultValues = {
   faq2Answer: "",
   faq3Question: "",
   faq3Answer: "",
+  faq4Question: "",
+  faq4Answer: "",
+  faq5Question: "",
+  faq5Answer: "",
+  metaTitle: "",
+  metaDescription: "",
 };
 
 function RefreshIcon() {
@@ -318,6 +332,7 @@ export default function AdminStoresManager() {
   const watchedLogoText = watch("logoText");
   const watchedSidebarBannerImage = watch("sidebarBannerImage");
   const watchedSidebarBannerUrl = watch("sidebarBannerUrl");
+  const watchedAboutText = watch("aboutText") || "";
   const watchedCategory = watch("category");
   const watchedCountryCode = watch("countryCode");
   const watchedTrustStatus = watch("trustStatus");
@@ -418,7 +433,7 @@ export default function AdminStoresManager() {
     setOpen(true);
   }
 
-  function openEditModal(store) {
+  async function openEditModal(store) {
     slugEditedRef.current = true;
     logoTextEditedRef.current = true;
     setActiveTab("general");
@@ -435,6 +450,7 @@ export default function AdminStoresManager() {
       logoImage: store.logoImage || "",
       sidebarBannerImage: store.sidebarBannerImage || "",
       sidebarBannerUrl: store.sidebarBannerUrl || "",
+      aboutText: store.aboutText || "",
       contentIntroTitle: store.contentIntroTitle || "",
       contentIntroParagraph1: store.contentIntroParagraph1 || "",
       contentIntroParagraph2: store.contentIntroParagraph2 || "",
@@ -446,8 +462,57 @@ export default function AdminStoresManager() {
       faq2Answer: store.faq2Answer || "",
       faq3Question: store.faq3Question || "",
       faq3Answer: store.faq3Answer || "",
+      faq4Question: store.faq4Question || "",
+      faq4Answer: store.faq4Answer || "",
+      faq5Question: store.faq5Question || "",
+      faq5Answer: store.faq5Answer || "",
+      metaTitle: store.metaTitle || "",
+      metaDescription: store.metaDescription || "",
     });
     setOpen(true);
+
+    try {
+      const response = await fetch(`/api/stores/${store.slug}`);
+      if (response.ok) {
+        const result = await response.json();
+        const fullStore = result.data;
+        if (fullStore) {
+          reset({
+            name: fullStore.name,
+            slug: fullStore.slug,
+            category: fullStore.category,
+            countryCode: fullStore.countryCode || DEFAULT_COUNTRY_CODE,
+            description: fullStore.description || "",
+            trustStatus: fullStore.trustStatus || "Active",
+            logoText: fullStore.logoText || "",
+            affiliateLink: fullStore.affiliateLink || "",
+            logoImage: fullStore.logoImage || "",
+            sidebarBannerImage: fullStore.sidebarBannerImage || "",
+            sidebarBannerUrl: fullStore.sidebarBannerUrl || "",
+            aboutText: fullStore.aboutText || fullStore.generatedAboutText || "",
+            contentIntroTitle: fullStore.contentIntroTitle || fullStore.generatedIntroTitle || "",
+            contentIntroParagraph1: fullStore.contentIntroParagraph1 || fullStore.generatedIntroParagraph1 || "",
+            contentIntroParagraph2: fullStore.contentIntroParagraph2 || fullStore.generatedIntroParagraph2 || "",
+            contentWhyItemsText: fullStore.contentWhyItemsText || fullStore.generatedWhyItemsText || "",
+            contentOutro: fullStore.contentOutro || fullStore.generatedOutro || "",
+            faq1Question: fullStore.faq1Question || fullStore.generatedFaqs?.[0]?.question || "",
+            faq1Answer: fullStore.faq1Answer || fullStore.generatedFaqs?.[0]?.answer || "",
+            faq2Question: fullStore.faq2Question || fullStore.generatedFaqs?.[1]?.question || "",
+            faq2Answer: fullStore.faq2Answer || fullStore.generatedFaqs?.[1]?.answer || "",
+            faq3Question: fullStore.faq3Question || fullStore.generatedFaqs?.[2]?.question || "",
+            faq3Answer: fullStore.faq3Answer || fullStore.generatedFaqs?.[2]?.answer || "",
+            faq4Question: fullStore.faq4Question || fullStore.generatedFaqs?.[3]?.question || "",
+            faq4Answer: fullStore.faq4Answer || fullStore.generatedFaqs?.[3]?.answer || "",
+            faq5Question: fullStore.faq5Question || fullStore.generatedFaqs?.[4]?.question || "",
+            faq5Answer: fullStore.faq5Answer || fullStore.generatedFaqs?.[4]?.answer || "",
+            metaTitle: fullStore.metaTitle || fullStore.generatedMetaTitle || "",
+            metaDescription: fullStore.metaDescription || fullStore.generatedMetaDescription || "",
+          });
+        }
+      }
+    } catch (err) {
+      console.error("Failed to load store template preview values:", err);
+    }
   }
 
   function closeModal() {
@@ -1145,6 +1210,35 @@ export default function AdminStoresManager() {
                           </select>
                           <span className="text-[9px] text-[var(--muted)]">Appends public trust rating credentials.</span>
                         </div>
+
+                        {/* SEO Metadata Override */}
+                        <div className="sm:col-span-2 border-t border-[var(--border)] pt-4 space-y-4">
+                          <div>
+                            <h3 className="text-xs font-bold text-[var(--text)] uppercase tracking-wider mb-0.5">SEO Metadata Override</h3>
+                            <p className="text-[10px] text-[var(--muted)]">Manually customize search engine meta titles and descriptions (optional).</p>
+                          </div>
+                          
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="grid gap-1.5">
+                              <label className="text-xs font-bold text-[var(--text)]">Meta Title Override</label>
+                              <Input
+                                className="rounded-lg bg-[var(--surface)]"
+                                placeholder="e.g. Store Coupons & Deals | Month Year"
+                                {...register("metaTitle")}
+                              />
+                            </div>
+
+                            <div className="grid gap-1.5">
+                              <label className="text-xs font-bold text-[var(--text)]">Meta Description Override</label>
+                              <textarea
+                                rows={2}
+                                className="min-h-[50px] w-full resize-y rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs text-[var(--text)] outline-none transition focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]"
+                                placeholder="e.g. Save big with verified coupons and promo codes..."
+                                {...register("metaDescription")}
+                              />
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -1334,7 +1428,7 @@ export default function AdminStoresManager() {
                   {activeTab === "content" && (
                     <div className="space-y-4">
                       <div>
-                        <h3 className="text-xs font-bold text-[var(--text)] uppercase tracking-wider mb-0.5">Editorial Content</h3>
+                        <h3 className="text-xs font-bold text-[var(--text)] uppercase tracking-wider mb-0.5">Store Guide / Editorial Content</h3>
                         <p className="text-[10px] text-[var(--muted)]">Write clean copies and descriptive brand answers.</p>
                       </div>
 
@@ -1358,6 +1452,20 @@ export default function AdminStoresManager() {
                             onChange={descriptionField.onChange}
                           />
                           {errors.description && <span className="text-[10px] font-semibold text-[var(--color-primary)]">{errors.description.message}</span>}
+                        </div>
+
+                        <div className="grid gap-1.5">
+                          <div className="flex items-center justify-between">
+                            <label className="text-xs font-bold text-[var(--text)]">Store About / Brand (Sidebar)</label>
+                            <span className="text-[9px] text-[var(--muted)]">{watchedAboutText.length} chars</span>
+                          </div>
+                          <textarea
+                            rows={4}
+                            className="min-h-[100px] w-full resize-y rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs text-[var(--text)] outline-none transition focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]"
+                            placeholder="A descriptive introduction about the brand (Sidebar card)."
+                            {...register("aboutText")}
+                          />
+                          {errors.aboutText && <span className="text-[10px] font-semibold text-[var(--color-primary)]">{errors.aboutText.message}</span>}
                         </div>
 
                         <div className="grid gap-1.5">
@@ -1422,6 +1530,28 @@ export default function AdminStoresManager() {
                               <label className="grid gap-1 text-[11px] font-bold text-[var(--text)]">
                                 FAQ 3: Answer
                                 <textarea className="min-h-[60px] text-xs rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-[var(--text)] outline-none" {...register("faq3Answer")} />
+                              </label>
+                            </div>
+
+                            <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-soft)]/20 p-3 space-y-2">
+                              <label className="grid gap-1 text-[11px] font-bold text-[var(--text)]">
+                                FAQ 4: Question
+                                <Input className="h-8.5 text-xs rounded-md bg-[var(--surface)]" {...register("faq4Question")} />
+                              </label>
+                              <label className="grid gap-1 text-[11px] font-bold text-[var(--text)]">
+                                FAQ 4: Answer
+                                <textarea className="min-h-[60px] text-xs rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-[var(--text)] outline-none" {...register("faq4Answer")} />
+                              </label>
+                            </div>
+
+                            <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-soft)]/20 p-3 space-y-2">
+                              <label className="grid gap-1 text-[11px] font-bold text-[var(--text)]">
+                                FAQ 5: Question
+                                <Input className="h-8.5 text-xs rounded-md bg-[var(--surface)]" {...register("faq5Question")} />
+                              </label>
+                              <label className="grid gap-1 text-[11px] font-bold text-[var(--text)]">
+                                FAQ 5: Answer
+                                <textarea className="min-h-[60px] text-xs rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-[var(--text)] outline-none" {...register("faq5Answer")} />
                               </label>
                             </div>
                           </div>

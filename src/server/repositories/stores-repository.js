@@ -19,6 +19,9 @@ function mapDbStoreToJs(dbStore) {
       dbStore.logo_class_name ||
       "border border-[var(--border)] bg-[var(--surface-soft)] text-[var(--text)] text-[12px] font-black",
     description: dbStore.description || "",
+    aboutText: dbStore.about_text || "",
+    metaTitle: dbStore.meta_title || "",
+    metaDescription: dbStore.meta_description || "",
     contentIntroTitle: dbStore.content_intro_title || "",
     contentIntroParagraph1: dbStore.content_intro_paragraph_1 || "",
     contentIntroParagraph2: dbStore.content_intro_paragraph_2 || "",
@@ -30,6 +33,10 @@ function mapDbStoreToJs(dbStore) {
     faq2Answer: dbStore.faq_2_answer || "",
     faq3Question: dbStore.faq_3_question || "",
     faq3Answer: dbStore.faq_3_answer || "",
+    faq4Question: dbStore.faq_4_question || "",
+    faq4Answer: dbStore.faq_4_answer || "",
+    faq5Question: dbStore.faq_5_question || "",
+    faq5Answer: dbStore.faq_5_answer || "",
     trustStatus: dbStore.trust_status || "Active",
     isFeatured: Boolean(dbStore.is_featured),
     heroImage:
@@ -69,6 +76,9 @@ function serializeStoreForDb(store) {
       store.logoClassName?.trim() ||
       "border border-[var(--border)] bg-[var(--surface-soft)] text-[var(--text)] text-[12px] font-black",
     description: store.description?.trim() || `${store.name.trim()} deals and coupons updated by Couponchy.`,
+    about_text: store.aboutText?.trim() || "",
+    meta_title: store.metaTitle?.trim() || "",
+    meta_description: store.metaDescription?.trim() || "",
     content_intro_title: store.contentIntroTitle?.trim() || "",
     content_intro_paragraph_1: store.contentIntroParagraph1?.trim() || "",
     content_intro_paragraph_2: store.contentIntroParagraph2?.trim() || "",
@@ -80,6 +90,10 @@ function serializeStoreForDb(store) {
     faq_2_answer: store.faq2Answer?.trim() || "",
     faq_3_question: store.faq3Question?.trim() || "",
     faq_3_answer: store.faq3Answer?.trim() || "",
+    faq_4_question: store.faq4Question?.trim() || "",
+    faq_4_answer: store.faq4Answer?.trim() || "",
+    faq_5_question: store.faq5Question?.trim() || "",
+    faq_5_answer: store.faq5Answer?.trim() || "",
     trust_status: store.trustStatus?.trim() || "Active",
     is_featured: Boolean(store.isFeatured),
     hero_image:

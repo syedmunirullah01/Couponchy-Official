@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 import { deleteStore, getStoreBySlug, updateStore } from "@/server/repositories/stores-repository";
-import { deleteOffersByStoreSlug } from "@/server/repositories/offers-repository";
+import { deleteOffersByStoreSlug, getOffersByStoreSlug } from "@/server/repositories/offers-repository";
 import { validateStorePayload } from "@/lib/validators";
 import { requirePermission } from "@/server/auth";
 import { revalidatePath } from "next/cache";
 import { translateStoreOnSave } from "@/server/services/translation-service";
+import { generateStoreContent, generateStoreAboutDescription } from "@/lib/store-seo-templates";
+import { generateLocalizedStoreMetadata } from "@/server/services/catalog-service";
+import { COUNTRY_TO_LANG } from "@/server/services/translation-service";
 
 export async function GET(_request, { params }) {
   const { slug } = await params;
@@ -14,7 +17,27 @@ export async function GET(_request, { params }) {
     return NextResponse.json({ error: "Store not found." }, { status: 404 });
   }
 
-  return NextResponse.json({ data: store });
+  const offers = await getOffersByStoreSlug(slug);
+  const generatedContent = generateStoreContent(store, offers);
+  const generatedAboutText = generateStoreAboutDescription(store, offers);
+
+  const lang = COUNTRY_TO_LANG[String(store.countryCode || "").toUpperCase()] || "en";
+  const generatedMetadata = generateLocalizedStoreMetadata(store, offers, lang, store.countryCode);
+
+  return NextResponse.json({
+    data: {
+      ...store,
+      generatedAboutText,
+      generatedIntroTitle: generatedContent.introTitle,
+      generatedIntroParagraph1: generatedContent.introParagraphs[0] || "",
+      generatedIntroParagraph2: generatedContent.introParagraphs[1] || "",
+      generatedWhyItemsText: generatedContent.whyItems.join("\n"),
+      generatedOutro: generatedContent.outro || "",
+      generatedFaqs: generatedContent.faqs,
+      generatedMetaTitle: generatedMetadata.title || "",
+      generatedMetaDescription: generatedMetadata.description || "",
+    }
+  });
 }
 
 export async function PUT(request, { params }) {

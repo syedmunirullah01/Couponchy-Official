@@ -53,7 +53,7 @@ const STORE_TRANSLATIONS = {
     "reviews": "reviews",
     "storesBreadcrumb": "Stores",
     "topPick": "Top pick",
-    "titleTemplate": "{name} Discount & Coupons Code {month} {year}",
+    "titleTemplate": "{name} Promo Codes & Coupons {month} {year}",
     "promoCodesCount": "Promo Codes",
     "topVerified": "Top Verified",
     "verifiedPercent": "100% Verified",
@@ -62,7 +62,9 @@ const STORE_TRANSLATIONS = {
     "code": "code",
     "curatedShowcase": "CURATED SHOWCASE",
     "shopProducts": "Shop Products",
-    "trendingProducts": "Trending {name} Products"
+    "trendingProducts": "Trending {name} Products",
+    "showMore": "Show More",
+    "showLess": "Show Less"
   },
   "pl": {
     "savingsGuide": "PORADNIK OSZCZĘDZANIA",
@@ -127,7 +129,9 @@ const STORE_TRANSLATIONS = {
     "code": "kod",
     "curatedShowcase": "WYBRANE PRODUKTY",
     "shopProducts": "Kup produkty",
-    "trendingProducts": "Popularne produkty {name}"
+    "trendingProducts": "Popularne produkty {name}",
+    "showMore": "Pokaż więcej",
+    "showLess": "Pokaż mniej"
   },
   "de": {
     "savingsGuide": "SPAR-GUIDE",
@@ -192,7 +196,9 @@ const STORE_TRANSLATIONS = {
     "code": "code",
     "curatedShowcase": "EXKLUSIVE AUSWAHL",
     "shopProducts": "Produkte shoppen",
-    "trendingProducts": "Beliebte {name}-Produkte"
+    "trendingProducts": "Beliebte {name}-Produkte",
+    "showMore": "Mehr anzeigen",
+    "showLess": "Weniger anzeigen"
   },
   "fr": {
     "savingsGuide": "GUIDE D'ÉPARGNE",
@@ -257,7 +263,9 @@ const STORE_TRANSLATIONS = {
     "code": "code",
     "curatedShowcase": "SÉLECTION EXCLUSIVE",
     "shopProducts": "Acheter les produits",
-    "trendingProducts": "Produits {name} tendance"
+    "trendingProducts": "Produits {name} tendance",
+    "showMore": "Afficher plus",
+    "showLess": "Afficher moins"
   },
   "nl": {
     "savingsGuide": "BESPAARGIDS",
@@ -322,7 +330,9 @@ const STORE_TRANSLATIONS = {
     "code": "code",
     "curatedShowcase": "EXCLUSIEVE SELECTIE",
     "shopProducts": "Producten kopen",
-    "trendingProducts": "Populaire {name} producten"
+    "trendingProducts": "Populaire {name} producten",
+    "showMore": "Toon meer",
+    "showLess": "Toon minder"
   },
   "it": {
     "savingsGuide": "GUIDA AL RISPARMIO",
@@ -387,7 +397,9 @@ const STORE_TRANSLATIONS = {
     "code": "codice",
     "curatedShowcase": "SELEZIONE ESCLUSIVA",
     "shopProducts": "Acquista prodotti",
-    "trendingProducts": "Prodotti {name} di tendenza"
+    "trendingProducts": "Prodotti {name} di tendenza",
+    "showMore": "Mostra di più",
+    "showLess": "Mostra meno"
   },
   "es": {
     "savingsGuide": "GUÍA DE AHORRO",
@@ -452,7 +464,9 @@ const STORE_TRANSLATIONS = {
     "code": "código",
     "curatedShowcase": "SELECCIÓN EXCLUSIVA",
     "shopProducts": "Comprar productos",
-    "trendingProducts": "Productos {name} de moda"
+    "trendingProducts": "Productos {name} de moda",
+    "showMore": "Mostrar más",
+    "showLess": "Mostrar menos"
   },
   "sv": {
     "savingsGuide": "SPARGUIDE",
@@ -517,7 +531,9 @@ const STORE_TRANSLATIONS = {
     "code": "kod",
     "curatedShowcase": "EXKLUSIVT URVAL",
     "shopProducts": "Köp produkter",
-    "trendingProducts": "Populära {name}-produkter"
+    "trendingProducts": "Populära {name}-produkter",
+    "showMore": "Visa mer",
+    "showLess": "Visa mindre"
   },
   "ja": {
     "savingsGuide": "節約ガイド",
@@ -582,7 +598,9 @@ const STORE_TRANSLATIONS = {
     "code": "コード",
     "curatedShowcase": "厳選ショーケース",
     "shopProducts": "商品を購入",
-    "trendingProducts": "人気の{name}商品"
+    "trendingProducts": "人気の{name}商品",
+    "showMore": "もっと見る",
+    "showLess": "閉じる"
   },
   "pt": {
     "savingsGuide": "GUIA DE ECONOMIA",
@@ -647,7 +665,9 @@ const STORE_TRANSLATIONS = {
     "code": "código",
     "curatedShowcase": "SELEÇÃO EXCLUSIVA",
     "shopProducts": "Comprar produtos",
-    "trendingProducts": "Produtos {name} populares"
+    "trendingProducts": "Produtos {name} populares",
+    "showMore": "Mostrar mais",
+    "showLess": "Mostrar menos"
   },
   "ar": {
     "savingsGuide": "دليل التوفير",
@@ -712,7 +732,9 @@ const STORE_TRANSLATIONS = {
     "code": "كود",
     "curatedShowcase": "معرض مختار",
     "shopProducts": "تسوق المنتجات",
-    "trendingProducts": "منتجات {name} الرائجة"
+    "trendingProducts": "منتجات {name} الرائجة",
+    "showMore": "عرض المزيد",
+    "showLess": "عرض أقل"
   }
 };
 

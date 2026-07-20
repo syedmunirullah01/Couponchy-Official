@@ -20,7 +20,7 @@ export default function StoreSidebar({ singleStore, relatedStores, offers = [], 
           </div>
           <p className="text-sm font-black text-white/80">{t.aboutBrand.replace("{name}", singleStore.name)}</p>
         </div>
-        <p className="text-xs leading-5 text-white/45">
+        <p className="text-xs leading-5 text-white/45 whitespace-pre-line">
           {aboutText}
         </p>
       </div>

@@ -7,6 +7,7 @@ import { getAllStores, getStoreBySlug } from "@/server/repositories/stores-repos
 import { getAllCategories } from "@/server/repositories/categories-repository";
 import { normalizeCountryCode } from "@/lib/countries";
 import { generateStoreContent, generateStoreAboutDescription } from "@/lib/store-seo-templates";
+import { replaceDynamicDatePlaceholders, getLocalizedMonthYear } from "@/lib/date-replacer";
 import {
   COUNTRY_TO_LANG,
   getTranslatedSettings,
@@ -44,7 +45,7 @@ function buildStoreDetail(store, offers, allStores) {
   // ── Generate SEO content via 4-template engine ──────────────────────────
   // Admin-entered content always takes priority; generated content is fallback.
   const generated = generateStoreContent(store, offers);
-  const aboutText = generateStoreAboutDescription(store, offers);
+  const aboutText = store.aboutText?.trim() || generateStoreAboutDescription(store, offers);
 
   // Admin why-items (from textarea, one per line)
   const customWhyItems = String(store.contentWhyItemsText || "")
@@ -57,6 +58,8 @@ function buildStoreDetail(store, offers, allStores) {
     { question: store.faq1Question, answer: store.faq1Answer },
     { question: store.faq2Question, answer: store.faq2Answer },
     { question: store.faq3Question, answer: store.faq3Answer },
+    { question: store.faq4Question, answer: store.faq4Answer },
+    { question: store.faq5Question, answer: store.faq5Answer },
   ].filter((item) => item.question?.trim() && item.answer?.trim());
 
   // Resolve intro paragraphs:
@@ -66,14 +69,26 @@ function buildStoreDetail(store, offers, allStores) {
   const hasAdminIntro = !!(adminPara1 || adminPara2);
 
   const introParagraphs = hasAdminIntro
-    ? [
-        adminPara1 || generated.introParagraphs[0],
-        adminPara2 || store.description || generated.introParagraphs[1],
-      ]
+    ? [adminPara1, adminPara2].filter(Boolean)
     : generated.introParagraphs;
 
+  const cc = store.countryCode;
+  const resolvedAboutText = replaceDynamicDatePlaceholders(aboutText, cc);
+  const rawIntroTitle = store.contentIntroTitle?.trim() || generated.introTitle;
+  const resolvedIntroTitle = replaceDynamicDatePlaceholders(rawIntroTitle, cc);
+  const resolvedIntroParagraphs = introParagraphs.map((p) => replaceDynamicDatePlaceholders(p, cc));
+  const rawWhyItems = customWhyItems.length ? customWhyItems : generated.whyItems;
+  const resolvedWhyItems = rawWhyItems.map((item) => replaceDynamicDatePlaceholders(item, cc));
+  const rawOutro = store.contentOutro?.trim() || generated.outro;
+  const resolvedOutro = replaceDynamicDatePlaceholders(rawOutro, cc);
+  const rawFaqs = customFaqs.length ? customFaqs : generated.faqs;
+  const resolvedFaqs = rawFaqs.map((faq) => ({
+    question: replaceDynamicDatePlaceholders(faq.question, cc),
+    answer: replaceDynamicDatePlaceholders(faq.answer, cc),
+  }));
+
   return {
-    aboutText,
+    aboutText: resolvedAboutText,
     singleStore: {
       ...store,
       title: `${store.name} Coupons, Deals & Promo Codes`,
@@ -81,14 +96,10 @@ function buildStoreDetail(store, offers, allStores) {
       validatedText: `${offers.length} active offer${offers.length === 1 ? "" : "s"} currently available`,
       activeCoupons,
       activeDeals,
-      // introTitle: admin wins, else generated
-      introTitle: store.contentIntroTitle?.trim() || generated.introTitle,
-      // introParagraphs: admin wins per-field, else full generated set
-      introParagraphs,
-      // whyItems: admin textarea wins, else generated
-      whyItems: customWhyItems.length ? customWhyItems : generated.whyItems,
-      // outro: admin wins, else generated
-      outro: store.contentOutro?.trim() || generated.outro,
+      introTitle: resolvedIntroTitle,
+      introParagraphs: resolvedIntroParagraphs,
+      whyItems: resolvedWhyItems,
+      outro: resolvedOutro,
     },
     storeTabs: ["Coupons", "Store Info", "FAQs"],
     offerTabs: [
@@ -101,8 +112,7 @@ function buildStoreDetail(store, offers, allStores) {
       views: `${Math.max(0, 10 + activeCoupons + activeDeals)} views`,
       date: new Date(offer.createdAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
     })),
-    // FAQs: admin custom FAQs win, else generated template FAQs
-    faqs: customFaqs.length ? customFaqs : generated.faqs,
+    faqs: resolvedFaqs,
     relatedStores: allStores
       .filter((item) => item.slug !== store.slug)
       .slice(0, 6)
@@ -556,29 +566,6 @@ const FREEBIE_LOCALIZATION = {
   ar: { trial: "تجربة مجانية", shipping: "شحن مجاني" }
 };
 
-const monthLocaleMap = {
-  en: "en-US",
-  de: "de-DE",
-  fr: "fr-FR",
-  es: "es-ES",
-  nl: "nl-NL",
-  pl: "pl-PL",
-  it: "it-IT",
-  ja: "ja-JP",
-  pt: "pt-PT",
-  sv: "sv-SE",
-  ar: "ar-SA"
-};
-
-function getLocalizedMonthYear(lang) {
-  const now = new Date();
-  const locale = monthLocaleMap[lang] || "en-US";
-  const rawMonth = now.toLocaleString(locale, { month: "long" });
-  const month = rawMonth.charAt(0).toUpperCase() + rawMonth.slice(1);
-  const year = now.getFullYear();
-  return { month, year };
-}
-
 function extractHighestOffer(offers, countryCode = "US", lang = "en") {
   if (!offers || offers.length === 0) return null;
 
@@ -713,58 +700,59 @@ function extractHighestOffer(offers, countryCode = "US", lang = "en") {
   return null;
 }
 
-function generateLocalizedTitle(brandName, highestOffer, lang) {
+function generateLocalizedTitle(brandName, highestOffer, lang, counts = { offers: 0 }) {
   const { month, year } = getLocalizedMonthYear(lang);
+  const totalOffers = counts.offers || 0;
 
   if (highestOffer) {
     switch (lang) {
       case "de":
-        return `${highestOffer} ${brandName} Gutscheine & Rabattcodes - Verifizierte ${month} Codes ${year}`;
+        return `${brandName} Gutscheincodes - ${highestOffer} (${totalOffers} Verifiziert) ${month} ${year}`;
       case "fr":
-        return `${highestOffer} ${brandName} Coupons et Codes Promo - Codes Vérifiés de ${month} ${year}`;
+        return `${brandName} Codes Promo - ${highestOffer} (${totalOffers} Vérifiés) ${month} ${year}`;
       case "es":
-        return `${highestOffer} ${brandName} Cupones y Códigos de Descuento - Códigos Verificados de ${month} ${year}`;
+        return `${brandName} Códigos Promocionales - ${highestOffer} (${totalOffers} Verificados) ${month} ${year}`;
       case "nl":
-        return `${highestOffer} ${brandName} Kortingscodes & Actiecodes - Geverifieerde ${month} Codes ${year}`;
+        return `${brandName} Kortingscodes - ${highestOffer} (${totalOffers} Geverifieerd) ${month} ${year}`;
       case "pl":
-        return `${highestOffer} ${brandName} Kody rabatowe i kupony - Zweryfikowane kody na ${month} ${year}`;
+        return `${brandName} Kody Rabatowe - ${highestOffer} (${totalOffers} Zweryfikowane) ${month} ${year}`;
       case "it":
-        return `${highestOffer} ${brandName} Codici Sconto & Coupon - Codici Verificati di ${month} ${year}`;
+        return `${brandName} Codici Sconto - ${highestOffer} (${totalOffers} Verificati) ${month} ${year}`;
       case "ja":
-        return `${highestOffer} ${brandName} クーポン＆割引コード - ${month}確認済みコード ${year}`;
+        return `${brandName} プロモコード - ${highestOffer} (${totalOffers}確認済み) ${year}年${month}月`;
       case "pt":
-        return `${highestOffer} ${brandName} Cupons e Códigos de Desconto - Códigos Verificados de ${month} ${year}`;
+        return `${brandName} Códigos Promocionais - ${highestOffer} (${totalOffers} Verificados) ${month} ${year}`;
       case "sv":
-        return `${highestOffer} ${brandName} Rabattkoder & Kuponger - Verifierade ${month} Koder ${year}`;
+        return `${brandName} Rabattkoder - ${highestOffer} (${totalOffers} Verifierade) ${month} ${year}`;
       case "ar":
-        return `${highestOffer} كوبونات وأكواد خصم ${brandName} - كوبونات موثقة لـ ${month} ${year}`;
+        return `أكواد خصم ${brandName} - ${highestOffer} (${totalOffers} موثق) ${month} ${year}`;
       default: // en
-        return `${highestOffer} ${brandName} Coupons & Discount Codes - Verified ${month} Codes ${year}`;
+        return `${brandName} Promo Codes - ${highestOffer} (${totalOffers} Verified) ${month} ${year}`;
     }
   } else {
     switch (lang) {
       case "de":
-        return `${brandName} Gutscheine & Rabattcodes - Verifizierte ${month} Codes ${year}`;
+        return `${brandName} Gutscheincodes - (${totalOffers} Verifiziert) ${month} ${year}`;
       case "fr":
-        return `${brandName} Coupons et Codes Promo - Codes Vérifiés de ${month} ${year}`;
+        return `${brandName} Codes Promo - (${totalOffers} Vérifiés) ${month} ${year}`;
       case "es":
-        return `${brandName} Cupones y Códigos de Descuento - Códigos Verificados de ${month} ${year}`;
+        return `${brandName} Códigos Promocionales - (${totalOffers} Verificados) ${month} ${year}`;
       case "nl":
-        return `${brandName} Kortingscodes & Actiecodes - Geverifieerde ${month} Codes ${year}`;
+        return `${brandName} Kortingscodes - (${totalOffers} Geverifieerd) ${month} ${year}`;
       case "pl":
-        return `${brandName} Kody rabatowe i kupony - Zweryfikowane kody na ${month} ${year}`;
+        return `${brandName} Kody Rabatowe - (${totalOffers} Zweryfikowane) ${month} ${year}`;
       case "it":
-        return `${brandName} Codici Sconto & Coupon - Codici Verificati di ${month} ${year}`;
+        return `${brandName} Codici Sconto - (${totalOffers} Verificati) ${month} ${year}`;
       case "ja":
-        return `${brandName} クーポン＆割引コード - ${month}確認済みコード ${year}`;
+        return `${brandName} プロモコード - (${totalOffers}確認済み) ${year}年${month}月`;
       case "pt":
-        return `${brandName} Cupons e Códigos de Desconto - Códigos Verificados de ${month} ${year}`;
+        return `${brandName} Códigos Promocionais - (${totalOffers} Verificados) ${month} ${year}`;
       case "sv":
-        return `${brandName} Rabattkoder & Kuponger - Verifierade ${month} Koder ${year}`;
+        return `${brandName} Rabattkoder - (${totalOffers} Verifierade) ${month} ${year}`;
       case "ar":
-        return `كوبونات وأكواد خصم ${brandName} - كوبونات موثقة لـ ${month} ${year}`;
+        return `أكواد خصم ${brandName} - (${totalOffers} موثق) ${month} ${year}`;
       default: // en
-        return `${brandName} Coupons & Discount Codes - Verified ${month} Codes ${year}`;
+        return `${brandName} Promo Codes - (${totalOffers} Verified) ${month} ${year}`;
     }
   }
 }
@@ -827,7 +815,7 @@ function generateLocalizedDescription(brandName, highestOffer, counts, lang, sto
   }
 }
 
-function generateLocalizedStoreMetadata(store, offers, lang, countryCode) {
+export function generateLocalizedStoreMetadata(store, offers, lang, countryCode) {
   const brandName = store.name || "Brand";
   const counts = {
     offers: offers.length,
@@ -837,8 +825,11 @@ function generateLocalizedStoreMetadata(store, offers, lang, countryCode) {
 
   const highestOffer = extractHighestOffer(offers, countryCode, lang);
 
-  const title = generateLocalizedTitle(brandName, highestOffer, lang);
-  const description = generateLocalizedDescription(brandName, highestOffer, counts, lang, store.description);
+  const rawTitle = store.metaTitle?.trim() || generateLocalizedTitle(brandName, highestOffer, lang, counts);
+  const rawDescription = store.metaDescription?.trim() || generateLocalizedDescription(brandName, highestOffer, counts, lang, store.description);
+
+  const title = replaceDynamicDatePlaceholders(rawTitle, countryCode, lang);
+  const description = replaceDynamicDatePlaceholders(rawDescription, countryCode, lang);
 
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://couponchy.com";
   const supportedLanguages = ["en", "de", "fr", "nl", "pl", "it", "es", "ar", "ja", "pt", "sv"];

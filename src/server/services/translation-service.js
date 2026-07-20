@@ -1,6 +1,7 @@
 import "server-only";
 import crypto from "crypto";
 import { supabase } from "@/lib/supabase";
+import { replaceDynamicDatePlaceholders } from "@/lib/date-replacer";
 
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
 
@@ -101,6 +102,9 @@ export async function translateStoreOnSave(store) {
   try {
     const fields = [
       "description",
+      "aboutText",
+      "metaTitle",
+      "metaDescription",
       "contentIntroTitle",
       "contentIntroParagraph1",
       "contentIntroParagraph2",
@@ -112,6 +116,10 @@ export async function translateStoreOnSave(store) {
       "faq2Answer",
       "faq3Question",
       "faq3Answer",
+      "faq4Question",
+      "faq4Answer",
+      "faq5Question",
+      "faq5Answer",
     ];
 
     for (const field of fields) {
@@ -1724,6 +1732,29 @@ export async function getTranslatedStoreDetail(detail, lang) {
         }
         return tab;
       });
+    }
+
+    const cc = store.countryCode;
+    if (result.singleStore.introTitle) {
+      result.singleStore.introTitle = replaceDynamicDatePlaceholders(result.singleStore.introTitle, cc, lang);
+    }
+    if (result.singleStore.outro) {
+      result.singleStore.outro = replaceDynamicDatePlaceholders(result.singleStore.outro, cc, lang);
+    }
+    if (result.aboutText) {
+      result.aboutText = replaceDynamicDatePlaceholders(result.aboutText, cc, lang);
+    }
+    if (result.singleStore.introParagraphs && result.singleStore.introParagraphs.length) {
+      result.singleStore.introParagraphs = result.singleStore.introParagraphs.map(p => replaceDynamicDatePlaceholders(p, cc, lang));
+    }
+    if (result.singleStore.whyItems && result.singleStore.whyItems.length) {
+      result.singleStore.whyItems = result.singleStore.whyItems.map(item => replaceDynamicDatePlaceholders(item, cc, lang));
+    }
+    if (result.faqs && result.faqs.length) {
+      result.faqs = result.faqs.map(faq => ({
+        question: replaceDynamicDatePlaceholders(faq.question, cc, lang),
+        answer: replaceDynamicDatePlaceholders(faq.answer, cc, lang),
+      }));
     }
 
     return result;

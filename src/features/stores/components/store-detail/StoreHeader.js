@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { buildCountryPath } from "@/lib/countries";
+import { replaceDynamicDatePlaceholders } from "@/lib/date-replacer";
 
 function StoreBadge({ size = "large", logoText, logoClassName, logoImage, name }) {
   const base = size === "large" ? "h-16 w-16 sm:h-20 sm:w-20" : "h-12 w-12 sm:h-14 sm:w-14";
@@ -141,9 +142,10 @@ export default function StoreHeader({ singleStore, storeTabs, offerTabs, offers 
   const monthLocale = monthLocaleMap[country] || "en-US";
   const month = now.toLocaleString(monthLocale, { month: "long" });
   const year = now.getFullYear();
-  const dynamicTitle = t.titleTemplate
-    ? t.titleTemplate.replace("{name}", singleStore.name).replace("{month}", month).replace("{year}", year)
-    : `${singleStore.name} Discount & Coupons Code ${month} ${year}`;
+  const rawTitleTemplate = t.titleTemplate
+    ? t.titleTemplate.replace("{name}", singleStore.name)
+    : `${singleStore.name} Promo Codes & Coupons {month} {year}`;
+  const dynamicTitle = replaceDynamicDatePlaceholders(rawTitleTemplate, singleStore.countryCode);
 
   const dynamicRating = (() => {
     let hash = 0;
