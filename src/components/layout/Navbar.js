@@ -298,7 +298,10 @@ export default function Navbar({
     async function loadBlogs() {
       try {
         const res = await fetch("/api/blog");
-        const json = await res.json();
+        if (!res.ok) return;
+        const text = await res.text();
+        if (!text) return;
+        const json = JSON.parse(text);
         setBlogPosts(json.data || []);
       } catch (e) {
         console.error("Failed to load blog posts in Navbar:", e);
