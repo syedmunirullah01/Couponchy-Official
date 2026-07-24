@@ -97,11 +97,48 @@ async function saveTranslation(entityType, entityId, fieldKey, language, transla
   if (error) throw error;
 }
 
+async function getExistingTranslation(entityType, entityId, fieldKey, language) {
+  if (isMongoEnabled()) {
+    try {
+      const { connectToDatabase } = require("@/lib/mongodb");
+      const Translation = require("@/server/models/Translation").default;
+      await connectToDatabase();
+      const doc = await Translation.findOne({
+        entity_type: entityType,
+        entity_id: String(entityId),
+        field_key: fieldKey,
+        language: language,
+      }).lean();
+      return doc ? { translated_text: doc.translated_text, original_hash: doc.original_hash } : null;
+    } catch (err) {
+      console.error(`[getExistingTranslation Mongo] Error:`, err);
+      return null;
+    }
+  }
+
+  const { data } = await supabase
+    .from("translations")
+    .select("translated_text, original_hash")
+    .eq("entity_type", entityType)
+    .eq("entity_id", String(entityId))
+    .eq("field_key", fieldKey)
+    .eq("language", language)
+    .maybeSingle();
+
+  return data;
+}
+
 export async function translateStoreOnSave(store) {
-  if (!store || !store.countryCode) return;
-  const country = String(store.countryCode).toUpperCase();
-  const lang = COUNTRY_TO_LANG[country];
-  if (!lang || lang === "en") return;
+  if (!store) return;
+  const country = String(store.countryCode || "").toUpperCase();
+  const primaryLang = COUNTRY_TO_LANG[country];
+
+  const targetLangs = new Set();
+  if (primaryLang && primaryLang !== "en") {
+    targetLangs.add(primaryLang);
+  } else {
+    ["de", "nl", "fr", "es", "it", "pl"].forEach((l) => targetLangs.add(l));
+  }
 
   try {
     const fields = [
@@ -126,36 +163,29 @@ export async function translateStoreOnSave(store) {
       "faq5Answer",
     ];
 
-    for (const field of fields) {
-      const originalText = store[field];
-      if (!originalText || typeof originalText !== "string" || !originalText.trim()) continue;
+    for (const lang of targetLangs) {
+      for (const field of fields) {
+        const originalText = store[field];
+        if (!originalText || typeof originalText !== "string" || !originalText.trim()) continue;
 
-      const hash = getHash(originalText);
+        const hash = getHash(originalText);
+        const existing = await getExistingTranslation("store", store.id, field, lang);
 
-      // Check if up-to-date in DB
-      const { data: existing } = await supabase
-        .from("translations")
-        .select("translated_text, original_hash")
-        .eq("entity_type", "store")
-        .eq("entity_id", String(store.id))
-        .eq("field_key", field)
-        .eq("language", lang)
-        .single();
-
-      if (!existing?.translated_text || existing.original_hash !== hash) {
-        let translated = "";
-        if (field === "contentWhyItemsText") {
-          const lines = originalText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-          const translatedLines = [];
-          for (const line of lines) {
-            const tLine = await callDeepSeek(line, lang);
-            translatedLines.push(tLine);
+        if (!existing?.translated_text || existing.original_hash !== hash) {
+          let translated = "";
+          if (field === "contentWhyItemsText") {
+            const lines = originalText.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+            const translatedLines = [];
+            for (const line of lines) {
+              const tLine = await callDeepSeek(line, lang);
+              translatedLines.push(tLine);
+            }
+            translated = translatedLines.join("\n");
+          } else {
+            translated = await callDeepSeek(originalText, lang);
           }
-          translated = translatedLines.join("\n");
-        } else {
-          translated = await callDeepSeek(originalText, lang);
+          await saveTranslation("store", store.id, field, lang, translated, hash);
         }
-        await saveTranslation("store", store.id, field, lang, translated, hash);
       }
     }
   } catch (err) {
@@ -169,28 +199,45 @@ export async function translateOfferOnSave(offer) {
   try {
     const { getStoreBySlug } = require("@/server/repositories/stores-repository");
     const store = await getStoreBySlug(offer.storeSlug);
-    if (!store || !store.countryCode) return;
+    if (!store) return;
 
-    const country = String(store.countryCode).toUpperCase();
-    const lang = COUNTRY_TO_LANG[country];
-    if (!lang || lang === "en") return;
+    const country = String(store.countryCode || "").toUpperCase();
+    const primaryLang = COUNTRY_TO_LANG[country];
 
-    if (offer.title) {
-      const titleHash = getHash(offer.title);
-      const translatedTitle = await callDeepSeek(offer.title, lang);
-      await saveTranslation("offer", offer.id, "title", lang, translatedTitle, titleHash);
+    const targetLangs = new Set();
+    if (primaryLang && primaryLang !== "en") {
+      targetLangs.add(primaryLang);
+    } else {
+      ["de", "nl", "fr", "es", "it", "pl"].forEach((l) => targetLangs.add(l));
     }
 
-    if (offer.description && offer.description !== offer.title) {
-      const descHash = getHash(offer.description);
-      const translatedDesc = await callDeepSeek(offer.description, lang);
-      await saveTranslation("offer", offer.id, "description", lang, translatedDesc, descHash);
-    }
+    for (const lang of targetLangs) {
+      if (offer.title) {
+        const titleHash = getHash(offer.title);
+        const existing = await getExistingTranslation("offer", offer.id, "title", lang);
+        if (!existing?.translated_text || existing.original_hash !== titleHash) {
+          const translatedTitle = await callDeepSeek(offer.title, lang);
+          await saveTranslation("offer", offer.id, "title", lang, translatedTitle, titleHash);
+        }
+      }
 
-    if (offer.ctaLabel) {
-      const ctaHash = getHash(offer.ctaLabel);
-      const translatedCta = await callDeepSeek(offer.ctaLabel, lang);
-      await saveTranslation("offer", offer.id, "ctaLabel", lang, translatedCta, ctaHash);
+      if (offer.description && offer.description !== offer.title) {
+        const descHash = getHash(offer.description);
+        const existing = await getExistingTranslation("offer", offer.id, "description", lang);
+        if (!existing?.translated_text || existing.original_hash !== descHash) {
+          const translatedDesc = await callDeepSeek(offer.description, lang);
+          await saveTranslation("offer", offer.id, "description", lang, translatedDesc, descHash);
+        }
+      }
+
+      if (offer.ctaLabel) {
+        const ctaHash = getHash(offer.ctaLabel);
+        const existing = await getExistingTranslation("offer", offer.id, "ctaLabel", lang);
+        if (!existing?.translated_text || existing.original_hash !== ctaHash) {
+          const translatedCta = await callDeepSeek(offer.ctaLabel, lang);
+          await saveTranslation("offer", offer.id, "ctaLabel", lang, translatedCta, ctaHash);
+        }
+      }
     }
   } catch (err) {
     console.error(`[translateOfferOnSave] Failed to translate offer ${offer.id}:`, err);
