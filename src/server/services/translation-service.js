@@ -28,7 +28,7 @@ async function callDeepSeek(text, langCode) {
     return text;
   }
   const langName = LANGUAGE_NAMES[langCode] || langCode;
-  
+
   let systemInstructions = `You are an expert translator specializing in e-commerce, coupons, and SEO localization.
 Translate the text provided in the user message from English to ${langName}.
 
@@ -404,41 +404,61 @@ export async function getBatchTranslationsWithHashes(entityType, entityIds, lang
   }
 }
 
-// Decorate a single offer with database translation
+// Decorate a single offer with lazy translation
 export async function getTranslatedOffer(offer, lang) {
   if (!offer || !lang || lang === "en") return offer;
   const decorated = await getTranslatedOffers([offer], lang);
   return decorated[0];
 }
 
-// Decorate a list of offers with database translations (ZERO API calls on user read)
+// Decorate a list of offers with lazy batch translation
 export async function getTranslatedOffers(offers, lang) {
   if (!offers || !offers.length || !lang || lang === "en") return offers;
 
   const offerIds = offers.map((o) => String(o.id));
   const translationsMap = await getBatchTranslationsWithHashes("offer", offerIds, lang);
 
-  return offers.map((offer) => {
-    const result = { ...offer };
-    const offerId = String(offer.id);
-    const offerTranslations = translationsMap[offerId] || {};
+  const decorated = await Promise.all(
+    offers.map(async (offer) => {
+      const result = { ...offer };
+      const offerId = String(offer.id);
+      const offerTranslations = translationsMap[offerId] || {};
 
-    if (offer.title && offerTranslations.title?.text) {
-      result.title = offerTranslations.title.text;
-    }
-    if (offer.description) {
-      if (offerTranslations.description?.text) {
-        result.description = offerTranslations.description.text;
-      } else if (offer.description === offer.title && offerTranslations.title?.text) {
-        result.description = offerTranslations.title.text;
+      const translateKey = async (fieldKey, originalText) => {
+        if (!originalText || !originalText.trim()) return originalText;
+        const currentHash = getHash(originalText);
+        const dbEntry = offerTranslations[fieldKey];
+
+        if (dbEntry && dbEntry.text && dbEntry.text.trim() && dbEntry.hash === currentHash) {
+          return dbEntry.text;
+        }
+
+        callDeepSeek(originalText, lang)
+          .then((translatedText) =>
+            saveTranslation("offer", offerId, fieldKey, lang, translatedText, currentHash)
+          )
+          .catch((err) =>
+            console.error(`[getTranslatedOffers] Background translation failed for ${fieldKey} in ${lang}:`, err)
+          );
+
+        return originalText;
+      };
+
+      if (offer.title) result.title = await translateKey("title", offer.title);
+      if (offer.description && offer.description !== offer.title) {
+        result.description = await translateKey("description", offer.description);
+      } else if (offer.description) {
+        result.description = result.title;
       }
-    }
-    if (offer.ctaLabel && offerTranslations.ctaLabel?.text) {
-      result.ctaLabel = offerTranslations.ctaLabel.text;
-    }
+      if (offer.ctaLabel) {
+        result.ctaLabel = await translateKey("ctaLabel", offer.ctaLabel);
+      }
 
-    return result;
-  });
+      return result;
+    })
+  );
+
+  return decorated;
 }
 
 // Decorate a single category
@@ -459,19 +479,89 @@ export async function getTranslatedCategories(categories, lang) {
   });
 }
 
-// Decorate settings (ZERO API calls on user read)
+// Decorate settings
 export async function getTranslatedSettings(settings, lang) {
   if (!settings || lang === "en") return settings;
-  const translations = await getEntityTranslations("settings", "global", lang);
-  return applyTranslations(settings, translations);
+
+  const translations = await getEntityTranslationsWithHashes("settings", "global", lang);
+
+  // For hero text fields: verify hash. If changed, fire background re-translation.
+  const heroTextFields = ["eyebrow", "titleLineOne", "titleAccent", "titleLineTwo", "description", "searchPlaceholder", "searchButtonLabel", "memberCountText"];
+  const hero = settings.homepage?.hero || {};
+
+  for (const key of heroTextFields) {
+    const originalText = hero[key];
+    if (!originalText || !originalText.trim()) continue;
+
+    const fieldKey = `homepage.hero.${key}`;
+    const currentHash = getHash(originalText);
+    const dbEntry = translations[fieldKey];
+
+    if (!dbEntry || !dbEntry.text || !dbEntry.text.trim() || dbEntry.hash !== currentHash) {
+      // Text changed or never translated — fire background re-translation
+      callDeepSeek(originalText, lang)
+        .then((translatedText) =>
+          saveTranslation("settings", "global", fieldKey, lang, translatedText, currentHash)
+        )
+        .catch((err) =>
+          console.error(`[getTranslatedSettings] Background re-translation failed for ${fieldKey} in ${lang}:`, err)
+        );
+    }
+  }
+
+  // Build a plain translations map (text only) for applyTranslations
+  const plainTranslations = {};
+  for (const [key, entry] of Object.entries(translations)) {
+    if (entry && entry.text) plainTranslations[key] = entry.text;
+  }
+
+  return applyTranslations(settings, plainTranslations);
 }
 
-// Decorate a single event (ZERO API calls on user read)
+
+// Decorate a single event
 export async function getTranslatedEvent(event, lang) {
   if (!event || !lang || lang === "en") return event;
+
   const eventId = event.id || event.slug;
-  const translations = await getEntityTranslations("event", eventId, lang);
-  return applyTranslations(event, translations);
+  const result = { ...event };
+
+  try {
+    const translations = await getEntityTranslationsWithHashes("event", eventId, lang);
+
+    const translateKey = async (fieldKey, originalText) => {
+      if (!originalText || !originalText.trim()) return originalText;
+
+      const currentHash = getHash(originalText);
+      const dbEntry = translations[fieldKey];
+
+      if (dbEntry && dbEntry.text && dbEntry.text.trim() && dbEntry.hash === currentHash) {
+        return dbEntry.text;
+      }
+
+      callDeepSeek(originalText, lang)
+        .then((translatedText) =>
+          saveTranslation("event", eventId, fieldKey, lang, translatedText, currentHash)
+        )
+        .catch((err) =>
+          console.error(`[getTranslatedEvent] Background translation failed for ${fieldKey} in ${lang}:`, err)
+        );
+
+      return originalText;
+    };
+
+    if (event.name) result.name = await translateKey("name", event.name);
+    if (event.tag) result.tag = await translateKey("tag", event.tag);
+    if (event.shortDescription) result.shortDescription = await translateKey("shortDescription", event.shortDescription);
+    if (event.longDescription) result.longDescription = await translateKey("longDescription", event.longDescription);
+    if (event.seoTitle) result.seoTitle = await translateKey("seoTitle", event.seoTitle);
+    if (event.seoDescription) result.seoDescription = await translateKey("seoDescription", event.seoDescription);
+
+  } catch (err) {
+    console.error(`[getTranslatedEvent] Error translating event ${eventId} in ${lang}:`, err);
+  }
+
+  return result;
 }
 
 // Decorate a list of events
@@ -1020,12 +1110,25 @@ export async function getTranslatedFooter(lang) {
   }
 
   try {
-    const translations = await getEntityTranslations("settings", "footer", lang);
+    const translations = await getEntityTranslationsWithHashes("settings", "footer", lang);
     const result = { ...DEFAULT_FOOTER, ...(FALLBACK_FOOTERS[lang] || {}) };
 
+    // Use DB translation if it exists and hash matches, otherwise queue background DeepSeek translation
     for (const key of Object.keys(DEFAULT_FOOTER)) {
-      if (translations[key] && translations[key].trim()) {
-        result[key] = translations[key];
+      const originalText = DEFAULT_FOOTER[key];
+      const currentHash = getHash(originalText);
+      const dbEntry = translations[key];
+
+      if (dbEntry && dbEntry.text && dbEntry.text.trim() && dbEntry.hash === currentHash) {
+        result[key] = dbEntry.text;
+      } else {
+        callDeepSeek(originalText, lang)
+          .then((translatedText) =>
+            saveTranslation("settings", "footer", key, lang, translatedText, currentHash)
+          )
+          .catch((err) =>
+            console.error(`[getTranslatedFooter] Background translation failed for ${key} in ${lang}:`, err)
+          );
       }
     }
 
@@ -1246,12 +1349,25 @@ export async function getTranslatedNavbar(lang) {
   }
 
   try {
-    const translations = await getEntityTranslations("settings", "navbar", lang);
+    const translations = await getEntityTranslationsWithHashes("settings", "navbar", lang);
     const result = { ...DEFAULT_NAVBAR, ...(FALLBACK_NAVBARS[lang] || {}) };
 
+    // Use DB translation if it exists and hash matches, otherwise queue background DeepSeek translation
     for (const key of Object.keys(DEFAULT_NAVBAR)) {
-      if (translations[key] && translations[key].trim()) {
-        result[key] = translations[key];
+      const originalText = DEFAULT_NAVBAR[key];
+      const currentHash = getHash(originalText);
+      const dbEntry = translations[key];
+
+      if (dbEntry && dbEntry.text && dbEntry.text.trim() && dbEntry.hash === currentHash) {
+        result[key] = dbEntry.text;
+      } else {
+        callDeepSeek(originalText, lang)
+          .then((translatedText) =>
+            saveTranslation("settings", "navbar", key, lang, translatedText, currentHash)
+          )
+          .catch((err) =>
+            console.error(`[getTranslatedNavbar] Background translation failed for ${key} in ${lang}:`, err)
+          );
       }
     }
 
@@ -1377,19 +1493,38 @@ const DEFAULT_ABOUT = {
  * We translate the ACTUAL admin content, so changes in admin panel are always reflected.
  */
 export async function getTranslatedAbout(lang, sourceAboutData = {}) {
-  if (!lang || lang === "en") return null;
+  if (!lang || lang === "en") return null; // null = use raw sourceAboutData in component
 
+  // Build effective source: admin content takes priority over code defaults
   const source = { ...DEFAULT_ABOUT, ...sourceAboutData };
 
   try {
-    const translations = await getEntityTranslations("settings", "about", lang);
+    const translations = await getEntityTranslationsWithHashes("settings", "about", lang);
     const result = {};
 
     for (const key of Object.keys(DEFAULT_ABOUT)) {
       const originalText = source[key];
       if (!originalText || typeof originalText !== "string" || !originalText.trim()) continue;
 
-      result[key] = translations[key] && translations[key].trim() ? translations[key] : originalText;
+      const currentHash = getHash(originalText);
+      const dbEntry = translations[key];
+
+      if (dbEntry && dbEntry.text && dbEntry.text.trim() && dbEntry.hash === currentHash) {
+        // DB translation exists and source text hasn't changed — use it
+        result[key] = dbEntry.text;
+      } else {
+        // Missing or stale — serve source text now, queue background update
+        result[key] = originalText;
+        const capturedText = originalText;
+        const capturedHash = currentHash;
+        callDeepSeek(capturedText, lang)
+          .then((translatedText) =>
+            saveTranslation("settings", "about", key, lang, translatedText, capturedHash)
+          )
+          .catch((err) =>
+            console.error(`[getTranslatedAbout] Background translation failed for ${key} in ${lang}:`, err)
+          );
+      }
     }
 
     return result;
@@ -1446,72 +1581,72 @@ export async function getTranslatedStoreDetail(detail, lang) {
   result.singleStore = { ...store };
 
   try {
-    const [storeTranslations, storeDetailTranslations] = await Promise.all([
-      getEntityTranslations("store", store.id, lang),
-      getEntityTranslations("store_detail", store.id, lang),
-    ]);
+    const translations = await getEntityTranslationsWithHashes("store_detail", store.id, lang);
 
-    const translations = { ...storeTranslations, ...storeDetailTranslations };
-
-    const translateKey = (keys, originalText) => {
+    // Helper to translate a key
+    const translateKey = async (fieldKey, originalText) => {
       if (!originalText || !originalText.trim()) return originalText;
-      const keyList = Array.isArray(keys) ? keys : [keys];
-      for (const key of keyList) {
-        if (translations[key] && translations[key].trim()) {
-          return translations[key];
-        }
+
+      const currentHash = getHash(originalText);
+      const dbEntry = translations[fieldKey];
+      const isFakeTranslation = lang !== "en" && dbEntry && dbEntry.text && dbEntry.text.trim() === originalText.trim() && originalText.trim().length > 10;
+
+      if (dbEntry && dbEntry.text && dbEntry.text.trim() && dbEntry.hash === currentHash && !isFakeTranslation) {
+        return dbEntry.text;
       }
+
+      // Stale or missing — return original now, translate in background
+      const capturedText = originalText;
+      const capturedHash = currentHash;
+      callDeepSeek(capturedText, lang)
+        .then((translatedText) =>
+          saveTranslation("store_detail", store.id, fieldKey, lang, translatedText, capturedHash)
+        )
+        .catch((err) =>
+          console.error(`[getTranslatedStoreDetail] Background translation failed for ${fieldKey} in ${lang}:`, err)
+        );
+
       return originalText;
     };
 
     // Translate main fields
     if (store.introTitle) {
-      result.singleStore.introTitle = translateKey(["contentIntroTitle", "introTitle"], store.introTitle);
+      result.singleStore.introTitle = await translateKey("introTitle", store.introTitle);
     }
     if (store.outro) {
-      result.singleStore.outro = translateKey(["contentOutro", "outro"], store.outro);
+      result.singleStore.outro = await translateKey("outro", store.outro);
     }
     if (store.description) {
-      result.singleStore.description = translateKey(["description"], store.description);
+      result.singleStore.description = await translateKey("description", store.description);
     }
     if (detail.aboutText) {
-      result.aboutText = translateKey(["aboutText"], detail.aboutText);
+      result.aboutText = await translateKey("aboutText", detail.aboutText);
     }
 
-    // Translate introParagraphs array (Store Guide)
+    // Translate introParagraphs array
     if (store.introParagraphs && store.introParagraphs.length) {
-      result.singleStore.introParagraphs = store.introParagraphs.map((para, idx) => {
-        const primaryKey = `contentIntroParagraph${idx + 1}`;
-        const fallbackKey = `introParagraph_${idx}`;
-        return translateKey([primaryKey, fallbackKey], para);
-      });
+      result.singleStore.introParagraphs = await Promise.all(
+        store.introParagraphs.map((para, idx) => translateKey(`introParagraph_${idx}`, para))
+      );
     }
 
     // Translate whyItems array
     if (store.whyItems && store.whyItems.length) {
-      if (translations.contentWhyItemsText) {
-        const lines = translations.contentWhyItemsText.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-        if (lines.length) {
-          result.singleStore.whyItems = lines;
-        }
-      } else {
-        result.singleStore.whyItems = store.whyItems.map((item, idx) =>
-          translateKey(`whyItem_${idx}`, item)
-        );
-      }
+      result.singleStore.whyItems = await Promise.all(
+        store.whyItems.map((item, idx) => translateKey(`whyItem_${idx}`, item))
+      );
     }
 
     // Translate FAQs questions and answers
     if (detail.faqs && detail.faqs.length) {
-      result.faqs = detail.faqs.map((faq, idx) => {
-        const num = idx + 1;
-        const qKeys = [`faq${num}Question`, `faq_q_${idx}`, `faq_${idx}_question`];
-        const aKeys = [`faq${num}Answer`, `faq_a_${idx}`, `faq_${idx}_answer`];
-        return {
-          question: translateKey(qKeys, faq.question),
-          answer: translateKey(aKeys, faq.answer),
-        };
-      });
+      result.faqs = await Promise.all(
+        detail.faqs.map(async (faq, idx) => {
+          return {
+            question: await translateKey(`faq_q_${idx}`, faq.question),
+            answer: await translateKey(`faq_a_${idx}`, faq.answer),
+          };
+        })
+      );
     }
 
     // 2. Localize UI Tabs
@@ -1519,31 +1654,31 @@ export async function getTranslatedStoreDetail(detail, lang) {
       result.storeTabs = detail.storeTabs.map(tab => {
         if (tab === "Coupons") {
           return lang === "pl" ? "Kupony" :
-                 lang === "de" ? "Gutscheine" :
-                 lang === "fr" ? "Coupons" :
-                 lang === "nl" ? "Kortingscodes" :
-                 lang === "it" ? "Coupon" :
-                 lang === "es" ? "Cupones" :
-                 lang === "sv" ? "Kuponger" :
-                 lang === "ja" ? "クーポン" :
-                 lang === "pt" ? "Cupons" :
-                 lang === "ar" ? "الكوبونات" : tab;
+            lang === "de" ? "Gutscheine" :
+              lang === "fr" ? "Coupons" :
+                lang === "nl" ? "Kortingscodes" :
+                  lang === "it" ? "Coupon" :
+                    lang === "es" ? "Cupones" :
+                      lang === "sv" ? "Kuponger" :
+                        lang === "ja" ? "クーポン" :
+                          lang === "pt" ? "Cupons" :
+                            lang === "ar" ? "الكوبونات" : tab;
         }
         if (tab === "Store Info") {
           return lang === "pl" ? "O sklepie" :
-                 lang === "de" ? "Shop-Infos" :
-                 lang === "fr" ? "Infos Magasin" :
-                 lang === "nl" ? "Winkel Info" :
-                 lang === "it" ? "Info Negozio" :
-                 lang === "es" ? "Info Tienda" :
-                 lang === "sv" ? "Butiksinfo" :
-                 lang === "ja" ? "店舗情報" :
-                 lang === "pt" ? "Informações da loja" :
-                 lang === "ar" ? "معلومات المتجر" : tab;
+            lang === "de" ? "Shop-Infos" :
+              lang === "fr" ? "Infos Magasin" :
+                lang === "nl" ? "Winkel Info" :
+                  lang === "it" ? "Info Negozio" :
+                    lang === "es" ? "Info Tienda" :
+                      lang === "sv" ? "Butiksinfo" :
+                        lang === "ja" ? "店舗情報" :
+                          lang === "pt" ? "Informações da loja" :
+                            lang === "ar" ? "معلومات المتجر" : tab;
         }
         if (tab === "FAQs") {
           return lang === "ar" ? "الأسئلة الشائعة" :
-                 lang === "ja" ? "よくある質問" : "FAQs";
+            lang === "ja" ? "よくある質問" : "FAQs";
         }
         return tab;
       });
@@ -1557,41 +1692,41 @@ export async function getTranslatedStoreDetail(detail, lang) {
           const count = match[2];
           if (type === "All") {
             const allLabel = lang === "pl" ? "Wszystkie" :
-                             lang === "de" ? "Alle" :
-                             lang === "fr" ? "Tout" :
-                             lang === "nl" ? "Alle" :
-                             lang === "it" ? "Tutto" :
-                             lang === "es" ? "Todo" :
-                             lang === "sv" ? "Alla" :
-                             lang === "ja" ? "すべて" :
-                             lang === "pt" ? "Todos" :
-                             lang === "ar" ? "الكل" : "All";
+              lang === "de" ? "Alle" :
+                lang === "fr" ? "Tout" :
+                  lang === "nl" ? "Alle" :
+                    lang === "it" ? "Tutto" :
+                      lang === "es" ? "Todo" :
+                        lang === "sv" ? "Alla" :
+                          lang === "ja" ? "すべて" :
+                            lang === "pt" ? "Todos" :
+                              lang === "ar" ? "الكل" : "All";
             return `${allLabel} (${count})`;
           }
           if (type === "Coupons") {
             const couponsLabel = lang === "pl" ? "Kupony" :
-                                 lang === "de" ? "Gutscheine" :
-                                 lang === "fr" ? "Coupons" :
-                                 lang === "nl" ? "Kortingscodes" :
-                                 lang === "it" ? "Coupon" :
-                                 lang === "es" ? "Cupones" :
-                                 lang === "sv" ? "Kuponger" :
-                                 lang === "ja" ? "クーポン" :
-                                 lang === "pt" ? "Cupons" :
-                                 lang === "ar" ? "الكوبونات" : "Coupons";
+              lang === "de" ? "Gutscheine" :
+                lang === "fr" ? "Coupons" :
+                  lang === "nl" ? "Kortingscodes" :
+                    lang === "it" ? "Coupon" :
+                      lang === "es" ? "Cupones" :
+                        lang === "sv" ? "Kuponger" :
+                          lang === "ja" ? "クーポン" :
+                            lang === "pt" ? "Cupons" :
+                              lang === "ar" ? "الكوبونات" : "Coupons";
             return `${couponsLabel} (${count})`;
           }
           if (type === "Deals") {
             const dealsLabel = lang === "pl" ? "Oferty" :
-                               lang === "de" ? "Angebote" :
-                               lang === "fr" ? "Offres" :
-                               lang === "nl" ? "Deals" :
-                               lang === "it" ? "Offerte" :
-                               lang === "es" ? "Ofertas" :
-                               lang === "sv" ? "Erbjudanden" :
-                               lang === "ja" ? "お得な情報" :
-                               lang === "pt" ? "Ofertas" :
-                               lang === "ar" ? "العروض" : "Deals";
+              lang === "de" ? "Angebote" :
+                lang === "fr" ? "Offres" :
+                  lang === "nl" ? "Deals" :
+                    lang === "it" ? "Offerte" :
+                      lang === "es" ? "Ofertas" :
+                        lang === "sv" ? "Erbjudanden" :
+                          lang === "ja" ? "お得な情報" :
+                            lang === "pt" ? "Ofertas" :
+                              lang === "ar" ? "العروض" : "Deals";
             return `${dealsLabel} (${count})`;
           }
         }
@@ -1776,31 +1911,78 @@ const SHORT_TRANSLATIONS = {
   }
 };
 
-async function getTranslatedUIDictionary(entityId, defaultDict, lang) {
-  if (!lang || lang === "en") return defaultDict;
+export async function getTranslatedTrendingStores(lang) {
+  if (!lang || lang === "en") {
+    return DEFAULT_TRENDING_STORES;
+  }
+
   try {
-    const translations = await getEntityTranslations("settings", entityId, lang);
-    const result = { ...defaultDict };
-    for (const key of Object.keys(defaultDict)) {
+    const translations = await getEntityTranslationsWithHashes("settings", "trending_stores", lang);
+    const result = { ...DEFAULT_TRENDING_STORES };
+
+    for (const key of Object.keys(DEFAULT_TRENDING_STORES)) {
+      const originalText = DEFAULT_TRENDING_STORES[key];
+      const currentHash = getHash(originalText);
+      const dbEntry = translations[key];
+
       if (SHORT_TRANSLATIONS[lang] && SHORT_TRANSLATIONS[lang][key]) {
         result[key] = SHORT_TRANSLATIONS[lang][key];
-      } else if (translations[key] && translations[key].trim()) {
-        result[key] = translations[key];
+        saveTranslation("settings", "trending_stores", key, lang, result[key], currentHash).catch(() => { });
+      } else if (dbEntry && dbEntry.text && dbEntry.text.trim() && dbEntry.hash === currentHash) {
+        result[key] = dbEntry.text;
+      } else {
+        callDeepSeek(originalText, lang)
+          .then((translatedText) =>
+            saveTranslation("settings", "trending_stores", key, lang, translatedText, currentHash)
+          )
+          .catch((err) =>
+            console.error(`[getTranslatedTrendingStores] Background translation failed for ${key} in ${lang}:`, err)
+          );
       }
     }
+
     return result;
   } catch (err) {
-    console.error(`[getTranslatedUIDictionary] Error for ${entityId} in ${lang}:`, err);
-    return defaultDict;
+    console.error(`[getTranslatedTrendingStores] Translation failed for ${lang}:`, err);
+    return DEFAULT_TRENDING_STORES;
   }
 }
 
-export async function getTranslatedTrendingStores(lang) {
-  return getTranslatedUIDictionary("trending_stores", DEFAULT_TRENDING_STORES, lang);
-}
-
 export async function getTranslatedStoreDirectory(lang) {
-  return getTranslatedUIDictionary("store_directory", DEFAULT_STORE_DIRECTORY, lang);
+  if (!lang || lang === "en") {
+    return DEFAULT_STORE_DIRECTORY;
+  }
+
+  try {
+    const translations = await getEntityTranslationsWithHashes("settings", "store_directory", lang);
+    const result = { ...DEFAULT_STORE_DIRECTORY };
+
+    for (const key of Object.keys(DEFAULT_STORE_DIRECTORY)) {
+      const originalText = DEFAULT_STORE_DIRECTORY[key];
+      const currentHash = getHash(originalText);
+      const dbEntry = translations[key];
+
+      if (SHORT_TRANSLATIONS[lang] && SHORT_TRANSLATIONS[lang][key]) {
+        result[key] = SHORT_TRANSLATIONS[lang][key];
+        saveTranslation("settings", "store_directory", key, lang, result[key], currentHash).catch(() => { });
+      } else if (dbEntry && dbEntry.text && dbEntry.text.trim() && dbEntry.hash === currentHash) {
+        result[key] = dbEntry.text;
+      } else {
+        callDeepSeek(originalText, lang)
+          .then((translatedText) =>
+            saveTranslation("settings", "store_directory", key, lang, translatedText, currentHash)
+          )
+          .catch((err) =>
+            console.error(`[getTranslatedStoreDirectory] Background translation failed for ${key} in ${lang}:`, err)
+          );
+      }
+    }
+
+    return result;
+  } catch (err) {
+    console.error(`[getTranslatedStoreDirectory] Translation failed for ${lang}:`, err);
+    return DEFAULT_STORE_DIRECTORY;
+  }
 }
 
 const DEFAULT_HOW_IT_WORKS = {
@@ -1831,7 +2013,40 @@ const DEFAULT_HOW_IT_WORKS = {
 };
 
 export async function getTranslatedHowItWorks(lang) {
-  return getTranslatedUIDictionary("how_it_works", DEFAULT_HOW_IT_WORKS, lang);
+  if (!lang || lang === "en") {
+    return DEFAULT_HOW_IT_WORKS;
+  }
+
+  try {
+    const translations = await getEntityTranslationsWithHashes("settings", "how_it_works", lang);
+    const result = { ...DEFAULT_HOW_IT_WORKS };
+
+    for (const key of Object.keys(DEFAULT_HOW_IT_WORKS)) {
+      const originalText = DEFAULT_HOW_IT_WORKS[key];
+      const currentHash = getHash(originalText);
+      const dbEntry = translations[key];
+
+      if (SHORT_TRANSLATIONS[lang] && SHORT_TRANSLATIONS[lang][key]) {
+        result[key] = SHORT_TRANSLATIONS[lang][key];
+        saveTranslation("settings", "how_it_works", key, lang, result[key], currentHash).catch(() => { });
+      } else if (dbEntry && dbEntry.text && dbEntry.text.trim() && dbEntry.hash === currentHash) {
+        result[key] = dbEntry.text;
+      } else {
+        callDeepSeek(originalText, lang)
+          .then((translatedText) =>
+            saveTranslation("settings", "how_it_works", key, lang, translatedText, currentHash)
+          )
+          .catch((err) =>
+            console.error(`[getTranslatedHowItWorks] Background translation failed for ${key} in ${lang}:`, err)
+          );
+      }
+    }
+
+    return result;
+  } catch (err) {
+    console.error(`[getTranslatedHowItWorks] Translation failed for ${lang}:`, err);
+    return DEFAULT_HOW_IT_WORKS;
+  }
 }
 
 const DEFAULT_FEATURED_COUPONS = {
@@ -1854,7 +2069,40 @@ const DEFAULT_FEATURED_COUPONS = {
 };
 
 export async function getTranslatedFeaturedCoupons(lang) {
-  return getTranslatedUIDictionary("featured_coupons", DEFAULT_FEATURED_COUPONS, lang);
+  if (!lang || lang === "en") {
+    return DEFAULT_FEATURED_COUPONS;
+  }
+
+  try {
+    const translations = await getEntityTranslationsWithHashes("settings", "featured_coupons", lang);
+    const result = { ...DEFAULT_FEATURED_COUPONS };
+
+    for (const key of Object.keys(DEFAULT_FEATURED_COUPONS)) {
+      const originalText = DEFAULT_FEATURED_COUPONS[key];
+      const currentHash = getHash(originalText);
+      const dbEntry = translations[key];
+
+      if (SHORT_TRANSLATIONS[lang] && SHORT_TRANSLATIONS[lang][key]) {
+        result[key] = SHORT_TRANSLATIONS[lang][key];
+        saveTranslation("settings", "featured_coupons", key, lang, result[key], currentHash).catch(() => { });
+      } else if (dbEntry && dbEntry.text && dbEntry.text.trim() && dbEntry.hash === currentHash) {
+        result[key] = dbEntry.text;
+      } else {
+        callDeepSeek(originalText, lang)
+          .then((translatedText) =>
+            saveTranslation("settings", "featured_coupons", key, lang, translatedText, currentHash)
+          )
+          .catch((err) =>
+            console.error(`[getTranslatedFeaturedCoupons] Background translation failed for ${key} in ${lang}:`, err)
+          );
+      }
+    }
+
+    return result;
+  } catch (err) {
+    console.error(`[getTranslatedFeaturedCoupons] Translation failed for ${lang}:`, err);
+    return DEFAULT_FEATURED_COUPONS;
+  }
 }
 
 const DEFAULT_HERO = {
@@ -1868,7 +2116,37 @@ const DEFAULT_HERO = {
 };
 
 export async function getTranslatedHero(lang) {
-  return getTranslatedUIDictionary("hero_stats", DEFAULT_HERO, lang);
+  if (!lang || lang === "en") {
+    return DEFAULT_HERO;
+  }
+
+  try {
+    const translations = await getEntityTranslationsWithHashes("settings", "hero_stats", lang);
+    const result = { ...DEFAULT_HERO };
+
+    for (const key of Object.keys(DEFAULT_HERO)) {
+      const originalText = DEFAULT_HERO[key];
+      const currentHash = getHash(originalText);
+      const dbEntry = translations[key];
+
+      if (dbEntry && dbEntry.text && dbEntry.text.trim() && dbEntry.hash === currentHash) {
+        result[key] = dbEntry.text;
+      } else {
+        callDeepSeek(originalText, lang)
+          .then((translatedText) =>
+            saveTranslation("settings", "hero_stats", key, lang, translatedText, currentHash)
+          )
+          .catch((err) =>
+            console.error(`[getTranslatedHero] Background translation failed for ${key} in ${lang}:`, err)
+          );
+      }
+    }
+
+    return result;
+  } catch (err) {
+    console.error(`[getTranslatedHero] Translation failed for ${lang}:`, err);
+    return DEFAULT_HERO;
+  }
 }
 
 const DEFAULT_MARQUEE = {
@@ -1884,14 +2162,82 @@ const DEFAULT_MARQUEE = {
 };
 
 export async function getTranslatedMarquee(lang) {
-  return getTranslatedUIDictionary("marquee_stats", DEFAULT_MARQUEE, lang);
+  if (!lang || lang === "en") {
+    return DEFAULT_MARQUEE;
+  }
+
+  try {
+    const translations = await getEntityTranslationsWithHashes("settings", "marquee_stats", lang);
+    const result = { ...DEFAULT_MARQUEE };
+
+    for (const key of Object.keys(DEFAULT_MARQUEE)) {
+      const originalText = DEFAULT_MARQUEE[key];
+      const currentHash = getHash(originalText);
+      const dbEntry = translations[key];
+
+      if (dbEntry && dbEntry.text && dbEntry.text.trim() && dbEntry.hash === currentHash) {
+        result[key] = dbEntry.text;
+      } else {
+        callDeepSeek(originalText, lang)
+          .then((translatedText) =>
+            saveTranslation("settings", "marquee_stats", key, lang, translatedText, currentHash)
+          )
+          .catch((err) =>
+            console.error(`[getTranslatedMarquee] Background translation failed for ${key} in ${lang}:`, err)
+          );
+      }
+    }
+
+    return result;
+  } catch (err) {
+    console.error(`[getTranslatedMarquee] Translation failed for ${lang}:`, err);
+    return DEFAULT_MARQUEE;
+  }
 }
 
+// Decorate a single blog post with translation
 export async function getTranslatedBlog(blog, lang) {
   if (!blog || !lang || lang === "en") return blog;
+  const result = { ...blog };
   const blogId = blog.id || blog.slug;
-  const translations = await getEntityTranslations("blog", blogId, lang);
-  return applyTranslations(blog, translations);
+
+  try {
+    const translations = await getEntityTranslationsWithHashes("blog", blogId, lang);
+
+    const translateKey = async (fieldKey, originalText) => {
+      if (!originalText || !originalText.trim()) return originalText;
+
+      const currentHash = getHash(originalText);
+      const dbEntry = translations[fieldKey];
+
+      if (dbEntry && dbEntry.text && dbEntry.text.trim() && dbEntry.hash === currentHash) {
+        return dbEntry.text;
+      }
+
+      // Stale or missing — return original now, translate in background
+      const capturedText = originalText;
+      const capturedHash = currentHash;
+      callDeepSeek(capturedText, lang)
+        .then((translatedText) =>
+          saveTranslation("blog", blogId, fieldKey, lang, translatedText, capturedHash)
+        )
+        .catch((err) =>
+          console.error(`[getTranslatedBlog] Background translation failed for ${fieldKey} in ${lang}:`, err)
+        );
+
+      return originalText;
+    };
+
+    if (blog.title) result.title = await translateKey("title", blog.title);
+    if (blog.excerpt) result.excerpt = await translateKey("excerpt", blog.excerpt);
+    if (blog.content) result.content = await translateKey("content", blog.content);
+    if (blog.authorRole) result.authorRole = await translateKey("authorRole", blog.authorRole);
+
+  } catch (err) {
+    console.error(`[getTranslatedBlog] Error translating blog ${blogId} in ${lang}:`, err);
+  }
+
+  return result;
 }
 
 // Decorate list of blog posts
@@ -1900,6 +2246,7 @@ export async function getTranslatedBlogs(blogs, lang) {
   return Promise.all(blogs.map((blog) => getTranslatedBlog(blog, lang)));
 }
 
+// Blog Static UI Dictionary
 export const DEFAULT_BLOG_UI = {
   ourJournal: "OUR JOURNAL",
   shoppingDecoded: "Shopping, Decoded.",
@@ -1945,6 +2292,67 @@ export const DEFAULT_BLOG_UI = {
   catDeepDives: "Deep Dives",
 };
 
+export async function getTranslatedBlogUI(lang) {
+  if (!lang || lang === "en") {
+    return DEFAULT_BLOG_UI;
+  }
+
+  try {
+    const translations = await getEntityTranslationsWithHashes("settings", "blog_ui", lang);
+    const result = { ...DEFAULT_BLOG_UI };
+
+    for (const key of Object.keys(DEFAULT_BLOG_UI)) {
+      const originalText = DEFAULT_BLOG_UI[key];
+      const currentHash = getHash(originalText);
+      const dbEntry = translations[key];
+
+      if (dbEntry && dbEntry.text && dbEntry.text.trim() && dbEntry.hash === currentHash) {
+        result[key] = dbEntry.text;
+      } else {
+        callDeepSeek(originalText, lang)
+          .then((translatedText) =>
+            saveTranslation("settings", "blog_ui", key, lang, translatedText, currentHash)
+          )
+          .catch((err) =>
+            console.error(`[getTranslatedBlogUI] Background translation failed for ${key} in ${lang}:`, err)
+          );
+      }
+    }
+
+    return result;
+  } catch (err) {
+    console.error(`[getTranslatedBlogUI] Translation failed for ${lang}:`, err);
+    return DEFAULT_BLOG_UI;
+  }
+}
+
+export async function translateBlogUIOnSave(activeLangs) {
+  for (const lang of activeLangs) {
+    if (lang === "en") continue;
+    for (const key of Object.keys(DEFAULT_BLOG_UI)) {
+      const originalText = DEFAULT_BLOG_UI[key];
+      if (!originalText || typeof originalText !== "string" || !originalText.trim()) continue;
+
+      const hash = getHash(originalText);
+
+      const { data: existing } = await supabase
+        .from("translations")
+        .select("translated_text, original_hash")
+        .eq("entity_type", "settings")
+        .eq("entity_id", "blog_ui")
+        .eq("field_key", key)
+        .eq("language", lang)
+        .single();
+
+      if (!existing?.translated_text || existing.original_hash !== hash) {
+        const translated = await callDeepSeek(originalText, lang);
+        await saveTranslation("settings", "blog_ui", key, lang, translated, hash);
+      }
+    }
+  }
+}
+
+// Exclusive Static UI Dictionary
 export const DEFAULT_EXCLUSIVE_UI = {
   exclusivePageBadge: "Exclusive Page",
   verifiedExclusiveTitle: "Verified Exclusive",
@@ -1966,12 +2374,41 @@ export const DEFAULT_EXCLUSIVE_UI = {
   noOffersYetDesc: "New exclusive deals and coupon codes will appear here as soon as matching offers are available.",
 };
 
-export async function getTranslatedBlogUI(lang) {
-  return getTranslatedUIDictionary("blog_ui", DEFAULT_BLOG_UI, lang);
-}
-
 export async function getTranslatedExclusiveUI(lang) {
-  return getTranslatedUIDictionary("exclusive_ui", DEFAULT_EXCLUSIVE_UI, lang);
+  if (!lang || lang === "en") {
+    return DEFAULT_EXCLUSIVE_UI;
+  }
+
+  try {
+    const translations = await getEntityTranslationsWithHashes("settings", "exclusive_ui", lang);
+    const result = { ...DEFAULT_EXCLUSIVE_UI };
+
+    for (const key of Object.keys(DEFAULT_EXCLUSIVE_UI)) {
+      const originalText = DEFAULT_EXCLUSIVE_UI[key];
+      const currentHash = getHash(originalText);
+      const dbEntry = translations[key];
+
+      if (dbEntry && dbEntry.text && dbEntry.text.trim() && dbEntry.hash === currentHash) {
+        result[key] = dbEntry.text;
+      } else {
+        // Fix for "READ" like issues: check if the text is very short/capitalized and handle it
+        let textToTranslate = originalText;
+        // If we are translating extremely short keywords, we can suffix them slightly to avoid LLM instruction confusion
+        callDeepSeek(textToTranslate, lang)
+          .then((translatedText) =>
+            saveTranslation("settings", "exclusive_ui", key, lang, translatedText, currentHash)
+          )
+          .catch((err) =>
+            console.error(`[getTranslatedExclusiveUI] Background translation failed for ${key} in ${lang}:`, err)
+          );
+      }
+    }
+
+    return result;
+  } catch (err) {
+    console.error(`[getTranslatedExclusiveUI] Translation failed for ${lang}:`, err);
+    return DEFAULT_EXCLUSIVE_UI;
+  }
 }
 
 export async function translateExclusiveUIOnSave(activeLangs) {
@@ -2074,6 +2511,7 @@ const DEFAULT_CONTACT = {
 export async function getTranslatedContact(lang, sourceContactData = {}) {
   if (!lang || lang === "en") return null;
 
+  // Merge admin-set contact fields that are translatable
   const translatableAdminFields = {
     formNote: sourceContactData.formNote,
     businessHours: sourceContactData.businessHours,
@@ -2082,13 +2520,30 @@ export async function getTranslatedContact(lang, sourceContactData = {}) {
   const source = { ...DEFAULT_CONTACT, ...Object.fromEntries(Object.entries(translatableAdminFields).filter(([, v]) => v)) };
 
   try {
-    const translations = await getEntityTranslations("settings", "contact", lang);
+    const translations = await getEntityTranslationsWithHashes("settings", "contact", lang);
     const result = {};
 
     for (const key of Object.keys(source)) {
       const originalText = source[key];
       if (!originalText || typeof originalText !== "string" || !originalText.trim()) continue;
-      result[key] = translations[key] && translations[key].trim() ? translations[key] : originalText;
+
+      const currentHash = getHash(originalText);
+      const dbEntry = translations[key];
+
+      if (dbEntry && dbEntry.text && dbEntry.text.trim() && dbEntry.hash === currentHash) {
+        result[key] = dbEntry.text;
+      } else {
+        result[key] = originalText;
+        const capturedText = originalText;
+        const capturedHash = currentHash;
+        callDeepSeek(capturedText, lang)
+          .then((translatedText) =>
+            saveTranslation("settings", "contact", key, lang, translatedText, capturedHash)
+          )
+          .catch((err) =>
+            console.error(`[getTranslatedContact] Background translation failed for ${key} in ${lang}:`, err)
+          );
+      }
     }
 
     return result;
@@ -2191,19 +2646,41 @@ function buildPrivacySource(sourcePolicyData = {}) {
   return { ...DEFAULT_PRIVACY, ...adminOverrides };
 }
 
+/**
+ * Returns translated strings for the Privacy Policy page.
+ * Admin-set privacyPolicy fields override code defaults before translation.
+ * Cache miss/stale: serves source text, queues background DeepSeek update.
+ */
 export async function getTranslatedPrivacy(lang, sourcePolicyData = {}) {
   if (!lang || lang === "en") return null;
 
   const source = buildPrivacySource(sourcePolicyData);
 
   try {
-    const translations = await getEntityTranslations("settings", "privacy", lang);
+    const translations = await getEntityTranslationsWithHashes("settings", "privacy", lang);
     const result = {};
 
     for (const key of Object.keys(source)) {
       const originalText = source[key];
       if (!originalText || typeof originalText !== "string" || !originalText.trim()) continue;
-      result[key] = translations[key] && translations[key].trim() ? translations[key] : originalText;
+
+      const currentHash = getHash(originalText);
+      const dbEntry = translations[key];
+
+      if (dbEntry && dbEntry.text && dbEntry.text.trim() && dbEntry.hash === currentHash) {
+        result[key] = dbEntry.text;
+      } else {
+        result[key] = originalText;
+        const capturedText = originalText;
+        const capturedHash = currentHash;
+        callDeepSeek(capturedText, lang)
+          .then((translatedText) =>
+            saveTranslation("settings", "privacy", key, lang, translatedText, capturedHash)
+          )
+          .catch((err) =>
+            console.error(`[getTranslatedPrivacy] Background translation failed for ${key} in ${lang}:`, err)
+          );
+      }
     }
 
     return result;
@@ -2213,6 +2690,10 @@ export async function getTranslatedPrivacy(lang, sourcePolicyData = {}) {
   }
 }
 
+/**
+ * Called on admin company settings save.
+ * Translates all Privacy Policy fields for all active languages.
+ */
 export async function translatePrivacyOnSave(activeLangs, sourcePolicyData = {}) {
   const source = buildPrivacySource(sourcePolicyData);
 
@@ -2273,19 +2754,40 @@ function buildTermsSource(sourceTermsData = {}) {
   return { ...DEFAULT_TERMS, ...adminOverrides };
 }
 
+/**
+ * Returns translated strings for the Terms of Service page.
+ * Cache miss/stale: serves source text, queues background DeepSeek update.
+ */
 export async function getTranslatedTerms(lang, sourceTermsData = {}) {
   if (!lang || lang === "en") return null;
 
   const source = buildTermsSource(sourceTermsData);
 
   try {
-    const translations = await getEntityTranslations("settings", "terms", lang);
+    const translations = await getEntityTranslationsWithHashes("settings", "terms", lang);
     const result = {};
 
     for (const key of Object.keys(source)) {
       const originalText = source[key];
       if (!originalText || typeof originalText !== "string" || !originalText.trim()) continue;
-      result[key] = translations[key] && translations[key].trim() ? translations[key] : originalText;
+
+      const currentHash = getHash(originalText);
+      const dbEntry = translations[key];
+
+      if (dbEntry && dbEntry.text && dbEntry.text.trim() && dbEntry.hash === currentHash) {
+        result[key] = dbEntry.text;
+      } else {
+        result[key] = originalText;
+        const capturedText = originalText;
+        const capturedHash = currentHash;
+        callDeepSeek(capturedText, lang)
+          .then((translatedText) =>
+            saveTranslation("settings", "terms", key, lang, translatedText, capturedHash)
+          )
+          .catch((err) =>
+            console.error(`[getTranslatedTerms] Background translation failed for ${key} in ${lang}:`, err)
+          );
+      }
     }
 
     return result;
@@ -2295,6 +2797,10 @@ export async function getTranslatedTerms(lang, sourceTermsData = {}) {
   }
 }
 
+/**
+ * Called on admin company settings save.
+ * Translates all Terms of Service fields for all active languages.
+ */
 export async function translateTermsOnSave(activeLangs, sourceTermsData = {}) {
   const source = buildTermsSource(sourceTermsData);
 
@@ -2349,6 +2855,39 @@ export const DEFAULT_EVENT_UI = {
   defaultLongDesc: "Fresh {eventName} deals and coupon codes will appear here as soon as matching offers are available.",
 };
 
+/**
+ * Returns translated static UI strings for the Event Spotlight detail page.
+ */
 export async function getTranslatedEventUI(lang) {
-  return getTranslatedUIDictionary("event_ui", DEFAULT_EVENT_UI, lang);
+  if (!lang || lang === "en") {
+    return DEFAULT_EVENT_UI;
+  }
+
+  try {
+    const translations = await getEntityTranslationsWithHashes("settings", "event_ui", lang);
+    const result = { ...DEFAULT_EVENT_UI };
+
+    for (const key of Object.keys(DEFAULT_EVENT_UI)) {
+      const originalText = DEFAULT_EVENT_UI[key];
+      const currentHash = getHash(originalText);
+      const dbEntry = translations[key];
+
+      if (dbEntry && dbEntry.text && dbEntry.text.trim() && dbEntry.hash === currentHash) {
+        result[key] = dbEntry.text;
+      } else {
+        callDeepSeek(originalText, lang)
+          .then((translatedText) =>
+            saveTranslation("settings", "event_ui", key, lang, translatedText, currentHash)
+          )
+          .catch((err) =>
+            console.error(`[getTranslatedEventUI] Background translation failed for ${key} in ${lang}:`, err)
+          );
+      }
+    }
+
+    return result;
+  } catch (err) {
+    console.error(`[getTranslatedEventUI] Translation failed for ${lang}:`, err);
+    return DEFAULT_EVENT_UI;
+  }
 }

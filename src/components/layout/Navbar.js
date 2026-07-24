@@ -298,10 +298,7 @@ export default function Navbar({
     async function loadBlogs() {
       try {
         const res = await fetch("/api/blog");
-        if (!res.ok) return;
-        const text = await res.text();
-        if (!text) return;
-        const json = JSON.parse(text);
+        const json = await res.json();
         setBlogPosts(json.data || []);
       } catch (e) {
         console.error("Failed to load blog posts in Navbar:", e);
@@ -391,11 +388,11 @@ export default function Navbar({
     document.cookie = `${COUNTRY_COOKIE_KEY}=${encodeURIComponent(normalizedCountryCode)}; path=/; max-age=31536000; samesite=lax`;
     const nextPath = buildCountryPath("/", normalizedCountryCode);
     const search = typeof window !== "undefined" ? window.location.search : "";
-    
+
     // Close mobile menu drawers automatically on country selection
     setMobileOpen(false);
     setMobileCountryDropdownOpen(false);
-    
+
     router.replace(`${nextPath}${search}`);
     router.refresh();
   }
@@ -714,7 +711,7 @@ export default function Navbar({
                         <div
                           className="w-[200px] overflow-hidden rounded-[16px] border border-white/10 bg-[#0c0c0c] p-2 shadow-[0_20px_50px_rgba(0,0,0,0.85)]"
                         >
-                           <div className="grid gap-1">
+                          <div className="grid gap-1">
                             {events.map((event) => {
                               const isDisabled = event.status === "disabled";
                               if (isDisabled) {
@@ -1045,7 +1042,7 @@ export default function Navbar({
                             {visibleExclusive.length ? (
                               visibleExclusive.map((offer) => {
                                 const store = storeMap.get(offer.storeSlug);
-                                const href = store 
+                                const href = store
                                   ? getStoreHref(store, selectedCountryCode)
                                   : buildCountryPath("/stores", selectedCountryCode);
                                 return (
@@ -1544,8 +1541,8 @@ export default function Navbar({
                             <Link
                               href={`${buildCountryPath("/stores", selectedCountryCode)}?category=${category.slug}`}
                               onClick={() => {
-                                      setMobileOpen(false);
-                                      setMobileDealsOpen(false);
+                                setMobileOpen(false);
+                                setMobileDealsOpen(false);
                               }}
                               className="text-[0.98rem] font-semibold text-[var(--accent)]"
                             >
