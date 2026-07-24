@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { connectToDatabase } from "@/lib/mongodb";
 import Offer from "@/server/models/Offer";
 
-const USE_MONGODB = process.env.USE_MONGODB === "true";
+const USE_MONGODB = process.env.USE_MONGODB === "true" || (process.env.USE_MONGODB !== "false" && Boolean(process.env.MONGODB_URI));
 
 function mapDbOfferToJs(dbOffer) {
   if (!dbOffer) return null;

@@ -18,6 +18,10 @@ const LANGUAGE_NAMES = {
   sv: "Swedish",
 };
 
+function isMongoEnabled() {
+  return process.env.USE_MONGODB === "true" || (process.env.USE_MONGODB !== "false" && Boolean(process.env.MONGODB_URI));
+}
+
 function getHash(text) {
   return crypto.createHash("md5").update(String(text).trim()).digest("hex");
 }
@@ -222,7 +226,7 @@ export async function getBatchTranslations(entityType, entityIds, language) {
   const cleanIds = entityIds.filter(Boolean).map(String);
   if (!cleanIds.length) return {};
 
-  if (process.env.USE_MONGODB === "true") {
+  if (isMongoEnabled()) {
     try {
       const { connectToDatabase } = require("@/lib/mongodb");
       const Translation = require("@/server/models/Translation").default;
@@ -284,7 +288,7 @@ export async function getBatchTranslations(entityType, entityIds, language) {
 export async function getEntityTranslations(entityType, entityId, language) {
   if (language === "en" || !entityId) return {};
 
-  if (process.env.USE_MONGODB === "true") {
+  if (isMongoEnabled()) {
     try {
       const { connectToDatabase } = require("@/lib/mongodb");
       const Translation = require("@/server/models/Translation").default;
@@ -325,7 +329,7 @@ export async function getEntityTranslations(entityType, entityId, language) {
 export async function getEntityTranslationsWithHashes(entityType, entityId, language) {
   if (language === "en" || !entityId) return {};
 
-  if (process.env.USE_MONGODB === "true") {
+  if (isMongoEnabled()) {
     try {
       const { connectToDatabase } = require("@/lib/mongodb");
       const Translation = require("@/server/models/Translation").default;
@@ -417,7 +421,7 @@ export async function getBatchTranslationsWithHashes(entityType, entityIds, lang
   const cleanIds = entityIds.filter(Boolean).map(String);
   if (!cleanIds.length) return {};
 
-  if (process.env.USE_MONGODB === "true") {
+  if (isMongoEnabled()) {
     try {
       const { connectToDatabase } = require("@/lib/mongodb");
       const Translation = require("@/server/models/Translation").default;

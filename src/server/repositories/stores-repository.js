@@ -5,7 +5,7 @@ import { normalizeCountryCode } from "@/lib/countries";
 import { connectToDatabase } from "@/lib/mongodb";
 import Store from "@/server/models/Store";
 
-const USE_MONGODB = process.env.USE_MONGODB === "true";
+const USE_MONGODB = process.env.USE_MONGODB === "true" || (process.env.USE_MONGODB !== "false" && Boolean(process.env.MONGODB_URI));
 
 function mapDbStoreToJs(dbStore) {
   if (!dbStore) return null;
