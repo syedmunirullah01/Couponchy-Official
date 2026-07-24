@@ -40,7 +40,9 @@ export async function middleware(req) {
   // 1. Always bypass API routes so NextAuth & API handlers receive pure JSON
   if (cleanPath.startsWith("/api")) {
     if (pathname !== cleanPath) {
-      return NextResponse.rewrite(new URL(cleanPath + search, req.url));
+      const rewriteUrl = req.nextUrl.clone();
+      rewriteUrl.pathname = cleanPath;
+      return NextResponse.rewrite(rewriteUrl);
     }
     return NextResponse.next();
   }
@@ -64,7 +66,8 @@ export async function middleware(req) {
     });
 
     if (!token) {
-      const redirectUrl = new URL("/login", req.url);
+      const redirectUrl = req.nextUrl.clone();
+      redirectUrl.pathname = "/login";
       return NextResponse.redirect(redirectUrl);
     }
 
@@ -75,7 +78,8 @@ export async function middleware(req) {
     );
 
     if (!canAccessPermission(permissions, permission)) {
-      const redirectUrl = new URL("/admin", req.url);
+      const redirectUrl = req.nextUrl.clone();
+      redirectUrl.pathname = "/admin";
       redirectUrl.searchParams.set("denied", permission);
       return NextResponse.redirect(redirectUrl);
     }
@@ -88,7 +92,7 @@ export async function middleware(req) {
   }
 
   // ================= COUNTRY ROUTING =================
-  const originalPathname = new URL(req.url).pathname;
+  const originalPathname = req.nextUrl.pathname;
   const originalCountryCode = getCountryCodeFromPathname(originalPathname);
 
   if (originalCountryCode && !getCountryCodeFromPathname(pathname)) {
@@ -107,7 +111,8 @@ export async function middleware(req) {
     const requestHeaders = new Headers(req.headers);
     requestHeaders.set(COUNTRY_HEADER_KEY, prefixedCountryCode);
 
-    const rewriteUrl = new URL(cleanPath + search, req.url);
+    const rewriteUrl = req.nextUrl.clone();
+    rewriteUrl.pathname = cleanPath;
 
     const response = NextResponse.rewrite(rewriteUrl, {
       request: {
@@ -147,7 +152,8 @@ export async function middleware(req) {
     return response;
   }
 
-  const redirectUrl = new URL(buildCountryPath(pathname, cookieCountryCode) + search, req.url);
+  const redirectUrl = req.nextUrl.clone();
+  redirectUrl.pathname = buildCountryPath(pathname, cookieCountryCode);
   return NextResponse.redirect(redirectUrl);
 }
 
