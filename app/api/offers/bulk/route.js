@@ -116,6 +116,8 @@ export async function POST(request) {
       const status = normalizeStatus(row.status);
       const source = normalizeCsvValue(row.source) || "Manual";
       const affiliateLink = normalizeCsvValue(row.affiliateLink);
+      const positionRaw = row.position ?? row["Position/Sort Order"] ?? row["Position"] ?? row["Sort Order"] ?? 0;
+      const position = Number(positionRaw) || 0;
 
       if (storeSlug) {
         fallbackStoreSlug = storeSlug;
@@ -181,6 +183,7 @@ export async function POST(request) {
         expiryDate,
         status,
         code,
+        position,
         affiliateLink: resolvedAffiliateLink,
       });
     });

@@ -224,14 +224,31 @@ export async function updateStore(slug, payload) {
   if (error) {
     throw error;
   }
+
+  // Keep store_name in offers table in sync if store name changed
+  if (merged.name !== currentStore.name) {
+    await supabase
+      .from("offers")
+      .update({ store_name: merged.name })
+      .eq("store_slug", merged.slug);
+  }
+
   return mapDbStoreToJs(data);
 }
 
 export async function deleteStore(slug) {
+  const normalizedSlug = slug.trim().toLowerCase();
+
+  // Delete associated offers first to prevent foreign key constraint violation
+  await supabase
+    .from("offers")
+    .delete()
+    .eq("store_slug", normalizedSlug);
+
   const { error } = await supabase
     .from("stores")
     .delete()
-    .eq("slug", slug);
+    .eq("slug", normalizedSlug);
 
   return !error;
 }

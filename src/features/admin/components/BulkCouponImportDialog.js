@@ -168,6 +168,8 @@ async function validateCsv(file, fileContent, storesBySlug, existingDuplicateKey
     const status = normalizeStatus(row["Status"]);
     const source = "Manual";
     const affiliateLink = normalizeCsvValue(row["Affiliate Link"]);
+    const positionRaw = row["Position/Sort Order"] ?? row["Position"] ?? row["Sort Order"] ?? row["position"] ?? row["sort"] ?? 0;
+    const position = Number(positionRaw) || 0;
 
     if (storeSlug) {
       fallbackStoreSlug = storeSlug;
@@ -235,6 +237,7 @@ async function validateCsv(file, fileContent, storesBySlug, existingDuplicateKey
       expiryDate,
       status,
       source,
+      position,
       affiliateLink: affiliateLink || store.affiliateLink || "",
     });
   });
