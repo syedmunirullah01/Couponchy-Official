@@ -408,36 +408,36 @@ export async function getHomePageData(countryCode) {
       trustStatus: store.trustStatus,
       offersCount: store.offersCount || 0,
     })),
-    featuredCouponsTitle: homepageSections.featuredCoupons.title,
-    featuredCoupons: featuredOffersSource.slice(0, homepageSections.featuredCoupons.limit).map((offer, index) => {
-      const store = storeMap.get(offer.storeSlug);
+    featuredCouponsTitle: homepageSections?.featuredCoupons?.title || "Featured Coupons",
+    featuredCoupons: featuredOffersSource.slice(0, homepageSections?.featuredCoupons?.limit || 4).filter(Boolean).map((offer, index) => {
+      const store = offer?.storeSlug ? storeMap.get(offer.storeSlug) : null;
       return {
-        brand: offer.storeName,
-        tag: offer.status,
-        title: offer.title,
-        value: offer.type === "Deal" ? "GET DEAL" : offer.code || "SAVE NOW",
-        description: offer.description,
-        expiryDate: offer.expiryDate,
-        affiliateLink: offer.affiliateLink,
-        storeSlug: offer.storeSlug,
+        brand: offer?.storeName || "",
+        tag: offer?.status || "",
+        title: offer?.title || "",
+        value: offer?.type === "Deal" ? "GET DEAL" : offer?.code || "SAVE NOW",
+        description: offer?.description || "",
+        expiryDate: offer?.expiryDate || "",
+        affiliateLink: offer?.affiliateLink || "",
+        storeSlug: offer?.storeSlug || "",
         highlight: index === 1,
         logoImage: store?.logoImage || null,
         logoText: store?.logoText || "",
       };
     }),
-    featuredProductsTitle: homepageSections.featuredProducts.title,
-    featuredProducts: featuredProductsSource.slice(0, Math.max(10, homepageSections.featuredProducts.limit || 10)).map((product) => ({
-      id: product.id,
-      title: product.title,
-      description: product.description,
-      image: product.image,
-      price: product.price,
-      originalPrice: product.originalPrice,
-      currency: product.currency,
-      ctaLabel: product.ctaLabel,
-      productUrl: product.productUrl,
-      storeName: product.storeName,
-      status: product.status,
+    featuredProductsTitle: homepageSections?.featuredProducts?.title || "Featured Products",
+    featuredProducts: featuredProductsSource.slice(0, Math.max(10, homepageSections?.featuredProducts?.limit || 10)).filter(Boolean).map((product) => ({
+      id: product?.id || "",
+      title: product?.title || "",
+      description: product?.description || "",
+      image: product?.image || "",
+      price: product?.price || "",
+      originalPrice: product?.originalPrice || "",
+      currency: product?.currency || "",
+      ctaLabel: product?.ctaLabel || "",
+      productUrl: product?.productUrl || "",
+      storeName: product?.storeName || "",
+      status: product?.status || "",
     })),
     allCategories: categories.map((cat) => ({
       id: cat.id,
@@ -843,11 +843,14 @@ export function generateLocalizedStoreMetadata(store, offers, lang, countryCode)
 
   const highestOffer = extractHighestOffer(offers, countryCode, lang);
 
-  const useGeneratedTitle = shouldRegenerateMetaTitle(store.metaTitle, brandName);
-  const useGeneratedDesc = shouldRegenerateMetaDescription(store.metaDescription, brandName);
+  const metaTitleStr = String(store?.metaTitle || "").trim();
+  const metaDescStr = String(store?.metaDescription || "").trim();
 
-  const rawTitle = useGeneratedTitle ? generateLocalizedTitle(brandName, highestOffer, lang, counts) : store.metaTitle.trim();
-  const rawDescription = useGeneratedDesc ? generateLocalizedDescription(brandName, highestOffer, counts, lang, store.description) : store.metaDescription.trim();
+  const useGeneratedTitle = shouldRegenerateMetaTitle(metaTitleStr, brandName);
+  const useGeneratedDesc = shouldRegenerateMetaDescription(metaDescStr, brandName);
+
+  const rawTitle = useGeneratedTitle ? generateLocalizedTitle(brandName, highestOffer, lang, counts) : metaTitleStr;
+  const rawDescription = useGeneratedDesc ? generateLocalizedDescription(brandName, highestOffer, counts, lang, store?.description || "") : metaDescStr;
 
   const title = replaceDynamicDatePlaceholders(rawTitle, countryCode, lang, counts, highestOffer);
   const description = replaceDynamicDatePlaceholders(rawDescription, countryCode, lang, counts, highestOffer);
