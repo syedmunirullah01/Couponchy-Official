@@ -477,7 +477,8 @@ export async function getStorePageData(slug, countryCode) {
     (item) => normalizeCountryCode(item.countryCode) === normalizeCountryCode(store.countryCode)
   );
 
-  const lang = COUNTRY_TO_LANG[String(store.countryCode || "").toUpperCase()] || "en";
+  const activeCountry = countryCode || store.countryCode || "US";
+  const lang = COUNTRY_TO_LANG[String(activeCountry).toUpperCase()] || "en";
   const [translatedStore, translatedOffers] = await Promise.all([
     getTranslatedStore(store, lang),
     getTranslatedOffers(offers, lang),
@@ -509,7 +510,8 @@ export async function getProductPageData(storeSlug, productSlug, countryCode) {
     return null;
   }
 
-  const lang = COUNTRY_TO_LANG[String(store.countryCode || "").toUpperCase()] || "en";
+  const activeCountry = countryCode || store.countryCode || "US";
+  const lang = COUNTRY_TO_LANG[String(activeCountry).toUpperCase()] || "en";
   const translatedStore = await getTranslatedStore(store, lang);
 
   return {
