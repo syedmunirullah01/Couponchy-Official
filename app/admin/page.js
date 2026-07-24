@@ -29,13 +29,27 @@ function getFlagEmoji(countryCode) {
 }
 
 export default async function AdminDashboardPage() {
-  const [stores, offers, settings] = await Promise.all([
-    getAllStores(),
-    getAllOffers(),
-    getSettings(),
+  const [storesRaw, offersRaw, settingsRaw] = await Promise.all([
+    getAllStores().catch((err) => {
+      console.error("[AdminDashboardPage] Error fetching stores:", err);
+      return [];
+    }),
+    getAllOffers().catch((err) => {
+      console.error("[AdminDashboardPage] Error fetching offers:", err);
+      return [];
+    }),
+    getSettings().catch((err) => {
+      console.error("[AdminDashboardPage] Error fetching settings:", err);
+      return {};
+    }),
   ]);
-  const couponsCount = offers.filter((offer) => offer.type === "Coupon").length;
-  const dealsCount = offers.filter((offer) => offer.type === "Deal").length;
+
+  const stores = Array.isArray(storesRaw) ? storesRaw.filter(Boolean) : [];
+  const offers = Array.isArray(offersRaw) ? offersRaw.filter(Boolean) : [];
+  const settings = settingsRaw || {};
+
+  const couponsCount = offers.filter((offer) => offer?.type === "Coupon").length;
+  const dealsCount = offers.filter((offer) => offer?.type === "Deal").length;
   
   const networksCount = [
     settings?.affiliate?.cjEnabled,
@@ -43,16 +57,24 @@ export default async function AdminDashboardPage() {
     settings?.affiliate?.impactEnabled
   ].filter(Boolean).length;
 
-  const recentOffers = offers.slice(0, 6).map((offer) => ({
-    title: offer.title,
-    store: offer.storeName,
-    type: offer.type,
-    source: offer.source,
-    addedAt: new Date(offer.createdAt).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-    }),
-  }));
+  const recentOffers = offers.slice(0, 6).map((offer) => {
+    let addedAtStr = "Recently";
+    if (offer?.createdAt) {
+      try {
+        const d = new Date(offer.createdAt);
+        if (!isNaN(d.getTime())) {
+          addedAtStr = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+        }
+      } catch (e) {}
+    }
+    return {
+      title: offer?.title || "Untitled Offer",
+      store: offer?.storeName || "Store",
+      type: offer?.type || "Coupon",
+      source: offer?.source || "Manual",
+      addedAt: addedAtStr,
+    };
+  });
 
   const adminMetrics = [
     { label: "Total Stores", value: String(stores.length).padStart(2, "0"), change: "Registered brands" },
@@ -73,8 +95,17 @@ export default async function AdminDashboardPage() {
 
   const chartData = last7Days.map((date, i) => {
     const dateStr = date.toDateString();
-    const actCoupons = offers.filter((o) => o.type === "Coupon" && new Date(o.createdAt).toDateString() === dateStr).length;
-    const actDeals = offers.filter((o) => o.type === "Deal" && new Date(o.createdAt).toDateString() === dateStr).length;
+    const actCoupons = offers.filter((o) => {
+      if (o?.type !== "Coupon" || !o?.createdAt) return false;
+      const d = new Date(o.createdAt);
+      return !isNaN(d.getTime()) && d.toDateString() === dateStr;
+    }).length;
+    const actDeals = offers.filter((o) => {
+      if (o?.type !== "Deal" || !o?.createdAt) return false;
+      const d = new Date(o.createdAt);
+      return !isNaN(d.getTime()) && d.toDateString() === dateStr;
+    }).length;
+
     return {
       label: date.toLocaleDateString("en-US", { weekday: "short" }),
       labelDay: date.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" }),

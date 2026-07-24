@@ -70,9 +70,9 @@ export async function getAllOffers() {
     await connectToDatabase();
     const docs = await Offer.find({}).sort({ created_at: -1 }).lean();
     const today = new Date().toISOString().slice(0, 10);
-    const jsOffers = docs.map(mapDbOfferToJs);
+    const jsOffers = docs.map(mapDbOfferToJs).filter(Boolean);
     const expiredIds = jsOffers
-      .filter(o => !o.autoRenew && o.expiryDate && o.expiryDate < today)
+      .filter(o => o && !o.autoRenew && o.expiryDate && o.expiryDate < today)
       .map(o => o.id);
 
     if (expiredIds.length > 0) {
@@ -80,7 +80,7 @@ export async function getAllOffers() {
         console.error("[offers-repository] Failed to delete expired Mongo offers:", err)
       );
     }
-    return jsOffers.filter(o => o.autoRenew || !o.expiryDate || o.expiryDate >= today);
+    return jsOffers.filter(o => o && (o.autoRenew || !o.expiryDate || o.expiryDate >= today));
   }
 
   const { data, error } = await supabase
@@ -93,10 +93,10 @@ export async function getAllOffers() {
   }
 
   const today = new Date().toISOString().slice(0, 10);
-  const jsOffers = (data || []).map(mapDbOfferToJs);
+  const jsOffers = (data || []).map(mapDbOfferToJs).filter(Boolean);
 
   const expiredIds = jsOffers
-    .filter(o => !o.autoRenew && o.expiryDate && o.expiryDate < today)
+    .filter(o => o && !o.autoRenew && o.expiryDate && o.expiryDate < today)
     .map(o => o.id);
 
   if (expiredIds.length > 0) {
@@ -105,7 +105,7 @@ export async function getAllOffers() {
     });
   }
 
-  return jsOffers.filter(o => o.autoRenew || !o.expiryDate || o.expiryDate >= today);
+  return jsOffers.filter(o => o && (o.autoRenew || !o.expiryDate || o.expiryDate >= today));
 }
 
 export async function getOfferById(id) {
