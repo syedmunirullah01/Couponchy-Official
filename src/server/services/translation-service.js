@@ -90,11 +90,39 @@ ${text}
 }
 
 async function saveTranslation(entityType, entityId, fieldKey, language, translatedText, originalHash) {
+  if (!entityId || !fieldKey || !language) return;
+
+  if (isMongoEnabled()) {
+    try {
+      const { connectToDatabase } = require("@/lib/mongodb");
+      const Translation = require("@/server/models/Translation").default;
+      await connectToDatabase();
+      await Translation.findOneAndUpdate(
+        { entity_type: entityType, entity_id: String(entityId), field_key: fieldKey, language },
+        {
+          entity_type: entityType,
+          entity_id: String(entityId),
+          field_key: fieldKey,
+          language,
+          translated_text: translatedText,
+          original_hash: originalHash,
+          updated_at: new Date(),
+        },
+        { upsert: true, new: true }
+      );
+      return;
+    } catch (err) {
+      console.error(`[saveTranslation Mongo Error]:`, err);
+    }
+  }
+
   const { error } = await supabase.from("translations").upsert(
-    { entity_type: entityType, entity_id: entityId, field_key: fieldKey, language, translated_text: translatedText, original_hash: originalHash, updated_at: new Date().toISOString() },
+    { entity_type: entityType, entity_id: String(entityId), field_key: fieldKey, language, translated_text: translatedText, original_hash: originalHash, updated_at: new Date().toISOString() },
     { onConflict: "entity_type,entity_id,field_key,language" }
   );
-  if (error) throw error;
+  if (error) {
+    console.error(`[saveTranslation Supabase Error]:`, error);
+  }
 }
 
 async function getExistingTranslation(entityType, entityId, fieldKey, language) {
