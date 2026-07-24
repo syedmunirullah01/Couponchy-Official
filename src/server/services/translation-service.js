@@ -222,6 +222,26 @@ export async function getBatchTranslations(entityType, entityIds, language) {
   const cleanIds = entityIds.filter(Boolean).map(String);
   if (!cleanIds.length) return {};
 
+  if (process.env.USE_MONGODB === "true") {
+    try {
+      const { connectToDatabase } = require("@/lib/mongodb");
+      const Translation = require("@/server/models/Translation").default;
+      await connectToDatabase();
+      const docs = await Translation.find({ entity_type: entityType, entity_id: { $in: cleanIds }, language }).lean();
+      const mapping = {};
+      for (const item of docs) {
+        if (!mapping[item.entity_id]) {
+          mapping[item.entity_id] = {};
+        }
+        mapping[item.entity_id][item.field_key] = item.translated_text;
+      }
+      return mapping;
+    } catch (err) {
+      console.error(`[getBatchTranslations Mongo] Error:`, err);
+      return {};
+    }
+  }
+
   // Chunk array into groups of 50 to avoid HTTP 431 / URI length limit errors
   const chunks = [];
   for (let i = 0; i < cleanIds.length; i += 50) {
@@ -261,10 +281,25 @@ export async function getBatchTranslations(entityType, entityIds, language) {
     return {};
   }
 }
-
-// Fetch all translations for a single entity
 export async function getEntityTranslations(entityType, entityId, language) {
   if (language === "en" || !entityId) return {};
+
+  if (process.env.USE_MONGODB === "true") {
+    try {
+      const { connectToDatabase } = require("@/lib/mongodb");
+      const Translation = require("@/server/models/Translation").default;
+      await connectToDatabase();
+      const docs = await Translation.find({ entity_type: entityType, entity_id: String(entityId), language }).lean();
+      const translations = {};
+      for (const item of docs) {
+        translations[item.field_key] = item.translated_text;
+      }
+      return translations;
+    } catch (err) {
+      console.error(`[getEntityTranslations Mongo] Error:`, err);
+      return {};
+    }
+  }
 
   const { data, error } = await supabase
     .from("translations")
@@ -289,6 +324,26 @@ export async function getEntityTranslations(entityType, entityId, language) {
 
 export async function getEntityTranslationsWithHashes(entityType, entityId, language) {
   if (language === "en" || !entityId) return {};
+
+  if (process.env.USE_MONGODB === "true") {
+    try {
+      const { connectToDatabase } = require("@/lib/mongodb");
+      const Translation = require("@/server/models/Translation").default;
+      await connectToDatabase();
+      const docs = await Translation.find({ entity_type: entityType, entity_id: String(entityId), language }).lean();
+      const translations = {};
+      for (const item of docs) {
+        translations[item.field_key] = {
+          text: item.translated_text,
+          hash: item.original_hash
+        };
+      }
+      return translations;
+    } catch (err) {
+      console.error(`[getEntityTranslationsWithHashes Mongo] Error:`, err);
+      return {};
+    }
+  }
 
   const { data, error } = await supabase
     .from("translations")
@@ -361,6 +416,29 @@ export async function getBatchTranslationsWithHashes(entityType, entityIds, lang
 
   const cleanIds = entityIds.filter(Boolean).map(String);
   if (!cleanIds.length) return {};
+
+  if (process.env.USE_MONGODB === "true") {
+    try {
+      const { connectToDatabase } = require("@/lib/mongodb");
+      const Translation = require("@/server/models/Translation").default;
+      await connectToDatabase();
+      const docs = await Translation.find({ entity_type: entityType, entity_id: { $in: cleanIds }, language }).lean();
+      const mapping = {};
+      for (const item of docs) {
+        if (!mapping[item.entity_id]) {
+          mapping[item.entity_id] = {};
+        }
+        mapping[item.entity_id][item.field_key] = {
+          text: item.translated_text,
+          hash: item.original_hash,
+        };
+      }
+      return mapping;
+    } catch (err) {
+      console.error(`[getBatchTranslationsWithHashes Mongo] Error:`, err);
+      return {};
+    }
+  }
 
   const chunks = [];
   for (let i = 0; i < cleanIds.length; i += 50) {
