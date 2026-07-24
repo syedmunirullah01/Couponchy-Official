@@ -1,4 +1,11 @@
 import mongoose from "mongoose";
+import dns from "dns";
+
+try {
+  dns.setServers(["8.8.8.8", "8.8.4.4"]);
+} catch (e) {
+  // Ignore if DNS server setting not permitted in runtime
+}
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
@@ -19,6 +26,8 @@ export async function connectToDatabase() {
     const opts = {
       bufferCommands: false,
       maxPoolSize: 20,
+      connectTimeoutMS: 10000,
+      socketTimeoutMS: 45000,
     };
 
     global._mongooseCache.promise = mongoose
