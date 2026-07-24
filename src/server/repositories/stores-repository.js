@@ -5,7 +5,9 @@ import { normalizeCountryCode } from "@/lib/countries";
 import { connectToDatabase } from "@/lib/mongodb";
 import Store from "@/server/models/Store";
 
-const USE_MONGODB = process.env.USE_MONGODB === "true" || (process.env.USE_MONGODB !== "false" && Boolean(process.env.MONGODB_URI));
+function isMongoEnabled() {
+  return process.env.USE_MONGODB === "true" || (process.env.USE_MONGODB !== "false" && Boolean(process.env.MONGODB_URI));
+}
 
 function mapDbStoreToJs(dbStore) {
   if (!dbStore) return null;
@@ -149,7 +151,7 @@ function serializeStoreForDb(store) {
 }
 
 export async function getAllStores() {
-  if (USE_MONGODB) {
+  if (isMongoEnabled()) {
     await connectToDatabase();
     const docs = await Store.find({}).sort({ created_at: -1 }).lean();
     return docs.map(mapDbStoreToJs);
@@ -168,7 +170,7 @@ export async function getAllStores() {
 
 export async function getStoreBySlug(slug) {
   const normalizedSlug = slug.trim().toLowerCase();
-  if (USE_MONGODB) {
+  if (isMongoEnabled()) {
     await connectToDatabase();
     const doc = await Store.findOne({ slug: normalizedSlug }).lean();
     return mapDbStoreToJs(doc);
@@ -189,7 +191,7 @@ export async function getStoreBySlug(slug) {
 export async function createStore(payload) {
   const store = serializeStoreForDb(payload);
 
-  if (USE_MONGODB) {
+  if (isMongoEnabled()) {
     await connectToDatabase();
     const existing = await Store.findOne({ slug: store.slug }).lean();
     if (existing) {
@@ -224,7 +226,7 @@ export async function createStore(payload) {
 export async function createStoresBulk(payloads) {
   const stores = payloads.map((p) => serializeStoreForDb(p));
 
-  if (USE_MONGODB) {
+  if (isMongoEnabled()) {
     await connectToDatabase();
     const bulkOps = stores.map((s) => ({
       updateOne: { filter: { _id: s.id }, update: { $set: { _id: s.id, ...s } }, upsert: true },
@@ -249,7 +251,7 @@ export async function createStoresBulk(payloads) {
 export async function upsertStoresBulk(payloads) {
   const stores = payloads.map((p) => serializeStoreForDb(p));
 
-  if (USE_MONGODB) {
+  if (isMongoEnabled()) {
     await connectToDatabase();
     const bulkOps = stores.map((s) => ({
       updateOne: { filter: { slug: s.slug }, update: { $set: { _id: s.id, ...s } }, upsert: true },
@@ -272,7 +274,7 @@ export async function upsertStoresBulk(payloads) {
 }
 
 export async function updateStore(slug, payload) {
-  if (USE_MONGODB) {
+  if (isMongoEnabled()) {
     await connectToDatabase();
     const currentStore = await Store.findOne({ slug }).lean();
     if (!currentStore) return null;
@@ -347,7 +349,7 @@ export async function updateStore(slug, payload) {
 export async function deleteStore(slug) {
   const normalizedSlug = slug.trim().toLowerCase();
 
-  if (USE_MONGODB) {
+  if (isMongoEnabled()) {
     await connectToDatabase();
     const Offer = (await import("@/server/models/Offer")).default;
     await Offer.deleteMany({ storeSlug: normalizedSlug });
@@ -370,7 +372,7 @@ export async function deleteStore(slug) {
 }
 
 export async function syncStoreOfferCount(slug, offersCount) {
-  if (USE_MONGODB) {
+  if (isMongoEnabled()) {
     await connectToDatabase();
     const updated = await Store.findOneAndUpdate(
       { slug },
@@ -394,7 +396,7 @@ export async function syncStoreOfferCount(slug, offersCount) {
 }
 
 export async function syncStoresForCategoryChange({ previousName, previousSlug, nextName, nextSlug }) {
-  if (USE_MONGODB) {
+  if (isMongoEnabled()) {
     await connectToDatabase();
     await Store.updateMany(
       { $or: [{ category_slug: previousSlug }, { category: previousName }] },

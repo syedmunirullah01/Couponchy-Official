@@ -7,8 +7,6 @@ try {
   // Ignore if DNS server setting not permitted in runtime
 }
 
-const MONGODB_URI = process.env.MONGODB_URI;
-
 if (!global._mongooseCache) {
   global._mongooseCache = { conn: null, promise: null };
 }
@@ -18,7 +16,9 @@ export async function connectToDatabase() {
     return global._mongooseCache.conn;
   }
 
-  if (!MONGODB_URI) {
+  const mongoUri = process.env.MONGODB_URI;
+
+  if (!mongoUri) {
     throw new Error("Please define MONGODB_URI in your environment variables (.env.local)");
   }
 
@@ -31,7 +31,7 @@ export async function connectToDatabase() {
     };
 
     global._mongooseCache.promise = mongoose
-      .connect(MONGODB_URI, opts)
+      .connect(mongoUri, opts)
       .then((m) => m);
   }
 

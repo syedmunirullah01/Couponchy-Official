@@ -4,7 +4,9 @@ import { supabase } from "@/lib/supabase";
 import { connectToDatabase } from "@/lib/mongodb";
 import Offer from "@/server/models/Offer";
 
-const USE_MONGODB = process.env.USE_MONGODB === "true" || (process.env.USE_MONGODB !== "false" && Boolean(process.env.MONGODB_URI));
+function isMongoEnabled() {
+  return process.env.USE_MONGODB === "true" || (process.env.USE_MONGODB !== "false" && Boolean(process.env.MONGODB_URI));
+}
 
 function mapDbOfferToJs(dbOffer) {
   if (!dbOffer) return null;
@@ -66,7 +68,7 @@ function serializeOfferForDb(offer) {
 }
 
 export async function getAllOffers() {
-  if (USE_MONGODB) {
+  if (isMongoEnabled()) {
     await connectToDatabase();
     const docs = await Offer.find({}).sort({ created_at: -1 }).lean();
     const today = new Date().toISOString().slice(0, 10);
@@ -109,7 +111,7 @@ export async function getAllOffers() {
 }
 
 export async function getOfferById(id) {
-  if (USE_MONGODB) {
+  if (isMongoEnabled()) {
     await connectToDatabase();
     const doc = await Offer.findOne({ _id: id }).lean();
     const offer = mapDbOfferToJs(doc);
@@ -152,7 +154,7 @@ export async function getOfferById(id) {
 export async function getOffersByStoreSlug(storeSlug) {
   const normalizedSlug = storeSlug.trim().toLowerCase();
 
-  if (USE_MONGODB) {
+  if (isMongoEnabled()) {
     await connectToDatabase();
     const docs = await Offer.find({ store_slug: normalizedSlug })
       .sort({ position: 1, created_at: -1 })
@@ -202,7 +204,7 @@ export async function getOffersByStoreSlug(storeSlug) {
 export async function createOffer(payload) {
   const offer = serializeOfferForDb(payload);
 
-  if (USE_MONGODB) {
+  if (isMongoEnabled()) {
     await connectToDatabase();
     await Offer.create({ _id: offer.id, ...offer });
     return mapDbOfferToJs(offer);
@@ -223,7 +225,7 @@ export async function createOffer(payload) {
 export async function createOffersBulk(payloads) {
   const offers = payloads.map((p) => serializeOfferForDb(p));
 
-  if (USE_MONGODB) {
+  if (isMongoEnabled()) {
     await connectToDatabase();
     const bulkOps = offers.map(o => ({
       updateOne: { filter: { _id: o.id }, update: { $set: { _id: o.id, ...o } }, upsert: true }
@@ -246,7 +248,7 @@ export async function createOffersBulk(payloads) {
 }
 
 export async function updateOffer(id, payload) {
-  if (USE_MONGODB) {
+  if (isMongoEnabled()) {
     await connectToDatabase();
     const currentOffer = await Offer.findOne({ _id: id }).lean();
     if (!currentOffer) return null;
@@ -295,7 +297,7 @@ export async function updateOffer(id, payload) {
 }
 
 export async function deleteOffer(id) {
-  if (USE_MONGODB) {
+  if (isMongoEnabled()) {
     await connectToDatabase();
     await Offer.deleteOne({ _id: id });
     return true;
@@ -312,7 +314,7 @@ export async function deleteOffer(id) {
 export async function deleteOffersByStoreSlug(storeSlug) {
   const normalizedSlug = storeSlug.trim().toLowerCase();
 
-  if (USE_MONGODB) {
+  if (isMongoEnabled()) {
     await connectToDatabase();
     await Offer.deleteMany({ store_slug: normalizedSlug });
     return true;
