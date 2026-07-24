@@ -42,27 +42,37 @@ function mapDbOfferToJs(dbOffer) {
 
 function serializeOfferForDb(offer) {
   const now = new Date().toISOString();
-  const storeSlug = offer.storeSlug.trim().toLowerCase();
+  const rawStoreSlug = offer.storeSlug || offer.store_slug || "";
+  const storeSlug = String(rawStoreSlug).trim().toLowerCase();
+  const rawStoreName = offer.storeName || offer.store_name || "";
+  const storeName = String(rawStoreName).trim();
 
-  const hadManualExpiry = Boolean(offer.expiryDate?.trim());
-  const expiryDate = hadManualExpiry ? offer.expiryDate.trim() : null;
+  const rawExpiry = offer.expiryDate || offer.expiry_date;
+  const hadManualExpiry = Boolean(rawExpiry && String(rawExpiry).trim());
+  const expiryDate = hadManualExpiry ? String(rawExpiry).trim() : null;
 
   return {
     id: offer.id || `offer_${storeSlug}_${Math.random().toString(36).slice(2, 10)}`,
-    title: offer.title.trim(),
-    description: offer.description?.trim() || "Fresh offer imported into Couponchy.",
-    type: offer.type?.trim() || "Coupon",
+    title: String(offer.title || "").trim(),
+    description: String(offer.description || "").trim() || "Fresh offer imported into Couponchy.",
+    type: String(offer.type || "").trim() || "Coupon",
     store_slug: storeSlug,
-    store_name: offer.storeName.trim(),
-    source: offer.source?.trim() || "Manual",
+    storeSlug: storeSlug,
+    store_name: storeName,
+    storeName: storeName,
+    source: String(offer.source || "").trim() || "Manual",
     expiry_date: expiryDate,
+    expiryDate: expiryDate,
     auto_renew: !hadManualExpiry,
-    status: offer.status?.trim() || "Active",
-    code: offer.code?.trim() || "",
-    affiliate_link: offer.affiliateLink?.trim() || "",
-    cta_label: offer.ctaLabel?.trim() || (offer.type === "Deal" ? "Get Deal" : "Get Code"),
+    autoRenew: !hadManualExpiry,
+    status: String(offer.status || "").trim() || "Active",
+    code: String(offer.code || "").trim(),
+    affiliate_link: String(offer.affiliateLink || offer.affiliate_link || "").trim(),
+    affiliateLink: String(offer.affiliateLink || offer.affiliate_link || "").trim(),
+    cta_label: String(offer.ctaLabel || offer.cta_label || "").trim() || (offer.type === "Deal" ? "Get Deal" : "Get Code"),
+    ctaLabel: String(offer.ctaLabel || offer.cta_label || "").trim() || (offer.type === "Deal" ? "Get Deal" : "Get Code"),
     position: Number(offer.position || 0),
-    created_at: offer.createdAt || now,
+    created_at: offer.createdAt || offer.created_at || now,
     updated_at: now,
   };
 }
