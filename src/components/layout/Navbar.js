@@ -348,15 +348,11 @@ export default function Navbar({
     const countryFromPath = getCountryCodeFromPathname(pathname);
     if (countryFromPath) {
       const normalized = normalizeCountryCode(countryFromPath);
-      if (normalized !== selectedCountryCode) {
-        setSelectedCountryCode(normalized);
-      }
+      setSelectedCountryCode(normalized);
     } else {
-      if (selectedCountryCode !== DEFAULT_COUNTRY_CODE) {
-        setSelectedCountryCode(DEFAULT_COUNTRY_CODE);
-      }
+      setSelectedCountryCode(initialCountryCode || DEFAULT_COUNTRY_CODE);
     }
-  }, [pathname, selectedCountryCode]);
+  }, [pathname, initialCountryCode]);
 
   useEffect(() => {
     if (categories.length > 0) {
@@ -384,15 +380,19 @@ export default function Navbar({
     const normalizedCountryCode = normalizeCountryCode(nextCountryCode);
     setSelectedCountryCode(normalizedCountryCode);
     document.cookie = `${COUNTRY_COOKIE_KEY}=${encodeURIComponent(normalizedCountryCode)}; path=/; max-age=31536000; samesite=lax`;
-    const nextPath = buildCountryPath("/", normalizedCountryCode);
+
+    const currentCleanPath = removeCountryPrefix(pathname);
+    const nextPath = buildCountryPath(currentCleanPath, normalizedCountryCode);
     const search = typeof window !== "undefined" ? window.location.search : "";
+    const targetUrl = `${nextPath}${search}`;
 
-    // Close mobile menu drawers automatically on country selection
-    setMobileOpen(false);
+    setCountryDropdownOpen(false);
     setMobileCountryDropdownOpen(false);
+    setMobileOpen(false);
 
-    router.replace(`${nextPath}${search}`);
-    router.refresh();
+    if (typeof window !== "undefined") {
+      window.location.href = targetUrl;
+    }
   }
 
   useEffect(() => {
