@@ -28,7 +28,7 @@ export async function GET(_request, { params }) {
       status: 200,
       headers: {
         "Content-Type": contentType,
-        "Cache-Control": "public, max-age=86400, s-maxage=86400, stale-while-revalidate=60",
+        "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
       },
     });
   } catch (err) {
