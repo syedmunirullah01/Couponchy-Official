@@ -469,10 +469,6 @@ export async function getStorePageData(slug, countryCode) {
     return null;
   }
 
-  if (countryCode && normalizeCountryCode(store.countryCode) !== normalizeCountryCode(countryCode)) {
-    return null;
-  }
-
   const countryMatchedStores = allStores.filter(
     (item) => normalizeCountryCode(item.countryCode) === normalizeCountryCode(store.countryCode)
   );
@@ -503,10 +499,6 @@ export async function getProductPageData(storeSlug, productSlug, countryCode) {
   ]);
 
   if (!store || !product) {
-    return null;
-  }
-
-  if (countryCode && normalizeCountryCode(store.countryCode) !== normalizeCountryCode(countryCode)) {
     return null;
   }
 
