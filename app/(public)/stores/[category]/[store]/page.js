@@ -1,9 +1,10 @@
 import SingleStorePage from "@/features/stores/components/store-detail/SingleStorePage";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getStorePageData, getStorePageMetadata } from "@/server/services/catalog-service";
 import { resolveRequestCountryCode } from "@/server/resolve-request-country";
 import { getMetadataDefaults } from "@/server/services/settings-service";
 import { getSeoAlternates } from "@/server/services/seo-alternates";
+import { buildCountryPath } from "@/lib/countries";
 
 export const dynamic = "force-dynamic";
 
@@ -42,10 +43,13 @@ export default async function Page({ params }) {
   const countryCode = await resolveRequestCountryCode();
   const storePageData = await getStorePageData(store, countryCode);
 
-
-
-  if (!storePageData || storePageData.singleStore.categorySlug !== category) {
+  if (!storePageData) {
     notFound();
+  }
+
+  if (storePageData.singleStore?.categorySlug && storePageData.singleStore.categorySlug !== category) {
+    const correctPath = buildCountryPath(`/stores/${storePageData.singleStore.categorySlug}/${store}`, countryCode);
+    redirect(correctPath);
   }
 
   return <SingleStorePage {...storePageData} />;
