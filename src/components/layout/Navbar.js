@@ -381,8 +381,7 @@ export default function Navbar({
     setSelectedCountryCode(normalizedCountryCode);
     document.cookie = `${COUNTRY_COOKIE_KEY}=${encodeURIComponent(normalizedCountryCode)}; path=/; max-age=31536000; samesite=lax`;
 
-    const currentCleanPath = removeCountryPrefix(pathname);
-    const nextPath = buildCountryPath(currentCleanPath, normalizedCountryCode);
+    const nextPath = buildCountryPath("/", normalizedCountryCode);
     const search = typeof window !== "undefined" ? window.location.search : "";
     const targetUrl = `${nextPath}${search}`;
 
