@@ -147,34 +147,23 @@ export async function middleware(req) {
     return response;
   }
 
-  const cookieCountryCode = normalizeCountryCode(
-    req.cookies.get(COUNTRY_COOKIE_KEY)?.value || DEFAULT_COUNTRY_CODE
-  );
+  // 2. Unprefixed URLs (e.g. couponchy.com or couponchy.com/stores) - URL is Authoritative (US / Default Mode)
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set(COUNTRY_HEADER_KEY, DEFAULT_COUNTRY_CODE);
 
-  if (cookieCountryCode === DEFAULT_COUNTRY_CODE) {
-    const requestHeaders = new Headers(req.headers);
-    requestHeaders.set(COUNTRY_HEADER_KEY, cookieCountryCode);
+  const response = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
 
-    const response = NextResponse.next({
-      request: {
-        headers: requestHeaders,
-      },
-    });
+  response.cookies.set(COUNTRY_COOKIE_KEY, DEFAULT_COUNTRY_CODE, {
+    path: "/",
+    maxAge: 31536000,
+    sameSite: "lax",
+  });
 
-    response.cookies.set(COUNTRY_COOKIE_KEY, cookieCountryCode, {
-      path: "/",
-      maxAge: 31536000,
-      sameSite: "lax",
-    });
-
-    return response;
-  }
-
-  const redirectUrl = req.nextUrl.clone();
-  redirectUrl.pathname = buildCountryPath(pathname, cookieCountryCode);
-  redirectUrl.search = search;
-
-  return NextResponse.redirect(redirectUrl);
+  return response;
 }
 
 export const config = {

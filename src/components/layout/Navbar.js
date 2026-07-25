@@ -346,19 +346,17 @@ export default function Navbar({
 
   useEffect(() => {
     const countryFromPath = getCountryCodeFromPathname(pathname);
-    if (!countryFromPath && typeof document !== "undefined") {
-      const matchedCookie = document.cookie
-        .split("; ")
-        .find((entry) => entry.startsWith(`${COUNTRY_COOKIE_KEY}=`))
-        ?.split("=")[1];
-      if (matchedCookie) {
-        const decoded = normalizeCountryCode(decodeURIComponent(matchedCookie));
-        if (decoded && decoded !== selectedCountryCode) {
-          setSelectedCountryCode(decoded);
-        }
+    if (countryFromPath) {
+      const normalized = normalizeCountryCode(countryFromPath);
+      if (normalized !== selectedCountryCode) {
+        setSelectedCountryCode(normalized);
+      }
+    } else {
+      if (selectedCountryCode !== DEFAULT_COUNTRY_CODE) {
+        setSelectedCountryCode(DEFAULT_COUNTRY_CODE);
       }
     }
-  }, [pathname]);
+  }, [pathname, selectedCountryCode]);
 
   useEffect(() => {
     if (categories.length > 0) {
