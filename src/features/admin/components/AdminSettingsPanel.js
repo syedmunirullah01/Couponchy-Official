@@ -20,6 +20,7 @@ const initialState = {
     customBodyEndScript: "",
     logoUrl: "",
     faviconUrl: "",
+    deepseekEnabled: true,
   },
   affiliate: {
     cjEnabled: true,
@@ -529,6 +530,51 @@ export default function AdminSettingsPanel() {
                     onChange={(event) => updateSection("general", "supportEmail", event.target.value)}
                   />
                 </SectionField>
+              </div>
+            </SettingsSection>
+
+            <SettingsSection
+              title="AI Translation (DeepSeek API)"
+              description="Control automated content translation powered by DeepSeek AI."
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-[var(--text)]">DeepSeek API Translation</span>
+                    <span
+                      className={cn(
+                        "inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide",
+                        settings.general?.deepseekEnabled !== false
+                          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                          : "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20"
+                      )}
+                    >
+                      {settings.general?.deepseekEnabled !== false ? "Active / Enabled" : "OFF / Disabled"}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-[var(--muted)]">
+                    {settings.general?.deepseekEnabled !== false
+                      ? "DeepSeek API is ON. Content (stores, offers, categories) will automatically translate into target languages."
+                      : "DeepSeek API is OFF. All AI auto-translation calls are paused to save API tokens and budget."}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={settings.general?.deepseekEnabled !== false}
+                  onClick={() => updateSection("general", "deepseekEnabled", settings.general?.deepseekEnabled === false ? true : false)}
+                  className={cn(
+                    "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
+                    settings.general?.deepseekEnabled !== false ? "bg-emerald-500" : "bg-gray-400/50"
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
+                      settings.general?.deepseekEnabled !== false ? "translate-x-5" : "translate-x-0"
+                    )}
+                  />
+                </button>
               </div>
             </SettingsSection>
 

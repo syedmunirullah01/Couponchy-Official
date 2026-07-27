@@ -17,6 +17,7 @@ export const defaultSettings = {
     customBodyEndScript: "",
     logoUrl: "",
     faviconUrl: "",
+    deepseekEnabled: true,
   },
   affiliate: {
     cjEnabled: true,

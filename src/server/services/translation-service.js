@@ -31,6 +31,18 @@ async function callDeepSeek(text, langCode) {
     console.warn("[callDeepSeek] DEEPSEEK_API_KEY is not defined in environments.");
     return text;
   }
+
+  try {
+    const { getSettings } = require("@/server/repositories/settings-repository");
+    const settings = await getSettings();
+    if (settings?.general?.deepseekEnabled === false) {
+      console.log("[callDeepSeek] Skipped: DeepSeek API is disabled in admin settings.");
+      return text;
+    }
+  } catch (err) {
+    console.error("[callDeepSeek] Failed to check deepseekEnabled setting:", err);
+  }
+
   const langName = LANGUAGE_NAMES[langCode] || langCode;
 
   let systemInstructions = `You are an expert translator specializing in e-commerce, coupons, and SEO localization.
