@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createOffer, getAllOffers } from "@/server/repositories/offers-repository";
+import { createOffer, getAllOffers, getOffersByStoreSlug } from "@/server/repositories/offers-repository";
 import { getAllStores, getStoreBySlug, syncStoreOfferCount } from "@/server/repositories/stores-repository";
 import { normalizeCountryCode } from "@/lib/countries";
 import { validateOfferPayload } from "@/lib/validators";
@@ -48,13 +48,12 @@ export async function POST(request) {
       ...payload,
       affiliateLink: payload.affiliateLink?.trim() || store.affiliateLink || "",
     });
-    const offers = await getAllOffers();
-    const storeOfferCount = offers.filter((item) => item.storeSlug === payload.storeSlug).length;
-    await syncStoreOfferCount(payload.storeSlug, storeOfferCount);
+    const storeOffers = await getOffersByStoreSlug(payload.storeSlug);
+    await syncStoreOfferCount(payload.storeSlug, storeOffers.length);
     translateOfferOnSave(offer).catch((err) =>
       console.error("[POST /api/offers] Auto translation failed:", err)
     );
-    revalidatePath("/", "layout");
+    revalidatePath("/");
     return NextResponse.json({ data: offer }, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: error.message || "Unable to create offer." }, { status: 400 });

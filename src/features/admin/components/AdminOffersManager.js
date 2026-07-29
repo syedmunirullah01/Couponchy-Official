@@ -258,12 +258,22 @@ export default function AdminOffersManager() {
       return;
     }
 
-    await loadData();
+    if (payload.data) {
+      const savedOffer = payload.data;
+      if (editingOffer) {
+        setOffers((prev) => prev.map((o) => (o.id === savedOffer.id ? savedOffer : o)));
+      } else {
+        setOffers((prev) => [savedOffer, ...prev]);
+      }
+    }
+
     setOpen(false);
     setForm(initialForm);
     setEditingOffer(null);
     affiliateEditedRef.current = false;
     setIsSubmitting(false);
+
+    loadData().catch((err) => console.error("Background data refresh failed:", err));
   }
 
   function openDeleteModal(offer) {

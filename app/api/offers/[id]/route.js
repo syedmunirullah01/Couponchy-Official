@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { deleteOffer, getAllOffers, getOfferById, updateOffer } from "@/server/repositories/offers-repository";
+import { deleteOffer, getAllOffers, getOfferById, getOffersByStoreSlug, updateOffer } from "@/server/repositories/offers-repository";
 import { getStoreBySlug, syncStoreOfferCount } from "@/server/repositories/stores-repository";
 import { validateOfferPayload } from "@/lib/validators";
 import { requirePermission } from "@/server/auth";
@@ -47,18 +47,17 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ error: "Offer not found." }, { status: 404 });
     }
 
-    const offers = await getAllOffers();
-    const nextStoreCount = offers.filter((item) => item.storeSlug === offer.storeSlug).length;
-    await syncStoreOfferCount(offer.storeSlug, nextStoreCount);
+    const nextStoreOffers = await getOffersByStoreSlug(offer.storeSlug);
+    await syncStoreOfferCount(offer.storeSlug, nextStoreOffers.length);
     if (existingOffer?.storeSlug && existingOffer.storeSlug !== offer.storeSlug) {
-      const previousStoreCount = offers.filter((item) => item.storeSlug === existingOffer.storeSlug).length;
-      await syncStoreOfferCount(existingOffer.storeSlug, previousStoreCount);
+      const prevStoreOffers = await getOffersByStoreSlug(existingOffer.storeSlug);
+      await syncStoreOfferCount(existingOffer.storeSlug, prevStoreOffers.length);
     }
 
     translateOfferOnSave(offer).catch((err) =>
       console.error("[PUT /api/offers/[id]] Auto translation failed:", err)
     );
-    revalidatePath("/", "layout");
+    revalidatePath("/");
     return NextResponse.json({ data: offer });
   } catch (error) {
     return NextResponse.json({ error: error.message || "Unable to update offer." }, { status: 400 });
@@ -81,11 +80,10 @@ export async function DELETE(_request, { params }) {
   }
 
   if (existingOffer) {
-    const offers = await getAllOffers();
-    const storeOfferCount = offers.filter((item) => item.storeSlug === existingOffer.storeSlug).length;
-    await syncStoreOfferCount(existingOffer.storeSlug, storeOfferCount);
+    const storeOffers = await getOffersByStoreSlug(existingOffer.storeSlug);
+    await syncStoreOfferCount(existingOffer.storeSlug, storeOffers.length);
   }
 
-  revalidatePath("/", "layout");
+  revalidatePath("/");
   return NextResponse.json({ success: true });
 }
