@@ -41,7 +41,7 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ error: "Event not found." }, { status: 404 });
     }
 
-    await translateEventOnSave(event).catch((err) =>
+    translateEventOnSave(event).catch((err) =>
       console.error("[PUT /api/events/[slug]] Auto translation failed:", err)
     );
     return NextResponse.json({ data: event });

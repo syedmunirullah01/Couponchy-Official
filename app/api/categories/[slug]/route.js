@@ -37,7 +37,7 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ error: "Category not found." }, { status: 404 });
     }
 
-    await translateCategoryOnSave(category).catch((err) =>
+    translateCategoryOnSave(category).catch((err) =>
       console.error("[PUT /api/categories/[slug]] Auto translation failed:", err)
     );
     revalidatePath("/", "layout");

@@ -33,8 +33,8 @@ async function callDeepSeek(text, langCode) {
   }
 
   try {
-    const { getSettings } = require("@/server/repositories/settings-repository");
-    const settings = await getSettings();
+    const { readCollection } = require("@/server/database/json-store");
+    const settings = await readCollection("settings.json", {});
     if (settings?.general?.deepseekEnabled === false) {
       console.log("[callDeepSeek] Skipped: DeepSeek API is disabled in admin settings.");
       return text;
@@ -120,7 +120,7 @@ async function saveTranslation(entityType, entityId, fieldKey, language, transla
           original_hash: originalHash,
           updated_at: new Date(),
         },
-        { upsert: true, new: true }
+        { upsert: true, returnDocument: "after" }
       );
       return;
     } catch (err) {
@@ -173,12 +173,10 @@ export async function translateStoreOnSave(store) {
   const country = String(store.countryCode || "").toUpperCase();
   const primaryLang = COUNTRY_TO_LANG[country];
 
-  const targetLangs = new Set();
-  if (primaryLang && primaryLang !== "en") {
-    targetLangs.add(primaryLang);
-  } else {
-    ["de", "nl", "fr", "es", "it", "pl"].forEach((l) => targetLangs.add(l));
-  }
+  // If store is in English (US, GB, CA, AU, IN, AE, CH, etc.), skip DeepSeek entirely (0 API calls)
+  if (!primaryLang || primaryLang === "en") return;
+
+  const targetLangs = [primaryLang];
 
   try {
     const fields = [
@@ -244,12 +242,10 @@ export async function translateOfferOnSave(offer) {
     const country = String(store.countryCode || "").toUpperCase();
     const primaryLang = COUNTRY_TO_LANG[country];
 
-    const targetLangs = new Set();
-    if (primaryLang && primaryLang !== "en") {
-      targetLangs.add(primaryLang);
-    } else {
-      ["de", "nl", "fr", "es", "it", "pl"].forEach((l) => targetLangs.add(l));
-    }
+    // If store is in English (US, GB, CA, AU, IN, AE, CH, etc.), skip DeepSeek entirely (0 API calls)
+    if (!primaryLang || primaryLang === "en") return;
+
+    const targetLangs = [primaryLang];
 
     for (const lang of targetLangs) {
       if (offer.title) {
@@ -587,47 +583,25 @@ export async function getTranslatedOffers(offers, lang) {
   const offerIds = offers.map((o) => String(o.id));
   const translationsMap = await getBatchTranslationsWithHashes("offer", offerIds, lang);
 
-  const decorated = await Promise.all(
-    offers.map(async (offer) => {
-      const result = { ...offer };
-      const offerId = String(offer.id);
-      const offerTranslations = translationsMap[offerId] || {};
+  return offers.map((offer) => {
+    const result = { ...offer };
+    const offerId = String(offer.id);
+    const offerTranslations = translationsMap[offerId] || {};
 
-      const translateKey = async (fieldKey, originalText) => {
-        if (!originalText || !originalText.trim()) return originalText;
-        const currentHash = getHash(originalText);
-        const dbEntry = offerTranslations[fieldKey];
+    if (offer.title && offerTranslations.title?.text) {
+      result.title = offerTranslations.title.text;
+    }
+    if (offer.description && offerTranslations.description?.text) {
+      result.description = offerTranslations.description.text;
+    } else if (offer.description && offerTranslations.title?.text) {
+      result.description = result.title;
+    }
+    if (offer.ctaLabel && offerTranslations.ctaLabel?.text) {
+      result.ctaLabel = offerTranslations.ctaLabel.text;
+    }
 
-        if (dbEntry && dbEntry.text && dbEntry.text.trim() && dbEntry.hash === currentHash) {
-          return dbEntry.text;
-        }
-
-        callDeepSeek(originalText, lang)
-          .then((translatedText) =>
-            saveTranslation("offer", offerId, fieldKey, lang, translatedText, currentHash)
-          )
-          .catch((err) =>
-            console.error(`[getTranslatedOffers] Background translation failed for ${fieldKey} in ${lang}:`, err)
-          );
-
-        return originalText;
-      };
-
-      if (offer.title) result.title = await translateKey("title", offer.title);
-      if (offer.description && offer.description !== offer.title) {
-        result.description = await translateKey("description", offer.description);
-      } else if (offer.description) {
-        result.description = result.title;
-      }
-      if (offer.ctaLabel) {
-        result.ctaLabel = await translateKey("ctaLabel", offer.ctaLabel);
-      }
-
-      return result;
-    })
-  );
-
-  return decorated;
+    return result;
+  });
 }
 
 // Decorate a single category
@@ -654,30 +628,6 @@ export async function getTranslatedSettings(settings, lang) {
 
   const translations = await getEntityTranslationsWithHashes("settings", "global", lang);
 
-  // For hero text fields: verify hash. If changed, fire background re-translation.
-  const heroTextFields = ["eyebrow", "titleLineOne", "titleAccent", "titleLineTwo", "description", "searchPlaceholder", "searchButtonLabel", "memberCountText"];
-  const hero = settings.homepage?.hero || {};
-
-  for (const key of heroTextFields) {
-    const originalText = hero[key];
-    if (!originalText || !originalText.trim()) continue;
-
-    const fieldKey = `homepage.hero.${key}`;
-    const currentHash = getHash(originalText);
-    const dbEntry = translations[fieldKey];
-
-    if (!dbEntry || !dbEntry.text || !dbEntry.text.trim() || dbEntry.hash !== currentHash) {
-      // Text changed or never translated — fire background re-translation
-      callDeepSeek(originalText, lang)
-        .then((translatedText) =>
-          saveTranslation("settings", "global", fieldKey, lang, translatedText, currentHash)
-        )
-        .catch((err) =>
-          console.error(`[getTranslatedSettings] Background re-translation failed for ${fieldKey} in ${lang}:`, err)
-        );
-    }
-  }
-
   // Build a plain translations map (text only) for applyTranslations
   const plainTranslations = {};
   for (const [key, entry] of Object.entries(translations)) {
@@ -698,33 +648,12 @@ export async function getTranslatedEvent(event, lang) {
   try {
     const translations = await getEntityTranslationsWithHashes("event", eventId, lang);
 
-    const translateKey = async (fieldKey, originalText) => {
-      if (!originalText || !originalText.trim()) return originalText;
-
-      const currentHash = getHash(originalText);
-      const dbEntry = translations[fieldKey];
-
-      if (dbEntry && dbEntry.text && dbEntry.text.trim() && dbEntry.hash === currentHash) {
-        return dbEntry.text;
-      }
-
-      callDeepSeek(originalText, lang)
-        .then((translatedText) =>
-          saveTranslation("event", eventId, fieldKey, lang, translatedText, currentHash)
-        )
-        .catch((err) =>
-          console.error(`[getTranslatedEvent] Background translation failed for ${fieldKey} in ${lang}:`, err)
-        );
-
-      return originalText;
-    };
-
-    if (event.name) result.name = await translateKey("name", event.name);
-    if (event.tag) result.tag = await translateKey("tag", event.tag);
-    if (event.shortDescription) result.shortDescription = await translateKey("shortDescription", event.shortDescription);
-    if (event.longDescription) result.longDescription = await translateKey("longDescription", event.longDescription);
-    if (event.seoTitle) result.seoTitle = await translateKey("seoTitle", event.seoTitle);
-    if (event.seoDescription) result.seoDescription = await translateKey("seoDescription", event.seoDescription);
+    if (event.name && translations.name?.text) result.name = translations.name.text;
+    if (event.tag && translations.tag?.text) result.tag = translations.tag.text;
+    if (event.shortDescription && translations.shortDescription?.text) result.shortDescription = translations.shortDescription.text;
+    if (event.longDescription && translations.longDescription?.text) result.longDescription = translations.longDescription.text;
+    if (event.seoTitle && translations.seoTitle?.text) result.seoTitle = translations.seoTitle.text;
+    if (event.seoDescription && translations.seoDescription?.text) result.seoDescription = translations.seoDescription.text;
 
   } catch (err) {
     console.error(`[getTranslatedEvent] Error translating event ${eventId} in ${lang}:`, err);

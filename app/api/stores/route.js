@@ -34,7 +34,7 @@ export async function POST(request) {
     }
 
     const store = await createStore(payload);
-    await translateStoreOnSave(store).catch((err) =>
+    translateStoreOnSave(store).catch((err) =>
       console.error("[POST /api/stores] Auto translation failed:", err)
     );
     revalidatePath("/", "layout");

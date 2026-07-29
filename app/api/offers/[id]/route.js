@@ -55,7 +55,7 @@ export async function PUT(request, { params }) {
       await syncStoreOfferCount(existingOffer.storeSlug, previousStoreCount);
     }
 
-    await translateOfferOnSave(offer).catch((err) =>
+    translateOfferOnSave(offer).catch((err) =>
       console.error("[PUT /api/offers/[id]] Auto translation failed:", err)
     );
     revalidatePath("/", "layout");

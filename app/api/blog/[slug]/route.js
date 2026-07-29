@@ -51,7 +51,7 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ error: "Blog post not found." }, { status: 404 });
     }
 
-    await translateBlogOnSave(post).catch((err) =>
+    translateBlogOnSave(post).catch((err) =>
       console.error("[PUT /api/blog/[slug]] Auto translation failed:", err)
     );
     return NextResponse.json({ data: post });

@@ -27,7 +27,7 @@ export async function POST(request) {
     }
 
     const category = await createCategory(payload);
-    await translateCategoryOnSave(category).catch((err) =>
+    translateCategoryOnSave(category).catch((err) =>
       console.error("[POST /api/categories] Auto translation failed:", err)
     );
     revalidatePath("/", "layout");
