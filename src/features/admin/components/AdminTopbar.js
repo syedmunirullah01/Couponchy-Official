@@ -63,20 +63,37 @@ function SearchBar() {
   const searchParams = useSearchParams();
   const [searchValue, setSearchValue] = useState("");
 
+  // Initialize from URL on mount
   useEffect(() => {
     setSearchValue(searchParams.get("search") || "");
+  }, []);
+
+  // Debounce the router.replace search query updates
+  useEffect(() => {
+    const query = searchParams.get("search") || "";
+    if (searchValue === query) return;
+
+    const timer = setTimeout(() => {
+      const params = new URLSearchParams(window.location.search);
+      if (searchValue) {
+        params.set("search", searchValue);
+      } else {
+        params.delete("search");
+      }
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [searchValue, pathname, router]);
+
+  // Sync state with URL when searchParams change externally (like back/forward navigation)
+  useEffect(() => {
+    const query = searchParams.get("search") || "";
+    setSearchValue((prev) => (prev !== query ? query : prev));
   }, [searchParams]);
 
   const handleSearchChange = (e) => {
-    const val = e.target.value;
-    setSearchValue(val);
-    const params = new URLSearchParams(searchParams);
-    if (val) {
-      params.set("search", val);
-    } else {
-      params.delete("search");
-    }
-    router.replace(`${pathname}?${params.toString()}`);
+    setSearchValue(e.target.value);
   };
 
   return (

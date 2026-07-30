@@ -1,11 +1,15 @@
-import mongoose from "mongoose";
 import dns from "dns";
 
 try {
-  dns.setServers(["8.8.8.8", "8.8.4.4"]);
+  dns.setDefaultResultOrder("ipv4first");
+  console.log("Current DNS servers:", dns.getServers());
+  dns.setServers(["8.8.8.8", "1.1.1.1", "8.8.4.4"]);
+  console.log("Updated DNS servers:", dns.getServers());
 } catch (e) {
-  // Ignore if DNS server setting not permitted in runtime
+  console.error("Failed to set DNS servers:", e);
 }
+
+import mongoose from "mongoose";
 
 if (!global._mongooseCache) {
   global._mongooseCache = { conn: null, promise: null };

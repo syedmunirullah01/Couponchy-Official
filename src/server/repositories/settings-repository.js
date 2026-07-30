@@ -3,8 +3,14 @@ import "server-only";
 import { readCollection, writeCollection } from "@/server/database/json-store";
 import { sanitizeCountryList, SUPPORTED_COUNTRIES } from "@/lib/countries";
 import { unstable_cache, revalidateTag } from "next/cache";
+import { connectToDatabase } from "@/lib/mongodb";
+import Settings from "@/server/models/Settings";
 
 const SETTINGS_FILE = "settings.json";
+
+function isMongoEnabled() {
+  return process.env.USE_MONGODB === "true" || (process.env.USE_MONGODB !== "false" && Boolean(process.env.MONGODB_URI));
+}
 
 export const defaultSettings = {
   general: {
@@ -191,7 +197,15 @@ export const defaultSettings = {
 };
 
 async function fetchSettings() {
-  const settings = await readCollection(SETTINGS_FILE, defaultSettings);
+  let settings;
+  if (isMongoEnabled()) {
+    await connectToDatabase();
+    const doc = await Settings.findOne({ _id: "global" }).lean();
+    settings = doc || {};
+  } else {
+    settings = await readCollection(SETTINGS_FILE, defaultSettings);
+  }
+
   return {
     ...defaultSettings,
     ...settings,
@@ -285,7 +299,17 @@ export async function updateSettings(payload) {
     },
   };
 
-  await writeCollection(SETTINGS_FILE, nextSettings);
+  if (isMongoEnabled()) {
+    await connectToDatabase();
+    await Settings.updateOne(
+      { _id: "global" },
+      { $set: { _id: "global", ...nextSettings } },
+      { upsert: true }
+    );
+  } else {
+    await writeCollection(SETTINGS_FILE, nextSettings);
+  }
+
   revalidateTag("settings");
   return nextSettings;
 }

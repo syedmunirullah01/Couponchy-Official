@@ -1171,35 +1171,33 @@ export default function Navbar({
                 <ChevronDownIcon className={cn("h-3.5 w-3.5 text-white/50 transition-transform", countryDropdownOpen ? "rotate-180" : "rotate-0")} />
               </button>
 
-              {countryDropdownOpen && (
-                <div className="absolute right-0 top-full mt-2 z-50">
-                  <div className="w-[52px] max-h-[280px] overflow-y-auto overflow-x-hidden rounded-[16px] border border-white/10 bg-[#0c0c0c] p-1.5 shadow-[0_20px_50px_rgba(0,0,0,0.85)]">
-                    <div className="grid gap-1">
-                      {countries.map((country) => (
-                        <button
-                          key={country.code}
-                          type="button"
-                          onClick={() => {
-                            handleCountryChange(country.code);
-                            setCountryDropdownOpen(false);
-                          }}
-                          className={cn(
-                            "flex items-center justify-center rounded-[10px] py-2 hover:bg-white/5 transition-colors",
-                            selectedCountryCode === country.code && "bg-white/10"
-                          )}
-                          title={country.name}
-                        >
-                          <img
-                            src={country.flagUrl || `https://flagcdn.com/w40/${country.code.toLowerCase()}.png`}
-                            alt={country.name}
-                            className="h-3.5 w-5 object-cover rounded-[1px]"
-                          />
-                        </button>
-                      ))}
-                    </div>
+              <div className={cn("absolute right-0 top-full mt-2 z-50 transition-all duration-200 origin-top-right", countryDropdownOpen ? "opacity-100 scale-100 visible" : "opacity-0 scale-95 invisible pointer-events-none")}>
+                <div className="w-[52px] max-h-[280px] overflow-y-auto overflow-x-hidden rounded-[16px] border border-white/10 bg-[#0c0c0c] p-1.5 shadow-[0_20px_50px_rgba(0,0,0,0.85)]">
+                  <div className="grid gap-1">
+                    {countries.map((country) => (
+                      <button
+                        key={country.code}
+                        type="button"
+                        onClick={() => {
+                          handleCountryChange(country.code);
+                          setCountryDropdownOpen(false);
+                        }}
+                        className={cn(
+                          "flex items-center justify-center rounded-[10px] py-2 hover:bg-white/5 transition-colors",
+                          selectedCountryCode === country.code && "bg-white/10"
+                        )}
+                        title={country.name}
+                      >
+                        <img
+                          src={country.flagUrl || `https://flagcdn.com/w40/${country.code.toLowerCase()}.png`}
+                          alt={country.name}
+                          className="h-3.5 w-5 object-cover rounded-[1px]"
+                        />
+                      </button>
+                    ))}
                   </div>
                 </div>
-              )}
+              </div>
             </div>
           </div>
           <button
@@ -1359,35 +1357,33 @@ export default function Navbar({
                     <ChevronDownIcon className={cn("h-4.5 w-4.5 text-white/55 transition-transform", mobileCountryDropdownOpen ? "rotate-180" : "rotate-0")} />
                   </button>
 
-                  {mobileCountryDropdownOpen && (
-                    <div className="absolute right-0 top-full mt-2 z-50">
-                      <div className="w-[52px] max-h-[280px] overflow-y-auto overflow-x-hidden rounded-[16px] border border-white/10 bg-[#0c0c0c] p-1.5 shadow-[0_20px_50px_rgba(0,0,0,0.85)]">
-                        <div className="grid gap-1">
-                          {countries.map((country) => (
-                            <button
-                              key={country.code}
-                              type="button"
-                              onClick={() => {
-                                handleCountryChange(country.code);
-                                setMobileCountryDropdownOpen(false);
-                              }}
-                              className={cn(
-                                "flex items-center justify-center rounded-[10px] py-2 hover:bg-white/5 transition-colors",
-                                selectedCountryCode === country.code && "bg-white/10"
-                              )}
-                              title={country.name}
-                            >
-                              <img
-                                src={country.flagUrl || `https://flagcdn.com/w40/${country.code.toLowerCase()}.png`}
-                                alt={country.name}
-                                className="h-3.5 w-5 object-cover rounded-[1px]"
-                              />
-                            </button>
-                          ))}
-                        </div>
+                  <div className={cn("absolute right-0 top-full mt-2 z-50 transition-all duration-200 origin-top-right", mobileCountryDropdownOpen ? "opacity-100 scale-100 visible" : "opacity-0 scale-95 invisible pointer-events-none")}>
+                    <div className="w-[52px] max-h-[280px] overflow-y-auto overflow-x-hidden rounded-[16px] border border-white/10 bg-[#0c0c0c] p-1.5 shadow-[0_20px_50px_rgba(0,0,0,0.85)]">
+                      <div className="grid gap-1">
+                        {countries.map((country) => (
+                          <button
+                            key={country.code}
+                            type="button"
+                            onClick={() => {
+                              handleCountryChange(country.code);
+                              setMobileCountryDropdownOpen(false);
+                            }}
+                            className={cn(
+                              "flex items-center justify-center rounded-[10px] py-2 hover:bg-white/5 transition-colors",
+                              selectedCountryCode === country.code && "bg-white/10"
+                            )}
+                            title={country.name}
+                          >
+                            <img
+                              src={country.flagUrl || `https://flagcdn.com/w40/${country.code.toLowerCase()}.png`}
+                              alt={country.name}
+                              className="h-3.5 w-5 object-cover rounded-[1px]"
+                            />
+                          </button>
+                        ))}
                       </div>
                     </div>
-                  )}
+                  </div>
                 </div>
               </div>
             </div>

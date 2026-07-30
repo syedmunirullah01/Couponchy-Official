@@ -1,8 +1,34 @@
 import "server-only";
 
 import { readCollection, writeCollection } from "@/server/database/json-store";
+import { unstable_cache, revalidateTag } from "next/cache";
+import { connectToDatabase } from "@/lib/mongodb";
+import Event from "@/server/models/Event";
 
 const FILE_NAME = "events.json";
+
+function isMongoEnabled() {
+  return process.env.USE_MONGODB === "true" || (process.env.USE_MONGODB !== "false" && Boolean(process.env.MONGODB_URI));
+}
+
+function mapDbEventToJs(doc) {
+  if (!doc) return null;
+  return {
+    id: doc.id || doc._id,
+    name: doc.name,
+    slug: doc.slug,
+    keyword: doc.keyword,
+    tag: doc.tag || "",
+    seoTitle: doc.seoTitle || "",
+    seoDescription: doc.seoDescription || "",
+    shortDescription: doc.shortDescription || "",
+    longDescription: doc.longDescription || "",
+    status: doc.status || "enabled",
+    countryCode: doc.countryCode || "GLOBAL",
+    createdAt: doc.createdAt || doc.created_at,
+    updatedAt: doc.updatedAt || doc.updated_at,
+  };
+}
 
 function slugify(value) {
   return String(value || "")
@@ -34,9 +60,23 @@ function normalizeEvent(input, currentEvent) {
   };
 }
 
-export async function getAllEvents() {
+async function fetchAllEvents() {
+  if (isMongoEnabled()) {
+    await connectToDatabase();
+    const docs = await Event.find({}).lean();
+    return docs.map(mapDbEventToJs).sort((a, b) => a.name.localeCompare(b.name));
+  }
+
   const events = await readCollection(FILE_NAME, []);
   return [...events].sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export async function getAllEvents() {
+  return unstable_cache(
+    async () => fetchAllEvents(),
+    ["events"],
+    { revalidate: 1800, tags: ["events"] }
+  )();
 }
 
 export async function getEnabledEvents() {
@@ -50,19 +90,51 @@ export async function getEventBySlug(slug) {
 }
 
 export async function createEvent(payload) {
-  const events = await getAllEvents();
   const event = normalizeEvent(payload);
 
+  if (isMongoEnabled()) {
+    await connectToDatabase();
+    const existing = await Event.findOne({ slug: event.slug }).lean();
+    if (existing) {
+      throw new Error("An event with this slug already exists.");
+    }
+    await Event.create({ _id: event.id, ...event });
+    revalidateTag("events");
+    return event;
+  }
+
+  const events = await getAllEvents();
   if (events.some((item) => item.slug === event.slug)) {
     throw new Error("An event with this slug already exists.");
   }
 
   const nextEvents = [...events, event];
   await writeCollection(FILE_NAME, nextEvents);
+  revalidateTag("events");
   return event;
 }
 
 export async function updateEvent(slug, payload) {
+  if (isMongoEnabled()) {
+    await connectToDatabase();
+    const currentEvent = await Event.findOne({ slug }).lean();
+    if (!currentEvent) {
+      return null;
+    }
+    
+    const currentJs = mapDbEventToJs(currentEvent);
+    const merged = normalizeEvent({ ...currentJs, ...payload }, currentJs);
+
+    const existing = await Event.findOne({ slug: merged.slug, _id: { $ne: currentEvent._id } }).lean();
+    if (existing) {
+      throw new Error("Another event already uses this slug.");
+    }
+
+    await Event.updateOne({ _id: currentEvent._id }, { $set: merged });
+    revalidateTag("events");
+    return merged;
+  }
+
   const events = await getAllEvents();
   const currentEvent = events.find((item) => item.slug === slug);
 
@@ -78,17 +150,32 @@ export async function updateEvent(slug, payload) {
 
   const nextEvents = events.map((item) => (item.id === currentEvent.id ? merged : item));
   await writeCollection(FILE_NAME, nextEvents);
+  revalidateTag("events");
   return merged;
 }
 
 export async function deleteEvent(slug) {
-  const events = await getAllEvents();
-  const nextEvents = events.filter((item) => item.slug !== slug);
+  let event;
+  if (isMongoEnabled()) {
+    await connectToDatabase();
+    event = await Event.findOne({ slug }).lean();
+  } else {
+    const events = await getAllEvents();
+    event = events.find((item) => item.slug === slug);
+  }
 
-  if (nextEvents.length === events.length) {
+  if (!event) {
     return false;
   }
 
-  await writeCollection(FILE_NAME, nextEvents);
+  if (isMongoEnabled()) {
+    await connectToDatabase();
+    await Event.deleteOne({ _id: event._id || event.id });
+  } else {
+    const events = await getAllEvents();
+    const nextEvents = events.filter((item) => item.slug !== slug);
+    await writeCollection(FILE_NAME, nextEvents);
+  }
+  revalidateTag("events");
   return true;
 }

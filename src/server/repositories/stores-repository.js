@@ -5,6 +5,17 @@ import { normalizeCountryCode } from "@/lib/countries";
 import { connectToDatabase } from "@/lib/mongodb";
 import Store from "@/server/models/Store";
 
+if (!global._storesCache) {
+  global._storesCache = { docs: null, timestamp: 0 };
+}
+
+export function invalidateStoresCache() {
+  if (global._storesCache) {
+    global._storesCache.docs = null;
+    global._storesCache.timestamp = 0;
+  }
+}
+
 function isMongoEnabled() {
   return process.env.USE_MONGODB === "true" || (process.env.USE_MONGODB !== "false" && Boolean(process.env.MONGODB_URI));
 }
@@ -150,22 +161,64 @@ function serializeStoreForDb(store) {
   };
 }
 
-export async function getAllStores() {
+export async function getAllStores(projection = null) {
+  const now = Date.now();
+  const cacheTTL = 30000; // Cache TTL of 30 seconds
+
   if (isMongoEnabled()) {
     await connectToDatabase();
-    const docs = await Store.find({}).sort({ created_at: -1 }).lean();
-    return docs.map(mapDbStoreToJs);
+    
+    let docs;
+    if (global._storesCache.docs && (now - global._storesCache.timestamp < cacheTTL)) {
+      docs = global._storesCache.docs;
+    } else {
+      docs = await Store.find({}).sort({ created_at: -1 }).lean();
+      global._storesCache.docs = docs;
+      global._storesCache.timestamp = now;
+    }
+
+    let resultDocs = docs;
+    if (projection) {
+      const fields = projection.split(" ");
+      resultDocs = docs.map(doc => {
+        const projected = { _id: doc._id };
+        fields.forEach(f => {
+          if (doc[f] !== undefined) projected[f] = doc[f];
+        });
+        return projected;
+      });
+    }
+
+    return resultDocs.map(mapDbStoreToJs).filter(Boolean);
+  }
+
+  // Supabase fallback (cache in-memory if needed, but since MONGODB_URI is primary, we focus on MongoDB path)
+  let selectQuery = "*";
+  if (projection) {
+    selectQuery = projection.split(" ").map(f => {
+      if (f === "categorySlug") return "category_slug";
+      if (f === "countryCode") return "country_code";
+      if (f === "logoImage") return "logo_image";
+      if (f === "logoText") return "logo_text";
+      if (f === "affiliateLink") return "affiliate_link";
+      if (f === "logoClassName") return "logo_class_name";
+      if (f === "trustStatus") return "trust_status";
+      if (f === "offersCount") return "offers_count";
+      if (f === "sidebarBannerImage") return "sidebar_banner_image";
+      if (f === "sidebarBannerUrl") return "sidebar_banner_url";
+      return f;
+    }).join(",");
   }
 
   const { data, error } = await supabase
     .from("stores")
-    .select("*")
+    .select(selectQuery)
     .order("created_at", { ascending: false });
 
   if (error) {
     throw error;
   }
-  return (data || []).map(mapDbStoreToJs);
+  return (data || []).map(mapDbStoreToJs).filter(Boolean);
 }
 
 export async function getStoreBySlug(slug) {
@@ -190,6 +243,7 @@ export async function getStoreBySlug(slug) {
 
 export async function createStore(payload) {
   const store = serializeStoreForDb(payload);
+  invalidateStoresCache();
 
   if (isMongoEnabled()) {
     await connectToDatabase();
@@ -225,6 +279,7 @@ export async function createStore(payload) {
 
 export async function createStoresBulk(payloads) {
   const stores = payloads.map((p) => serializeStoreForDb(p));
+  invalidateStoresCache();
 
   if (isMongoEnabled()) {
     await connectToDatabase();
@@ -250,6 +305,7 @@ export async function createStoresBulk(payloads) {
 
 export async function upsertStoresBulk(payloads) {
   const stores = payloads.map((p) => serializeStoreForDb(p));
+  invalidateStoresCache();
 
   if (isMongoEnabled()) {
     await connectToDatabase();
@@ -274,6 +330,7 @@ export async function upsertStoresBulk(payloads) {
 }
 
 export async function updateStore(slug, payload) {
+  invalidateStoresCache();
   if (isMongoEnabled()) {
     await connectToDatabase();
     const currentStore = await Store.findOne({ slug }).lean();
@@ -348,6 +405,7 @@ export async function updateStore(slug, payload) {
 
 export async function deleteStore(slug) {
   const normalizedSlug = slug.trim().toLowerCase();
+  invalidateStoresCache();
 
   if (isMongoEnabled()) {
     await connectToDatabase();
@@ -372,6 +430,7 @@ export async function deleteStore(slug) {
 }
 
 export async function syncStoreOfferCount(slug, offersCount) {
+  invalidateStoresCache();
   if (isMongoEnabled()) {
     await connectToDatabase();
     const updated = await Store.findOneAndUpdate(
@@ -396,6 +455,7 @@ export async function syncStoreOfferCount(slug, offersCount) {
 }
 
 export async function syncStoresForCategoryChange({ previousName, previousSlug, nextName, nextSlug }) {
+  invalidateStoresCache();
   if (isMongoEnabled()) {
     await connectToDatabase();
     await Store.updateMany(

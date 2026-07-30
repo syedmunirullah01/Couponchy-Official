@@ -3,8 +3,26 @@ import "server-only";
 import { readCollection, writeCollection } from "@/server/database/json-store";
 import { getAllStores, syncStoresForCategoryChange } from "@/server/repositories/stores-repository";
 import { unstable_cache, revalidateTag } from "next/cache";
+import { connectToDatabase } from "@/lib/mongodb";
+import Category from "@/server/models/Category";
 
 const FILE_NAME = "categories.json";
+
+function isMongoEnabled() {
+  return process.env.USE_MONGODB === "true" || (process.env.USE_MONGODB !== "false" && Boolean(process.env.MONGODB_URI));
+}
+
+function mapDbCategoryToJs(doc) {
+  if (!doc) return null;
+  return {
+    id: doc.id || doc._id,
+    name: doc.name,
+    slug: doc.slug,
+    description: doc.description || "",
+    createdAt: doc.createdAt || doc.created_at,
+    updatedAt: doc.updatedAt || doc.updated_at,
+  };
+}
 
 function slugifyCategory(value) {
   return value
@@ -55,6 +73,24 @@ async function getBootstrapCategoriesFromStores() {
 }
 
 async function fetchAllCategories() {
+  if (isMongoEnabled()) {
+    await connectToDatabase();
+    const docs = await Category.find({}).lean();
+    
+    if (docs.length > 0) {
+      return docs.map(mapDbCategoryToJs).sort((a, b) => a.name.localeCompare(b.name));
+    }
+    
+    const bootstrapped = await getBootstrapCategoriesFromStores();
+    if (bootstrapped.length > 0) {
+      const ops = bootstrapped.map(c => ({
+        updateOne: { filter: { _id: c.id }, update: { $set: { _id: c.id, ...c } }, upsert: true }
+      }));
+      await Category.bulkWrite(ops);
+    }
+    return bootstrapped;
+  }
+
   const categories = await readCollection(FILE_NAME, []);
 
   if (categories.length > 0) {
@@ -84,9 +120,20 @@ export async function getCategoryBySlug(slug) {
 }
 
 export async function createCategory(payload) {
-  const categories = await fetchAllCategories();
   const category = normalizeCategory(payload);
 
+  if (isMongoEnabled()) {
+    await connectToDatabase();
+    const existing = await Category.findOne({ slug: category.slug }).lean();
+    if (existing) {
+      throw new Error("A category with this slug already exists.");
+    }
+    await Category.create({ _id: category.id, ...category });
+    revalidateTag("categories");
+    return category;
+  }
+
+  const categories = await fetchAllCategories();
   if (categories.some((item) => item.slug === category.slug)) {
     throw new Error("A category with this slug already exists.");
   }
@@ -98,6 +145,36 @@ export async function createCategory(payload) {
 }
 
 export async function updateCategory(slug, payload) {
+  if (isMongoEnabled()) {
+    await connectToDatabase();
+    const currentCategory = await Category.findOne({ slug }).lean();
+    if (!currentCategory) {
+      return null;
+    }
+    
+    const currentJs = mapDbCategoryToJs(currentCategory);
+    const merged = normalizeCategory({ ...currentJs, ...payload }, currentJs);
+
+    const existing = await Category.findOne({ slug: merged.slug, _id: { $ne: currentCategory._id } }).lean();
+    if (existing) {
+      throw new Error("Another category already uses this slug.");
+    }
+
+    await Category.updateOne({ _id: currentCategory._id }, { $set: merged });
+    revalidateTag("categories");
+
+    if (currentCategory.name !== merged.name || currentCategory.slug !== merged.slug) {
+      await syncStoresForCategoryChange({
+        previousName: currentCategory.name,
+        previousSlug: currentCategory.slug,
+        nextName: merged.name,
+        nextSlug: merged.slug,
+      });
+    }
+
+    return merged;
+  }
+
   const categories = await fetchAllCategories();
   const currentCategory = categories.find((item) => item.slug === slug);
 
@@ -131,8 +208,14 @@ export async function updateCategory(slug, payload) {
 }
 
 export async function deleteCategory(slug) {
-  const categories = await fetchAllCategories();
-  const category = categories.find((item) => item.slug === slug);
+  let category;
+  if (isMongoEnabled()) {
+    await connectToDatabase();
+    category = await Category.findOne({ slug }).lean();
+  } else {
+    const categories = await fetchAllCategories();
+    category = categories.find((item) => item.slug === slug);
+  }
 
   if (!category) {
     return { deleted: false, linkedStores: 0 };
@@ -145,8 +228,14 @@ export async function deleteCategory(slug) {
     throw new Error(`Cannot delete category with ${linkedStores} linked store${linkedStores === 1 ? "" : "s"}.`);
   }
 
-  const nextCategories = categories.filter((item) => item.id !== category.id);
-  await writeCollection(FILE_NAME, nextCategories);
+  if (isMongoEnabled()) {
+    await connectToDatabase();
+    await Category.deleteOne({ _id: category._id || category.id });
+  } else {
+    const categories = await fetchAllCategories();
+    const nextCategories = categories.filter((item) => item.id !== category.id);
+    await writeCollection(FILE_NAME, nextCategories);
+  }
   revalidateTag("categories");
 
   return { deleted: true, linkedStores: 0 };

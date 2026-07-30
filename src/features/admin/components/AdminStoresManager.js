@@ -1217,7 +1217,7 @@ export default function AdminStoresManager() {
                             <h3 className="text-xs font-bold text-[var(--text)] uppercase tracking-wider mb-0.5">SEO Metadata Override</h3>
                             <p className="text-[10px] text-[var(--muted)]">Manually customize search engine meta titles and descriptions (optional).</p>
                           </div>
-                          
+
                           <div className="grid gap-4 sm:grid-cols-2">
                             <div className="grid gap-1.5">
                               <label className="text-xs font-bold text-[var(--text)]">Meta Title Override</label>

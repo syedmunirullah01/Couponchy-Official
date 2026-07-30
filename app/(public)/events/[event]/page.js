@@ -39,12 +39,9 @@ function formatEventName(slug) {
 
 function isEventOffer(offer, keyword) {
   const isActive = String(offer.status || "").trim().toLowerCase() === "active";
-  const searchableText = [offer.title, offer.description, offer.code, offer.source, offer.status]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase();
+  const titleText = String(offer.title || "").toLowerCase();
 
-  return isActive && searchableText.includes(String(keyword || "").trim().toLowerCase());
+  return isActive && titleText.includes(String(keyword || "").trim().toLowerCase());
 }
 
 const COUNTRY_CURRENCY_MAP = {

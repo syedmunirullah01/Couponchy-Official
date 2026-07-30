@@ -4,6 +4,17 @@ import { supabase } from "@/lib/supabase";
 import { connectToDatabase } from "@/lib/mongodb";
 import Offer from "@/server/models/Offer";
 
+if (!global._offersCache) {
+  global._offersCache = { docs: null, timestamp: 0 };
+}
+
+export function invalidateOffersCache() {
+  if (global._offersCache) {
+    global._offersCache.docs = null;
+    global._offersCache.timestamp = 0;
+  }
+}
+
 function isMongoEnabled() {
   return process.env.USE_MONGODB === "true" || (process.env.USE_MONGODB !== "false" && Boolean(process.env.MONGODB_URI));
 }
@@ -77,12 +88,36 @@ function serializeOfferForDb(offer) {
   };
 }
 
-export async function getAllOffers() {
+export async function getAllOffers(projection = null) {
+  const now = Date.now();
+  const cacheTTL = 30000; // Cache TTL of 30 seconds
+
   if (isMongoEnabled()) {
     await connectToDatabase();
-    const docs = await Offer.find({}).sort({ created_at: -1 }).lean();
+    
+    let docs;
+    if (global._offersCache.docs && (now - global._offersCache.timestamp < cacheTTL)) {
+      docs = global._offersCache.docs;
+    } else {
+      docs = await Offer.find({}).sort({ created_at: -1 }).lean();
+      global._offersCache.docs = docs;
+      global._offersCache.timestamp = now;
+    }
+
+    let resultDocs = docs;
+    if (projection) {
+      const fields = projection.split(" ");
+      resultDocs = docs.map(doc => {
+        const projected = { _id: doc._id };
+        fields.forEach(f => {
+          if (doc[f] !== undefined) projected[f] = doc[f];
+        });
+        return projected;
+      });
+    }
+
     const today = new Date().toISOString().slice(0, 10);
-    const jsOffers = docs.map(mapDbOfferToJs).filter(Boolean);
+    const jsOffers = resultDocs.map(mapDbOfferToJs).filter(Boolean);
     const expiredIds = jsOffers
       .filter(o => o && !o.autoRenew && o.expiryDate && o.expiryDate < today)
       .map(o => o.id);
@@ -91,13 +126,31 @@ export async function getAllOffers() {
       Offer.deleteMany({ _id: { $in: expiredIds } }).catch(err =>
         console.error("[offers-repository] Failed to delete expired Mongo offers:", err)
       );
+      // Invalidate the cache since we deleted database documents
+      invalidateOffersCache();
     }
     return jsOffers.filter(o => o && (o.autoRenew || !o.expiryDate || o.expiryDate >= today));
   }
 
+  // Supabase fallback
+  let selectQuery = "*";
+  if (projection) {
+    selectQuery = projection.split(" ").map(f => {
+      if (f === "storeName") return "store_name";
+      if (f === "storeSlug") return "store_slug";
+      if (f === "expiryDate") return "expiry_date";
+      if (f === "affiliateLink") return "affiliate_link";
+      if (f === "ctaLabel") return "cta_label";
+      if (f === "autoRenew") return "auto_renew";
+      if (f === "createdAt") return "created_at";
+      if (f === "updatedAt") return "updated_at";
+      return f;
+    }).join(",");
+  }
+
   const { data, error } = await supabase
     .from("offers")
-    .select("*")
+    .select(selectQuery)
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -213,6 +266,7 @@ export async function getOffersByStoreSlug(storeSlug) {
 
 export async function createOffer(payload) {
   const offer = serializeOfferForDb(payload);
+  invalidateOffersCache();
 
   if (isMongoEnabled()) {
     await connectToDatabase();
@@ -234,6 +288,7 @@ export async function createOffer(payload) {
 
 export async function createOffersBulk(payloads) {
   const offers = payloads.map((p) => serializeOfferForDb(p));
+  invalidateOffersCache();
 
   if (isMongoEnabled()) {
     await connectToDatabase();
@@ -258,6 +313,7 @@ export async function createOffersBulk(payloads) {
 }
 
 export async function updateOffer(id, payload) {
+  invalidateOffersCache();
   if (isMongoEnabled()) {
     await connectToDatabase();
     const currentOffer = await Offer.findOne({ _id: id }).lean();
@@ -307,6 +363,7 @@ export async function updateOffer(id, payload) {
 }
 
 export async function deleteOffer(id) {
+  invalidateOffersCache();
   if (isMongoEnabled()) {
     await connectToDatabase();
     await Offer.deleteOne({ _id: id });
@@ -323,6 +380,7 @@ export async function deleteOffer(id) {
 
 export async function deleteOffersByStoreSlug(storeSlug) {
   const normalizedSlug = storeSlug.trim().toLowerCase();
+  invalidateOffersCache();
 
   if (isMongoEnabled()) {
     await connectToDatabase();

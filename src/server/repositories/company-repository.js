@@ -2,8 +2,14 @@ import "server-only";
 
 import { readCollection, writeCollection } from "@/server/database/json-store";
 import { unstable_cache, revalidateTag } from "next/cache";
+import { connectToDatabase } from "@/lib/mongodb";
+import Company from "@/server/models/Company";
 
 const FILE_NAME = "company.json";
+
+function isMongoEnabled() {
+  return process.env.USE_MONGODB === "true" || (process.env.USE_MONGODB !== "false" && Boolean(process.env.MONGODB_URI));
+}
 
 const defaultContent = {
   aboutUs: {
@@ -63,6 +69,8 @@ const defaultContent = {
     // Section 5
     cookiesText: "We utilize cookies to remember your country preferences (e.g. storing your region preference in cookies) so that you do not need to select it again. These cookies do not track your browsing habits outside our domain. You can disable cookies in your browser settings, though some regional features may fall back to default configurations.",
     // Section 6
+    cookiesHeadline: "How We Use Cookies",
+    cookiesSubtext: "We use cookies to enhance your experience, analyze site usage, and support our advertising efforts. By continuing to use our website, you agree to our use of cookies.",
     dataSecurityText: "We apply industry-standard security measures, including SSL encryption and secure database controls. We never lease, trade, or sell your personal details to outside marketing agencies or aggregators.",
     // Section 7
     thirdPartyText: "Our site lists deals and links to third-party brand websites. Once you click a link and navigate away, we do not have authority over their privacy structures. We strongly advise checking the individual privacy policies of any site you visit.",
@@ -106,7 +114,14 @@ const defaultContent = {
 };
 
 async function fetchCompanyContent() {
-  const stored = await readCollection(FILE_NAME);
+  let stored;
+  if (isMongoEnabled()) {
+    await connectToDatabase();
+    const doc = await Company.findOne({ _id: "global" }).lean();
+    stored = doc || {};
+  } else {
+    stored = await readCollection(FILE_NAME);
+  }
 
   if (!stored || typeof stored !== "object") {
     return defaultContent;
@@ -140,7 +155,17 @@ export async function updateCompanyContent(payload) {
     sitemap: { ...current.sitemap, ...payload.sitemap },
   };
 
-  await writeCollection(FILE_NAME, next);
+  if (isMongoEnabled()) {
+    await connectToDatabase();
+    await Company.updateOne(
+      { _id: "global" },
+      { $set: { _id: "global", ...next } },
+      { upsert: true }
+    );
+  } else {
+    await writeCollection(FILE_NAME, next);
+  }
+
   revalidateTag("company-content");
   return next;
 }

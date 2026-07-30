@@ -1,10 +1,37 @@
 import "server-only";
 
 import { readCollection, writeCollection } from "@/server/database/json-store";
+import { getStoreBySlug } from "./stores-repository";
+import { unstable_cache, revalidateTag } from "next/cache";
+import { connectToDatabase } from "@/lib/mongodb";
+import Product from "@/server/models/Product";
 
 const FILE_NAME = "products.json";
 
-import { getStoreBySlug } from "./stores-repository";
+function isMongoEnabled() {
+  return process.env.USE_MONGODB === "true" || (process.env.USE_MONGODB !== "false" && Boolean(process.env.MONGODB_URI));
+}
+
+function mapDbProductToJs(doc) {
+  if (!doc) return null;
+  return {
+    id: doc.id || doc._id,
+    slug: doc.slug,
+    storeSlug: doc.storeSlug,
+    storeName: doc.storeName,
+    title: doc.title,
+    description: doc.description || "",
+    image: doc.image || "",
+    price: doc.price || 0,
+    originalPrice: doc.originalPrice === "" || doc.originalPrice == null ? null : doc.originalPrice,
+    currency: doc.currency || "$",
+    ctaLabel: doc.ctaLabel || "View Product",
+    productUrl: doc.productUrl || "",
+    status: doc.status || "Active",
+    createdAt: doc.createdAt || doc.created_at,
+    updatedAt: doc.updatedAt || doc.updated_at,
+  };
+}
 
 function slugify(value) {
   return value
@@ -55,9 +82,23 @@ async function normalizeProduct(input) {
   };
 }
 
-export async function getAllProducts() {
+async function fetchAllProducts() {
+  if (isMongoEnabled()) {
+    await connectToDatabase();
+    const docs = await Product.find({}).lean();
+    return docs.map(mapDbProductToJs).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  }
+
   const products = await readCollection(FILE_NAME);
   return [...products].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+}
+
+export async function getAllProducts() {
+  return unstable_cache(
+    async () => fetchAllProducts(),
+    ["products"],
+    { revalidate: 1800, tags: ["products"] }
+  )();
 }
 
 export async function getProductById(id) {
@@ -76,15 +117,43 @@ export async function getProductByStoreAndSlug(storeSlug, slug) {
 }
 
 export async function createProduct(payload) {
-  const products = await getAllProducts();
   const product = await normalizeProduct(payload);
+
+  if (isMongoEnabled()) {
+    await connectToDatabase();
+    await Product.create({ _id: product.id, ...product });
+    revalidateTag("products");
+    return product;
+  }
+
+  const products = await fetchAllProducts();
   const nextProducts = [product, ...products];
   await writeCollection(FILE_NAME, nextProducts);
+  revalidateTag("products");
   return product;
 }
 
 export async function updateProduct(id, payload) {
-  const products = await getAllProducts();
+  if (isMongoEnabled()) {
+    await connectToDatabase();
+    const currentProduct = await Product.findOne({ _id: id }).lean();
+    if (!currentProduct) {
+      return null;
+    }
+    const currentJs = mapDbProductToJs(currentProduct);
+    const merged = await normalizeProduct({
+      ...currentJs,
+      ...payload,
+      id: currentProduct._id,
+      createdAt: currentProduct.created_at || currentProduct.createdAt,
+    });
+
+    await Product.updateOne({ _id: id }, { $set: merged });
+    revalidateTag("products");
+    return merged;
+  }
+
+  const products = await fetchAllProducts();
   const currentProduct = products.find((product) => product.id === id);
 
   if (!currentProduct) {
@@ -100,11 +169,22 @@ export async function updateProduct(id, payload) {
 
   const nextProducts = products.map((product) => (product.id === id ? merged : product));
   await writeCollection(FILE_NAME, nextProducts);
+  revalidateTag("products");
   return merged;
 }
 
 export async function deleteProduct(id) {
-  const products = await getAllProducts();
+  if (isMongoEnabled()) {
+    await connectToDatabase();
+    const res = await Product.deleteOne({ _id: id });
+    if (res.deletedCount === 0) {
+      return false;
+    }
+    revalidateTag("products");
+    return true;
+  }
+
+  const products = await fetchAllProducts();
   const nextProducts = products.filter((product) => product.id !== id);
 
   if (nextProducts.length === products.length) {
@@ -112,5 +192,6 @@ export async function deleteProduct(id) {
   }
 
   await writeCollection(FILE_NAME, nextProducts);
+  revalidateTag("products");
   return true;
 }

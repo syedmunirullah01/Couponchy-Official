@@ -4,6 +4,10 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { supabase } from "@/lib/supabase";
 
+if (!global._jsonStoreCache) {
+  global._jsonStoreCache = {};
+}
+
 // Bundled data directory (read-only on Vercel / serverless)
 const bundledDir = path.join(process.cwd(), "data", "database");
 
@@ -17,7 +21,22 @@ async function ensureDir(dir) {
 }
 
 export async function readCollection(fileName, fallback = []) {
+  const now = Date.now();
+  const cacheTTL = 30000; // 30 seconds cache TTL
+
+  if (global._jsonStoreCache[fileName]) {
+    const { data, timestamp } = global._jsonStoreCache[fileName];
+    if (now - timestamp < cacheTTL) {
+      return data;
+    }
+  }
+
   const tmpPath = path.join(writableDir, fileName);
+
+  const setCacheAndReturn = (records) => {
+    global._jsonStoreCache[fileName] = { data: records, timestamp: Date.now() };
+    return records;
+  };
 
   // 1. Try to download from Supabase storage first (most up-to-date, shared cloud store)
   try {
@@ -33,7 +52,7 @@ export async function readCollection(fileName, fallback = []) {
       await ensureDir(writableDir);
       await writeFile(tmpPath, text, "utf8");
 
-      return records;
+      return setCacheAndReturn(records);
     }
   } catch (err) {
     // If download or parse fails, fall through to local cache
@@ -42,7 +61,8 @@ export async function readCollection(fileName, fallback = []) {
   // 2. Try to read from local /tmp cache
   try {
     const fileContents = await readFile(tmpPath, "utf8");
-    return JSON.parse(fileContents);
+    const records = JSON.parse(fileContents);
+    return setCacheAndReturn(records);
   } catch { }
 
   // 3. Fall back to bundled data/database file
@@ -61,14 +81,17 @@ export async function readCollection(fileName, fallback = []) {
         });
     } catch { }
 
-    return records;
+    return setCacheAndReturn(records);
   } catch {
-    return fallback;
+    return setCacheAndReturn(fallback);
   }
 }
 
 export async function writeCollection(fileName, records) {
   const jsonStr = `${JSON.stringify(records, null, 2)}\n`;
+
+  // Update in-memory cache immediately
+  global._jsonStoreCache[fileName] = { data: records, timestamp: Date.now() };
 
   // 1. Write to local /tmp cache
   try {

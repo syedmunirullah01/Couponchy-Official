@@ -327,12 +327,12 @@ export default function AdminOffersManager() {
             <CardDescription className="text-xs text-[var(--muted)] mt-0.5">Manage coupon codes and direct deals from one place.</CardDescription>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <Button 
-              type="button" 
-              variant="outline" 
+            <Button
+              type="button"
+              variant="outline"
               className={cn(
                 "h-10 rounded-xl font-bold transition-all duration-200 px-4 flex items-center gap-1.5 text-xs",
-                selectedOfferIds.length 
+                selectedOfferIds.length
                   ? "border border-red-500/25 bg-red-500/5 text-red-500 hover:bg-red-500 hover:text-white hover:border-red-600 cursor-pointer"
                   : "border border-[var(--border)] bg-[var(--surface-soft)]/20 text-[var(--muted)]/40 cursor-not-allowed opacity-50"
               )}
@@ -424,8 +424,8 @@ export default function AdminOffersManager() {
                         offer.status === "Active"
                           ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
                           : offer.status === "Scheduled"
-                          ? "bg-blue-500/10 text-blue-600 border-blue-500/20"
-                          : "bg-red-500/10 text-red-600 border-red-500/20"
+                            ? "bg-blue-500/10 text-blue-600 border-blue-500/20"
+                            : "bg-red-500/10 text-red-600 border-red-500/20"
                       )}>
                         {offer.status}
                       </span>
@@ -484,7 +484,7 @@ export default function AdminOffersManager() {
                 >
                   Previous
                 </button>
-                
+
                 {getPageNumbers().map((pageNum, idx) => {
                   if (pageNum === "...") {
                     return (
@@ -493,7 +493,7 @@ export default function AdminOffersManager() {
                       </span>
                     );
                   }
-                  
+
                   const isCurrent = currentPage === pageNum;
                   return (
                     <button
@@ -580,7 +580,7 @@ export default function AdminOffersManager() {
                 {storeDropdownOpen && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setStoreDropdownOpen(false)} />
-                    
+
                     <div className="absolute left-0 right-0 mt-1.5 max-h-64 overflow-y-auto rounded-xl border border-[var(--border)] bg-[#0c0c11] p-2 shadow-2xl z-50 flex flex-col gap-1.5 custom-scrollbar">
                       <input
                         type="text"
@@ -591,7 +591,7 @@ export default function AdminOffersManager() {
                         className="h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface-soft)]/40 px-3 text-xs text-[var(--text)] outline-none focus:border-[var(--color-primary)] placeholder-white/30"
                         onClick={(e) => e.stopPropagation()}
                       />
-                      
+
                       <div className="overflow-y-auto max-h-48 flex flex-col gap-1 pr-1 custom-scrollbar">
                         {filteredStoresForSelect.length === 0 ? (
                           <div className="py-4 text-center text-xs text-white/30 italic">No stores found</div>
@@ -617,8 +617,8 @@ export default function AdminOffersManager() {
                                 }}
                                 className={cn(
                                   "w-full text-left px-3 py-2 text-xs rounded-lg transition duration-150 cursor-pointer font-medium flex items-center justify-between",
-                                  isSelected 
-                                    ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)] font-bold" 
+                                  isSelected
+                                    ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)] font-bold"
                                     : "text-white/60 hover:bg-white/[0.03] hover:text-white"
                                 )}
                               >

@@ -9,7 +9,10 @@ import { translateStoreOnSave } from "@/server/services/translation-service";
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const requestedCountryCode = searchParams.get("country");
-  const stores = await getAllStores();
+  
+  // Project only basic fields needed for lists and dropdowns to speed up load time
+  const projection = "name slug category category_slug country_code logo_image logo_text affiliate_link logo_class_name trust_status offers_count position created_at";
+  const stores = await getAllStores(projection);
 
   if (!requestedCountryCode) {
     return NextResponse.json({ data: stores });
