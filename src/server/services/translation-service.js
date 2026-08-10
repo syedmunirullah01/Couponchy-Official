@@ -26,7 +26,11 @@ function getHash(text) {
   return crypto.createHash("md5").update(String(text).trim()).digest("hex");
 }
 
-async function callDeepSeek(text, langCode) {
+async function callDeepSeek(text, langCode, entityType = null) {
+  if (entityType !== "offer") {
+    return text;
+  }
+
   if (!DEEPSEEK_API_KEY) {
     console.warn("[callDeepSeek] DEEPSEEK_API_KEY is not defined in environments.");
     return text;
@@ -252,7 +256,7 @@ export async function translateOfferOnSave(offer) {
         const titleHash = getHash(offer.title);
         const existing = await getExistingTranslation("offer", offer.id, "title", lang);
         if (!existing?.translated_text || existing.original_hash !== titleHash) {
-          const translatedTitle = await callDeepSeek(offer.title, lang);
+          const translatedTitle = await callDeepSeek(offer.title, lang, "offer");
           await saveTranslation("offer", offer.id, "title", lang, translatedTitle, titleHash);
         }
       }
@@ -261,7 +265,7 @@ export async function translateOfferOnSave(offer) {
         const descHash = getHash(offer.description);
         const existing = await getExistingTranslation("offer", offer.id, "description", lang);
         if (!existing?.translated_text || existing.original_hash !== descHash) {
-          const translatedDesc = await callDeepSeek(offer.description, lang);
+          const translatedDesc = await callDeepSeek(offer.description, lang, "offer");
           await saveTranslation("offer", offer.id, "description", lang, translatedDesc, descHash);
         }
       }
@@ -270,7 +274,7 @@ export async function translateOfferOnSave(offer) {
         const ctaHash = getHash(offer.ctaLabel);
         const existing = await getExistingTranslation("offer", offer.id, "ctaLabel", lang);
         if (!existing?.translated_text || existing.original_hash !== ctaHash) {
-          const translatedCta = await callDeepSeek(offer.ctaLabel, lang);
+          const translatedCta = await callDeepSeek(offer.ctaLabel, lang, "offer");
           await saveTranslation("offer", offer.id, "ctaLabel", lang, translatedCta, ctaHash);
         }
       }
