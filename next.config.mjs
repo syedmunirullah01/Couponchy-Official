@@ -25,11 +25,11 @@ const nextConfig = {
   async rewrites() {
     return [
       {
-        source: "/:country(us|gb|ca|au|in|ae|sa|de|it|fr|pl|es|nl|be|pk)/:path*",
+        source: "/:country(us|gb|ca|au|in|ae|pt|de|it|fr|pl|es|nl|be|se)/:path*",
         destination: "/:path*",
       },
       {
-        source: "/:country(us|gb|ca|au|in|ae|sa|de|it|fr|pl|es|nl|be|pk)",
+        source: "/:country(us|gb|ca|au|in|ae|pt|de|it|fr|pl|es|nl|be|se)",
         destination: "/",
       },
     ];
