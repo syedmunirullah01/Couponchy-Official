@@ -124,13 +124,7 @@ export async function middleware(req) {
     const requestHeaders = new Headers(req.headers);
     requestHeaders.set(COUNTRY_HEADER_KEY, prefixedCountryCode);
 
-    const rewriteUrl = req.nextUrl.clone();
-    rewriteUrl.pathname = removeCountryPrefix(pathname);
-
-    // Fix protocol mismatch when running behind a reverse proxy (e.g. Nginx on VPS proxying to localhost)
-    if (rewriteUrl.hostname === "localhost" || rewriteUrl.hostname === "127.0.0.1") {
-      rewriteUrl.protocol = "http";
-    }
+    const rewriteUrl = new URL(removeCountryPrefix(pathname) + search, req.url);
 
     const response = NextResponse.rewrite(rewriteUrl, {
       request: {
