@@ -1,5 +1,6 @@
 import "server-only";
 
+import { cache } from "react";
 import { supabase } from "@/lib/supabase";
 import { normalizeCountryCode } from "@/lib/countries";
 import { connectToDatabase } from "@/lib/mongodb";
@@ -221,7 +222,7 @@ export async function getAllStores(projection = null) {
   return (data || []).map(mapDbStoreToJs).filter(Boolean);
 }
 
-export async function getStoreBySlug(slug) {
+export const getStoreBySlug = cache(async function (slug) {
   const normalizedSlug = slug.trim().toLowerCase();
   if (isMongoEnabled()) {
     await connectToDatabase();
@@ -239,7 +240,7 @@ export async function getStoreBySlug(slug) {
     throw error;
   }
   return mapDbStoreToJs(data);
-}
+});
 
 export async function createStore(payload) {
   const store = serializeStoreForDb(payload);

@@ -1,5 +1,6 @@
 import "server-only";
 
+import { cache } from "react";
 import { supabase } from "@/lib/supabase";
 import { connectToDatabase } from "@/lib/mongodb";
 import Offer from "@/server/models/Offer";
@@ -214,7 +215,7 @@ export async function getOfferById(id) {
   return offer;
 }
 
-export async function getOffersByStoreSlug(storeSlug) {
+export const getOffersByStoreSlug = cache(async function (storeSlug) {
   const normalizedSlug = storeSlug.trim().toLowerCase();
 
   if (isMongoEnabled()) {
@@ -262,7 +263,7 @@ export async function getOffersByStoreSlug(storeSlug) {
   }
 
   return jsOffers.filter(o => o.autoRenew || !o.expiryDate || o.expiryDate >= today);
-}
+});
 
 export async function createOffer(payload) {
   const offer = serializeOfferForDb(payload);
