@@ -22,6 +22,18 @@ const nextConfig = {
       },
     ],
   },
+  async rewrites() {
+    return [
+      {
+        source: "/:country(us|gb|ca|au|in|ae|sa|de|it|fr|pl|es|nl|be|pk)/:path*",
+        destination: "/:path*",
+      },
+      {
+        source: "/:country(us|gb|ca|au|in|ae|sa|de|it|fr|pl|es|nl|be|pk)",
+        destination: "/",
+      },
+    ];
+  },
 };
 
 export default nextConfig;

@@ -124,18 +124,7 @@ export async function middleware(req) {
     const requestHeaders = new Headers(req.headers);
     requestHeaders.set(COUNTRY_HEADER_KEY, prefixedCountryCode);
 
-    // Delete forwarded headers to avoid HTTPS/HTTP protocol mismatch loops on self-hosted servers
-    requestHeaders.delete("x-forwarded-proto");
-    requestHeaders.delete("x-forwarded-host");
-
-    const rewriteUrl = new URL(removeCountryPrefix(pathname) + search, req.url);
-    
-    // Force http protocol for internal rewrite to match the local node server listener protocol
-    if (rewriteUrl.protocol === "https:") {
-      rewriteUrl.protocol = "http:";
-    }
-
-    const response = NextResponse.rewrite(rewriteUrl, {
+    const response = NextResponse.next({
       request: {
         headers: requestHeaders,
       },
