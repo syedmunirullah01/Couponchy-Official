@@ -29,52 +29,193 @@ function getFlagEmoji(countryCode) {
 }
 
 export default async function AdminDashboardPage() {
-  const [storesRaw, offersRaw, settingsRaw] = await Promise.all([
-    getAllStores().catch((err) => {
-      console.error("[AdminDashboardPage] Error fetching stores:", err);
-      return [];
-    }),
-    getAllOffers().catch((err) => {
-      console.error("[AdminDashboardPage] Error fetching offers:", err);
-      return [];
-    }),
-    getSettings().catch((err) => {
-      console.error("[AdminDashboardPage] Error fetching settings:", err);
-      return {};
-    }),
-  ]);
-
-  const stores = Array.isArray(storesRaw) ? storesRaw.filter(Boolean) : [];
-  const offers = Array.isArray(offersRaw) ? offersRaw.filter(Boolean) : [];
+  const settingsRaw = await getSettings().catch((err) => {
+    console.error("[AdminDashboardPage] Error fetching settings:", err);
+    return {};
+  });
   const settings = settingsRaw || {};
 
-  const couponsCount = offers.filter((offer) => offer?.type === "Coupon").length;
-  const dealsCount = offers.filter((offer) => offer?.type === "Deal").length;
-  
+  let stores = [];
+  let couponsCount = 0;
+  let dealsCount = 0;
+  let recentOffers = [];
+  let chartData = [];
+
+  const isMongoEnabled = process.env.USE_MONGODB === "true" || (process.env.USE_MONGODB !== "false" && Boolean(process.env.MONGODB_URI));
+
+  if (isMongoEnabled) {
+    try {
+      const { connectToDatabase } = require("@/lib/mongodb");
+      const Store = (await import("@/server/models/Store")).default;
+      const Offer = (await import("@/server/models/Offer")).default;
+      await connectToDatabase();
+
+      const [
+        storesCount,
+        couponsCountVal,
+        dealsCountVal,
+        recentOffersDocs,
+        countryBreakdown,
+        last7DaysOffers
+      ] = await Promise.all([
+        Store.countDocuments({}),
+        Offer.countDocuments({ type: "Coupon" }),
+        Offer.countDocuments({ type: "Deal" }),
+        Offer.find({}).sort({ created_at: -1 }).limit(6).lean(),
+        Store.aggregate([
+          { $group: { _id: { $toUpper: "$country_code" }, count: { $sum: 1 } } }
+        ]),
+        Offer.find(
+          { created_at: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString() } },
+          { type: 1, created_at: 1 }
+        ).lean()
+      ]);
+
+      couponsCount = couponsCountVal;
+      dealsCount = dealsCountVal;
+
+      // Mock stores array with only countryCode for CountryStoresCard grouping
+      const mockStores = [];
+      countryBreakdown.forEach((group) => {
+        const code = group._id || "US";
+        const count = group.count || 0;
+        for (let i = 0; i < count; i++) {
+          mockStores.push({ countryCode: code });
+        }
+      });
+      stores = mockStores;
+
+      // Format recent offers
+      recentOffers = recentOffersDocs.map((offer) => {
+        let addedAtStr = "Recently";
+        if (offer.created_at) {
+          try {
+            const d = new Date(offer.created_at);
+            if (!isNaN(d.getTime())) {
+              addedAtStr = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+            }
+          } catch (e) {}
+        }
+        return {
+          title: offer.title || "Untitled Offer",
+          store: offer.storeName || "Store",
+          type: offer.type || "Coupon",
+          source: offer.source || "Manual",
+          addedAt: addedAtStr,
+        };
+      });
+
+      // 7-day trend
+      const last7Days = Array.from({ length: 7 }, (_, i) => {
+        const d = new Date();
+        d.setDate(d.getDate() - (6 - i));
+        return d;
+      });
+
+      const baseCoupons = [3, 7, 5, 12, 8, 15, 10];
+      const baseDeals = [5, 9, 8, 15, 10, 18, 14];
+
+      chartData = last7Days.map((date, i) => {
+        const dateStr = date.toDateString();
+        const actCoupons = last7DaysOffers.filter((o) => {
+          if (o.type !== "Coupon" || !o.created_at) return false;
+          const d = new Date(o.created_at);
+          return !isNaN(d.getTime()) && d.toDateString() === dateStr;
+        }).length;
+        const actDeals = last7DaysOffers.filter((o) => {
+          if (o.type !== "Deal" || !o.created_at) return false;
+          const d = new Date(o.created_at);
+          return !isNaN(d.getTime()) && d.toDateString() === dateStr;
+        }).length;
+
+        return {
+          label: date.toLocaleDateString("en-US", { weekday: "short" }),
+          labelDay: date.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" }),
+          coupons: actCoupons || baseCoupons[i],
+          deals: actDeals || baseDeals[i],
+        };
+      });
+
+    } catch (err) {
+      console.error("[AdminDashboardPage] MongoDB optimized query failed:", err);
+    }
+  }
+
+  // Fallback if MongoDB is not enabled or if queries failed
+  if (stores.length === 0 && couponsCount === 0 && dealsCount === 0) {
+    const [storesRaw, offersRaw] = await Promise.all([
+      getAllStores().catch((err) => {
+        console.error("[AdminDashboardPage] Fallback: Error fetching stores:", err);
+        return [];
+      }),
+      getAllOffers().catch((err) => {
+        console.error("[AdminDashboardPage] Fallback: Error fetching offers:", err);
+        return [];
+      }),
+    ]);
+
+    const fallbackStores = Array.isArray(storesRaw) ? storesRaw.filter(Boolean) : [];
+    const fallbackOffers = Array.isArray(offersRaw) ? offersRaw.filter(Boolean) : [];
+
+    stores = fallbackStores;
+    couponsCount = fallbackOffers.filter((offer) => offer?.type === "Coupon").length;
+    dealsCount = fallbackOffers.filter((offer) => offer?.type === "Deal").length;
+
+    recentOffers = fallbackOffers.slice(0, 6).map((offer) => {
+      let addedAtStr = "Recently";
+      if (offer?.createdAt) {
+        try {
+          const d = new Date(offer.createdAt);
+          if (!isNaN(d.getTime())) {
+            addedAtStr = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+          }
+        } catch (e) {}
+      }
+      return {
+        title: offer?.title || "Untitled Offer",
+        store: offer?.storeName || "Store",
+        type: offer?.type || "Coupon",
+        source: offer?.source || "Manual",
+        addedAt: addedAtStr,
+      };
+    });
+
+    const last7Days = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (6 - i));
+      return d;
+    });
+
+    const baseCoupons = [3, 7, 5, 12, 8, 15, 10];
+    const baseDeals = [5, 9, 8, 15, 10, 18, 14];
+
+    chartData = last7Days.map((date, i) => {
+      const dateStr = date.toDateString();
+      const actCoupons = fallbackOffers.filter((o) => {
+        if (o?.type !== "Coupon" || !o?.createdAt) return false;
+        const d = new Date(o.createdAt);
+        return !isNaN(d.getTime()) && d.toDateString() === dateStr;
+      }).length;
+      const actDeals = fallbackOffers.filter((o) => {
+        if (o?.type !== "Deal" || !o?.createdAt) return false;
+        const d = new Date(o.createdAt);
+        return !isNaN(d.getTime()) && d.toDateString() === dateStr;
+      }).length;
+
+      return {
+        label: date.toLocaleDateString("en-US", { weekday: "short" }),
+        labelDay: date.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" }),
+        coupons: actCoupons || baseCoupons[i],
+        deals: actDeals || baseDeals[i],
+      };
+    });
+  }
+
   const networksCount = [
     settings?.affiliate?.cjEnabled,
     settings?.affiliate?.rakutenEnabled,
     settings?.affiliate?.impactEnabled
   ].filter(Boolean).length;
-
-  const recentOffers = offers.slice(0, 6).map((offer) => {
-    let addedAtStr = "Recently";
-    if (offer?.createdAt) {
-      try {
-        const d = new Date(offer.createdAt);
-        if (!isNaN(d.getTime())) {
-          addedAtStr = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-        }
-      } catch (e) {}
-    }
-    return {
-      title: offer?.title || "Untitled Offer",
-      store: offer?.storeName || "Store",
-      type: offer?.type || "Coupon",
-      source: offer?.source || "Manual",
-      addedAt: addedAtStr,
-    };
-  });
 
   const adminMetrics = [
     { label: "Total Stores", value: String(stores.length).padStart(2, "0"), change: "Registered brands" },
@@ -83,50 +224,10 @@ export default async function AdminDashboardPage() {
     { label: "Network Integrations", value: String(networksCount).padStart(2, "0"), change: "Merchant networks configured" },
   ];
 
-  // 1. Process 7-Day Trend Chart data (using website offers data + fallback trend)
-  const last7Days = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - (6 - i));
-    return d;
-  });
-
-  const baseCoupons = [3, 7, 5, 12, 8, 15, 10];
-  const baseDeals = [5, 9, 8, 15, 10, 18, 14];
-
-  const chartData = last7Days.map((date, i) => {
-    const dateStr = date.toDateString();
-    const actCoupons = offers.filter((o) => {
-      if (o?.type !== "Coupon" || !o?.createdAt) return false;
-      const d = new Date(o.createdAt);
-      return !isNaN(d.getTime()) && d.toDateString() === dateStr;
-    }).length;
-    const actDeals = offers.filter((o) => {
-      if (o?.type !== "Deal" || !o?.createdAt) return false;
-      const d = new Date(o.createdAt);
-      return !isNaN(d.getTime()) && d.toDateString() === dateStr;
-    }).length;
-
-    return {
-      label: date.toLocaleDateString("en-US", { weekday: "short" }),
-      labelDay: date.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" }),
-      coupons: actCoupons || baseCoupons[i],
-      deals: actDeals || baseDeals[i],
-    };
-  });
-
-  // 2. Process Top Performing Stores list
-  const topStores = [...stores]
-    .sort((a, b) => (b.offersCount || 0) - (a.offersCount || 0))
-    .slice(0, 6);
-
-  const maxStoreOffers = Math.max(...topStores.map((s) => s.offersCount || 1)) || 1;
-
-  // 3. Process Coupons vs Deals percentages for Donut chart
   const totalOffers = couponsCount + dealsCount || 1;
   const couponPercent = Math.round((couponsCount / totalOffers) * 100);
   const dealPercent = 100 - couponPercent;
 
-  // SVG Donut Circle Calculations
   const radius = 15.915;
   const circumference = 2 * Math.PI * radius;
   const couponStrokeOffset = circumference - (couponPercent / 100) * circumference;
