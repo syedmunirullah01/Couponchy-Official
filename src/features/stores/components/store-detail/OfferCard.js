@@ -214,7 +214,6 @@ export default function OfferCard({ offer, store, isFirst, t }) {
   const isExternal = Boolean(offer.affiliateLink || store.affiliateLink);
   const actionHref = isExternal || offerHref === "#" ? offerHref : buildCountryPath(offerHref, store.countryCode);
   const offerValue = getOfferValue(offer, store?.countryCode);
-  console.log("OFFER VALUE DEBUG:", { title: offer.title, desc: offer.description, val: offerValue });
   const isCoupon = offer.type === "Coupon";
   const isTranslated = !["US", "GB", "CA", "AU", "IN", "AE", "CH"].includes(String(store?.countryCode || "").toUpperCase());
   const expiryText = formatExpiry(offer.expiryDate);

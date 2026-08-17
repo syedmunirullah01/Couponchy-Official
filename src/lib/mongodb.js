@@ -2,9 +2,11 @@ import dns from "dns";
 
 try {
   dns.setDefaultResultOrder("ipv4first");
-  console.log("Current DNS servers:", dns.getServers());
-  dns.setServers(["8.8.8.8", "1.1.1.1", "8.8.4.4"]);
-  console.log("Updated DNS servers:", dns.getServers());
+  if (process.env.NODE_ENV === "development") {
+    console.log("Current DNS servers:", dns.getServers());
+    dns.setServers(["8.8.8.8", "1.1.1.1", "8.8.4.4"]);
+    console.log("Updated DNS servers:", dns.getServers());
+  }
 } catch (e) {
   console.error("Failed to set DNS servers:", e);
 }
