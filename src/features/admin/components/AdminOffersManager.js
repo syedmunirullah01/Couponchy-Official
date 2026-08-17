@@ -45,35 +45,7 @@ export default function AdminOffersManager() {
   const [countries, setCountries] = useState(SUPPORTED_COUNTRIES);
   const [selectedCountryFilter, setSelectedCountryFilter] = useState("all");
 
-  const filteredOffers = useMemo(() => {
-    const storeMap = new Map(stores.map((s) => [s.slug, s]));
-    let result = offers;
-
-    if (selectedCountryFilter !== "all") {
-      result = result.filter((offer) => {
-        const store = storeMap.get(offer.storeSlug);
-        const countryCode = store?.countryCode || "US";
-        return countryCode.toLowerCase() === selectedCountryFilter.toLowerCase();
-      });
-    }
-
-    if (!searchQuery) return result;
-    const lowerQuery = searchQuery.toLowerCase();
-    return result.filter((offer) => {
-      const title = (offer.title || "").toLowerCase();
-      const desc = (offer.description || "").toLowerCase();
-      const storeName = (offer.storeName || "").toLowerCase();
-      const code = (offer.code || "").toLowerCase();
-      const type = (offer.type || "").toLowerCase();
-      return (
-        title.includes(lowerQuery) ||
-        desc.includes(lowerQuery) ||
-        storeName.includes(lowerQuery) ||
-        code.includes(lowerQuery) ||
-        type.includes(lowerQuery)
-      );
-    });
-  }, [offers, stores, searchQuery, selectedCountryFilter]);
+  const filteredOffers = offers;
 
   const [storeSearch, setStoreSearch] = useState("");
   const [storeDropdownOpen, setStoreDropdownOpen] = useState(false);
@@ -103,13 +75,11 @@ export default function AdminOffersManager() {
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 15;
+  const [totalOffersCount, setTotalOffersCount] = useState(0);
 
-  const totalPages = Math.ceil(filteredOffers.length / pageSize);
+  const totalPages = Math.ceil(totalOffersCount / pageSize);
 
-  const paginatedOffers = useMemo(() => {
-    const startIndex = (currentPage - 1) * pageSize;
-    return filteredOffers.slice(startIndex, startIndex + pageSize);
-  }, [filteredOffers, currentPage, pageSize]);
+  const paginatedOffers = offers;
 
   // Reset page when search query or country filter changes
   useEffect(() => {
@@ -141,53 +111,57 @@ export default function AdminOffersManager() {
   const affiliateEditedRef = useRef(false);
 
   async function loadData() {
-    const [offersResponse, storesResponse, countriesResponse] = await Promise.all([
-      fetch("/api/offers", { cache: "no-store" }),
-      fetch("/api/stores", { cache: "no-store" }),
-      fetch("/api/public/countries", { cache: "no-store" }),
-    ]);
-
-    const [offersPayload, storesPayload, countriesPayload] = await Promise.all([
-      offersResponse.json(),
-      storesResponse.json(),
-      countriesResponse.json(),
-    ]);
-    setOffers(offersPayload.data || []);
-    setStores(storesPayload.data || []);
-    setCountries(sanitizeCountryList(countriesPayload.data || SUPPORTED_COUNTRIES));
-    setSelectedOfferIds((current) => current.filter((id) => (offersPayload.data || []).some((offer) => offer.id === id)));
+    const response = await fetch(
+      `/api/offers?page=${currentPage}&limit=${pageSize}&search=${searchQuery}&country=${selectedCountryFilter}`,
+      { cache: "no-store" }
+    );
+    const payload = await response.json();
+    setOffers(payload.data || []);
+    setTotalOffersCount(payload.total || 0);
   }
 
+  // Load stores and countries once on mount
   useEffect(() => {
     let active = true;
-
-    async function hydrateData() {
-      const [offersResponse, storesResponse, countriesResponse] = await Promise.all([
-        fetch("/api/offers", { cache: "no-store" }),
+    async function loadInitial() {
+      const [storesResponse, countriesResponse] = await Promise.all([
         fetch("/api/stores", { cache: "no-store" }),
         fetch("/api/public/countries", { cache: "no-store" }),
       ]);
-
-      const [offersPayload, storesPayload, countriesPayload] = await Promise.all([
-        offersResponse.json(),
+      const [storesPayload, countriesPayload] = await Promise.all([
         storesResponse.json(),
         countriesResponse.json(),
       ]);
-
       if (active) {
-        setOffers(offersPayload.data || []);
         setStores(storesPayload.data || []);
         setCountries(sanitizeCountryList(countriesPayload.data || SUPPORTED_COUNTRIES));
-        setSelectedOfferIds([]);
       }
     }
-
-    hydrateData();
-
+    loadInitial();
     return () => {
       active = false;
     };
   }, []);
+
+  // Fetch paginated offers when filters or page changes
+  useEffect(() => {
+    let active = true;
+    async function fetchOffers() {
+      const response = await fetch(
+        `/api/offers?page=${currentPage}&limit=${pageSize}&search=${searchQuery}&country=${selectedCountryFilter}`,
+        { cache: "no-store" }
+      );
+      const payload = await response.json();
+      if (active) {
+        setOffers(payload.data || []);
+        setTotalOffersCount(payload.total || 0);
+      }
+    }
+    fetchOffers();
+    return () => {
+      active = false;
+    };
+  }, [currentPage, searchQuery, selectedCountryFilter]);
 
   function handleOpenCreate() {
     setEditingOffer(null);

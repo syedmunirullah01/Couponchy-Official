@@ -396,3 +396,80 @@ export async function deleteOffersByStoreSlug(storeSlug) {
 
   return !error;
 }
+
+export async function getPaginatedOffers({ page = 1, limit = 15, search = "", country = "all" }) {
+  const skip = (page - 1) * limit;
+
+  if (isMongoEnabled()) {
+    await connectToDatabase();
+
+    // 1. Build country filter
+    let storeSlugs = null;
+    if (country !== "all") {
+      const Store = (await import("@/server/models/Store")).default;
+      const normalizedCountry = country.toUpperCase();
+      const stores = await Store.find({ country_code: normalizedCountry }, { slug: 1 }).lean();
+      storeSlugs = stores.map(s => s.slug);
+    }
+
+    // 2. Build search filter
+    const query = {};
+    if (storeSlugs !== null) {
+      query.store_slug = { $in: storeSlugs };
+    }
+
+    if (search.trim()) {
+      const regex = new RegExp(search.trim(), "i");
+      query.$or = [
+        { title: regex },
+        { description: regex },
+        { store_name: regex },
+        { code: regex },
+        { type: regex }
+      ];
+    }
+
+    // 3. Query total count and data
+    const total = await Offer.countDocuments(query);
+    const docs = await Offer.find(query)
+      .sort({ created_at: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    const jsOffers = docs.map(mapDbOfferToJs).filter(Boolean);
+    return { data: jsOffers, total };
+  }
+
+  // Supabase/mock DB fallback
+  const allOffers = await getAllOffers();
+  
+  // Apply country filter
+  let filtered = allOffers;
+  if (country !== "all") {
+    const { getAllStores } = require("./stores-repository");
+    const stores = await getAllStores();
+    const allowedStoreSlugs = new Set(
+      stores.filter(s => normalizeCountryCode(s.countryCode) === normalizeCountryCode(country)).map(s => s.slug)
+    );
+    filtered = filtered.filter(o => allowedStoreSlugs.has(o.storeSlug));
+  }
+
+  // Apply search filter
+  if (search.trim()) {
+    const lowerQuery = search.toLowerCase().trim();
+    filtered = filtered.filter(o => {
+      return (
+        String(o.title || "").toLowerCase().includes(lowerQuery) ||
+        String(o.description || "").toLowerCase().includes(lowerQuery) ||
+        String(o.storeName || "").toLowerCase().includes(lowerQuery) ||
+        String(o.code || "").toLowerCase().includes(lowerQuery) ||
+        String(o.type || "").toLowerCase().includes(lowerQuery)
+      );
+    });
+  }
+
+  const total = filtered.length;
+  const paginated = filtered.slice(skip, skip + limit);
+  return { data: paginated, total };
+}

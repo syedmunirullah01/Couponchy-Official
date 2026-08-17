@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createOffer, getAllOffers, getOffersByStoreSlug } from "@/server/repositories/offers-repository";
+import { createOffer, getAllOffers, getOffersByStoreSlug, getPaginatedOffers } from "@/server/repositories/offers-repository";
 import { getAllStores, getStoreBySlug, syncStoreOfferCount } from "@/server/repositories/stores-repository";
 import { normalizeCountryCode } from "@/lib/countries";
 import { validateOfferPayload } from "@/lib/validators";
@@ -9,7 +9,24 @@ import { translateOfferOnSave } from "@/server/services/translation-service";
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
+  const page = searchParams.get("page");
+  const limit = searchParams.get("limit");
+  const search = searchParams.get("search") || "";
   const requestedCountryCode = searchParams.get("country");
+
+  if (page) {
+    const parsedPage = parseInt(page, 10) || 1;
+    const parsedLimit = parseInt(limit, 10) || 15;
+    const countryFilter = requestedCountryCode || "all";
+    const result = await getPaginatedOffers({
+      page: parsedPage,
+      limit: parsedLimit,
+      search,
+      country: countryFilter
+    });
+    return NextResponse.json(result);
+  }
+
   const offers = await getAllOffers();
 
   if (!requestedCountryCode) {
