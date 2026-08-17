@@ -15,6 +15,9 @@ export function invalidateStoresCache() {
     global._storesCache.docs = null;
     global._storesCache.timestamp = 0;
   }
+  global._homePageDataCache = {};
+  global._storePageDataCache = {};
+  global._storeDirectoryDataCache = {};
 }
 
 function isMongoEnabled() {

@@ -23,6 +23,16 @@ import {
   getTranslatedMarquee,
 } from "@/server/services/translation-service";
 
+if (!global._homePageDataCache) {
+  global._homePageDataCache = {};
+}
+if (!global._storePageDataCache) {
+  global._storePageDataCache = {};
+}
+if (!global._storeDirectoryDataCache) {
+  global._storeDirectoryDataCache = {};
+}
+
 
 function buildStoreDirectoryRecord(store) {
   const label = `${store.offersCount} ${store.offersCount === 1 ? "Active Offer" : "Active Offers"}`;
@@ -231,6 +241,15 @@ function filterStoresByCountry(stores, countryCode) {
 }
 
 export async function getStoreDirectoryData(search = "", countryCode) {
+  const isCacheable = !String(search || "").trim();
+  const now = Date.now();
+  const cacheKey = String(countryCode || "US").toUpperCase();
+  const cacheTTL = 60000; // 1 minute
+
+  if (isCacheable && global._storeDirectoryDataCache[cacheKey] && (now - global._storeDirectoryDataCache[cacheKey].timestamp < cacheTTL)) {
+    return global._storeDirectoryDataCache[cacheKey].data;
+  }
+
   const [stores, offers] = await Promise.all([getAllStores(), getAllOffers()]);
   const scopedStores = filterStoresByCountry(stores, countryCode);
   const allowedStoreSlugs = new Set(scopedStores.map((store) => store.slug));
@@ -257,7 +276,7 @@ export async function getStoreDirectoryData(search = "", countryCode) {
     active: index === 0,
   }));
 
-  return {
+  const result = {
     breadcrumbItems: normalizedSearch
       ? ["Home", "Stores", `Search: ${search}`]
       : ["Home", "Stores", categories[0]?.name || "All Stores"],
@@ -266,9 +285,26 @@ export async function getStoreDirectoryData(search = "", countryCode) {
     searchValue: search,
     t: translatedStoreDirectory,
   };
+
+  if (isCacheable) {
+    global._storeDirectoryDataCache[cacheKey] = {
+      data: result,
+      timestamp: now
+    };
+  }
+
+  return result;
 }
 
 export async function getHomePageData(countryCode) {
+  const now = Date.now();
+  const cacheKey = String(countryCode || "US").toUpperCase();
+  const cacheTTL = 60000; // 1 minute
+
+  if (global._homePageDataCache[cacheKey] && (now - global._homePageDataCache[cacheKey].timestamp < cacheTTL)) {
+    return global._homePageDataCache[cacheKey].data;
+  }
+
   const [stores, offers, products, settings, categories] = await Promise.all([
     getAllStores(),
     getAllOffers(),
@@ -378,7 +414,7 @@ export async function getHomePageData(countryCode) {
   const rawTitle = homepageSections.latestStores.title || "";
   const categoriesTitle = rawTitle.toLowerCase().includes("store") ? "Browse Categories" : (rawTitle || "Browse Categories");
 
-  return {
+  const result = {
     hero: translatedSettings.homepage.hero,
     categoriesTitle,
     heroStatsT: translatedHero,
@@ -455,9 +491,24 @@ export async function getHomePageData(countryCode) {
     })),
     totalStoresCount: scopedStores.length,
   };
+
+  global._homePageDataCache[cacheKey] = {
+    data: result,
+    timestamp: now
+  };
+
+  return result;
 }
 
 export async function getStorePageData(slug, countryCode) {
+  const now = Date.now();
+  const cacheKey = `${String(slug).toLowerCase()}_${String(countryCode || "US").toUpperCase()}`;
+  const cacheTTL = 60000; // 1 minute
+
+  if (global._storePageDataCache[cacheKey] && (now - global._storePageDataCache[cacheKey].timestamp < cacheTTL)) {
+    return global._storePageDataCache[cacheKey].data;
+  }
+
   const [store, offers, products, allStores] = await Promise.all([
     getStoreBySlug(slug),
     getOffersByStoreSlug(slug),
@@ -483,13 +534,20 @@ export async function getStorePageData(slug, countryCode) {
   const detail = buildStoreDetail(translatedStore, translatedOffers, countryMatchedStores);
   const translatedDetail = await getTranslatedStoreDetail(detail, lang);
 
-  return {
+  const result = {
     ...translatedDetail,
     products: products.map((product) => ({
       ...product,
       productUrl: product.productUrl || `/stores/${store.categorySlug}/${store.slug}/products/${product.slug}`,
     })),
   };
+
+  global._storePageDataCache[cacheKey] = {
+    data: result,
+    timestamp: now
+  };
+
+  return result;
 }
 
 export async function getProductPageData(storeSlug, productSlug, countryCode) {

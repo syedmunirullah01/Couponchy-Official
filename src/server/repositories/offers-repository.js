@@ -14,6 +14,9 @@ export function invalidateOffersCache() {
     global._offersCache.docs = null;
     global._offersCache.timestamp = 0;
   }
+  global._homePageDataCache = {};
+  global._storePageDataCache = {};
+  global._storeDirectoryDataCache = {};
 }
 
 function isMongoEnabled() {
