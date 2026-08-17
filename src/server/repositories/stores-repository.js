@@ -475,3 +475,67 @@ export async function syncStoresForCategoryChange({ previousName, previousSlug, 
     throw error;
   }
 }
+
+export async function getPaginatedStores({ page = 1, limit = 15, search = "", country = "all" }) {
+  const skip = (page - 1) * limit;
+  const projection = "name slug category category_slug country_code logo_image logo_text affiliate_link logo_class_name trust_status offers_count position created_at";
+
+  if (isMongoEnabled()) {
+    await connectToDatabase();
+
+    const query = {};
+
+    // 1. Build country filter
+    if (country !== "all") {
+      query.country_code = country.toUpperCase();
+    }
+
+    // 2. Build search filter
+    if (search.trim()) {
+      const regex = new RegExp(search.trim(), "i");
+      query.$or = [
+        { name: regex },
+        { slug: regex },
+        { category: regex },
+        { country_code: regex }
+      ];
+    }
+
+    // 3. Query total count and data
+    const total = await Store.countDocuments(query);
+    const docs = await Store.find(query, projection)
+      .sort({ created_at: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    const jsStores = docs.map(mapDbStoreToJs).filter(Boolean);
+    return { data: jsStores, total };
+  }
+
+  // Supabase fallback
+  const allStores = await getAllStores();
+  
+  // Apply country filter
+  let filtered = allStores;
+  if (country !== "all") {
+    filtered = filtered.filter(s => (s.countryCode || "").toLowerCase() === country.toLowerCase());
+  }
+
+  // Apply search filter
+  if (search.trim()) {
+    const lowerQuery = search.toLowerCase().trim();
+    filtered = filtered.filter(s => {
+      return (
+        String(s.name || "").toLowerCase().includes(lowerQuery) ||
+        String(s.slug || "").toLowerCase().includes(lowerQuery) ||
+        String(s.category || "").toLowerCase().includes(lowerQuery) ||
+        String(s.countryCode || "").toLowerCase().includes(lowerQuery)
+      );
+    });
+  }
+
+  const total = filtered.length;
+  const paginated = filtered.slice(skip, skip + limit);
+  return { data: paginated, total };
+}

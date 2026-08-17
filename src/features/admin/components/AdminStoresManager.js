@@ -231,28 +231,7 @@ export default function AdminStoresManager() {
   const [open, setOpen] = useState(false);
   const [selectedCountryFilter, setSelectedCountryFilter] = useState("all");
 
-  const filteredStores = useMemo(() => {
-    let result = stores;
-    if (selectedCountryFilter !== "all") {
-      result = result.filter(
-        (store) => (store.countryCode || "").toLowerCase() === selectedCountryFilter.toLowerCase()
-      );
-    }
-    if (!searchQuery) return result;
-    const lowerQuery = searchQuery.toLowerCase();
-    return result.filter((store) => {
-      const name = (store.name || "").toLowerCase();
-      const slug = (store.slug || "").toLowerCase();
-      const category = (store.category || "").toLowerCase();
-      const countryCode = (store.countryCode || "").toLowerCase();
-      return (
-        name.includes(lowerQuery) ||
-        slug.includes(lowerQuery) ||
-        category.includes(lowerQuery) ||
-        countryCode.includes(lowerQuery)
-      );
-    });
-  }, [stores, searchQuery, selectedCountryFilter]);
+  const filteredStores = stores;
   const [bulkImportOpen, setBulkImportOpen] = useState(false);
   const [editingStore, setEditingStore] = useState(null);
   const [isHydrating, setIsHydrating] = useState(false);
@@ -266,13 +245,11 @@ export default function AdminStoresManager() {
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 15;
+  const [totalStoresCount, setTotalStoresCount] = useState(0);
 
-  const totalPages = Math.ceil(filteredStores.length / pageSize);
+  const totalPages = Math.ceil(totalStoresCount / pageSize);
 
-  const paginatedStores = useMemo(() => {
-    const startIndex = (currentPage - 1) * pageSize;
-    return filteredStores.slice(startIndex, startIndex + pageSize);
-  }, [filteredStores, currentPage, pageSize]);
+  const paginatedStores = stores;
 
   // Reset page when search query or country filter changes
   useEffect(() => {
@@ -341,53 +318,52 @@ export default function AdminStoresManager() {
   const descriptionField = register("description");
 
   async function loadStores() {
-    setIsHydrating(true);
+    const response = await fetch(
+      `/api/stores?page=${currentPage}&limit=${pageSize}&search=${searchQuery}&country=${selectedCountryFilter}`,
+      { cache: "no-store" }
+    );
+    const payload = await response.json();
+    setStores(payload.data || []);
+    setTotalStoresCount(payload.total || 0);
+  }
 
-    try {
-      const [storesResponse, categoriesResponse, countriesResponse] = await Promise.all([
-        fetch("/api/stores", { cache: "no-store" }),
+  // Load categories and countries once on mount
+  useEffect(() => {
+    let active = true;
+    async function hydrateDeps() {
+      const [categoriesResponse, countriesResponse] = await Promise.all([
         fetch("/api/categories", { cache: "no-store" }),
         fetch("/api/public/countries", { cache: "no-store" }),
       ]);
-      const [storesPayload, categoriesPayload, countriesPayload] = await Promise.all([
-        storesResponse.json(),
+      const [categoriesPayload, countriesPayload] = await Promise.all([
         categoriesResponse.json(),
         countriesResponse.json(),
       ]);
-      setStores(storesPayload.data || []);
-      setCategories(categoriesPayload.data || []);
-      setCountries(sanitizeCountryList(countriesPayload.data || SUPPORTED_COUNTRIES));
-      setSelectedStoreSlugs((current) =>
-        current.filter((slug) => (storesPayload.data || []).some((store) => store.slug === slug))
-      );
-    } finally {
-      setIsHydrating(false);
+      if (active) {
+        setCategories(categoriesPayload.data || []);
+        setCountries(sanitizeCountryList(countriesPayload.data || SUPPORTED_COUNTRIES));
+      }
     }
-  }
+    hydrateDeps();
+    return () => {
+      active = false;
+    };
+  }, []);
 
+  // Fetch paginated stores when filters or page changes
   useEffect(() => {
     let active = true;
-
-    async function hydrateStores() {
+    async function fetchStores() {
       setIsHydrating(true);
-
       try {
-        const [storesResponse, categoriesResponse, countriesResponse] = await Promise.all([
-          fetch("/api/stores", { cache: "no-store" }),
-          fetch("/api/categories", { cache: "no-store" }),
-          fetch("/api/public/countries", { cache: "no-store" }),
-        ]);
-        const [storesPayload, categoriesPayload, countriesPayload] = await Promise.all([
-          storesResponse.json(),
-          categoriesResponse.json(),
-          countriesResponse.json(),
-        ]);
-
+        const response = await fetch(
+          `/api/stores?page=${currentPage}&limit=${pageSize}&search=${searchQuery}&country=${selectedCountryFilter}`,
+          { cache: "no-store" }
+        );
+        const payload = await response.json();
         if (active) {
-          setStores(storesPayload.data || []);
-          setCategories(categoriesPayload.data || []);
-          setCountries(sanitizeCountryList(countriesPayload.data || SUPPORTED_COUNTRIES));
-          setSelectedStoreSlugs([]);
+          setStores(payload.data || []);
+          setTotalStoresCount(payload.total || 0);
         }
       } finally {
         if (active) {
@@ -395,13 +371,11 @@ export default function AdminStoresManager() {
         }
       }
     }
-
-    hydrateStores();
-
+    fetchStores();
     return () => {
       active = false;
     };
-  }, []);
+  }, [currentPage, searchQuery, selectedCountryFilter]);
 
   useEffect(() => {
     if (!slugEditedRef.current) {
